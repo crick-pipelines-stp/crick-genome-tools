@@ -88,3 +88,18 @@ class Fasta:
             sequences.update(Fasta.read_fasta_file(file))
 
         return sequences
+
+    @staticmethod
+    def write_fasta_file(fasta_data: Dict[str, str], path: str):
+        """
+        Write a dictionary of fasta data to a file
+
+        Args:
+            fasta_data (Dict[str, str]): Dictionary of fasta data.
+            path (str): Path to write the fasta file to.
+        """
+
+        with open(path, "w", encoding="UTF-8") as file:
+            for tag, seq in fasta_data.items():
+                file.write(f">{tag}\n")
+                file.write(f"{seq}\n")

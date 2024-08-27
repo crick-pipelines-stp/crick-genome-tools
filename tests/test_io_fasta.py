@@ -9,6 +9,7 @@ import unittest
 import pytest
 
 from crick_genome_tools.io.fasta import Fasta
+from tests.utils import with_temporary_folder
 
 
 TEST_FASTA_SOURCE_FOLDER = "tests/data/io/fasta"
@@ -63,6 +64,17 @@ class TestIoFasta(unittest.TestCase):
 
         # Assert
         self.assertTrue(len(fasta_seqs) == 2)
+
+    @with_temporary_folder
+    def test_fasta_write(self, tmpdirname):
+        # Test
+        fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "H1N1pdm_HA.fasta"))
+        Fasta.write_fasta_file(fasta_seqs, os.path.join(tmpdirname, "H1N1pdm_HA.fasta"))
+
+        # Assert
+        self.assertTrue(os.path.exists(os.path.join(tmpdirname, "H1N1pdm_HA.fasta")))
+        with open(os.path.join(tmpdirname, "H1N1pdm_HA.fasta"), "r", encoding="UTF-8") as file:
+            self.assertEqual(file.read(), ">H1N1pdm_HA\n" + fasta_seqs["H1N1pdm_HA"] + "\n")
 
 
 class TestFastaFixture():
