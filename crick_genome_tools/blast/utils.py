@@ -7,6 +7,7 @@ from typing import Dict
 
 from crick_genome_tools.io.fasta import Fasta
 
+
 def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
     """
     Build a fasta data structure from the top hits of a blast file.
@@ -30,11 +31,11 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
     with open(blast_path, "r", encoding="UTF-8") as in_f:
         blast_lines = in_f.readlines()
 
-    # if the blast file is empty, error out
+    # if the blast file is empty, error out
     if len(blast_lines) == 0:
         raise ValueError("Error: No top hits detected in the blast file.")
 
-    # build list of the second column of the blast file
+    # build list of the second column of the blast file
     top_blast_hits = []
     for line in blast_lines:
         top_blast_hits.append(line.split("\t")[1])
@@ -46,7 +47,7 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
     # parse the reference fasta file
     fasta_data = Fasta.read_fasta_file(fasta_path)
 
-    # build the fasta data from the top hits
+    # build the fasta data from the top hits
     fasta_top_hits = {}
     for hit in top_blast_hits:
         if hit in fasta_data:

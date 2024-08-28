@@ -27,11 +27,11 @@ class Fasta:
             Dict[str, str]: A dictionary where keys are the sequence identifiers and values are strings of the sequences.
         """
 
-        # Check for path not exists
+        # Check for path not exists
         if not os.path.exists(path):
             raise FileNotFoundError(f"File does not exist: {path}")
 
-        # Init
+        # Init
         sequences: Dict[str, str] = {}
         current_tag = None
         current_seq: List[str] = []
