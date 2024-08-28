@@ -5,8 +5,8 @@ LABEL authors="chris.cheshire@crick.ac.uk"
 RUN python -m pip install --upgrade pip
 
 # Add thesource files to the image
-COPY . /usr/src/genome_tools
-WORKDIR /usr/src/genome_tools
+COPY . /usr/src/crick_genome_tools
+WORKDIR /usr/src/crick_genome_tools
 
 # Update version
 RUN pip install toml
