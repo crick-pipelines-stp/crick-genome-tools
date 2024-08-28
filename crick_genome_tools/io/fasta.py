@@ -90,7 +90,7 @@ class Fasta:
         return sequences
 
     @staticmethod
-    def write_fasta_file(fasta_data: Dict[str, str], path: str):
+    def write_fasta_file(fasta_data: Dict[str, str], path: str, column_width: int = 70):
         """
         Write a dictionary of fasta data to a file
 
@@ -102,4 +102,5 @@ class Fasta:
         with open(path, "w", encoding="UTF-8") as file:
             for tag, seq in fasta_data.items():
                 file.write(f">{tag}\n")
-                file.write(f"{seq}\n")
+                for i in range(0, len(seq), column_width):
+                    file.write(seq[i:i+column_width] + "\n")

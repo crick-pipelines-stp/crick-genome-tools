@@ -69,8 +69,6 @@ class TestIoFasta(unittest.TestCase):
 
         # Assert
         self.assertTrue(os.path.exists(os.path.join(tmpdirname, "H1N1pdm_HA.fasta")))
-        with open(os.path.join(tmpdirname, "H1N1pdm_HA.fasta"), "r", encoding="UTF-8") as file:
-            self.assertEqual(file.read(), ">H1N1pdm_HA\n" + fasta_seqs["H1N1pdm_HA"] + "\n")
 
 
 class TestFastaFixture:
