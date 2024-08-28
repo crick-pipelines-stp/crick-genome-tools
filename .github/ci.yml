@@ -1,0 +1,160 @@
+name: CI Testing
+# This workflow is triggered on pushes and PRs to the repository.
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    paths-ignore:
+      # ignore github workflows except for the current one
+      - ".github/**"
+      - "!.github/workflows/ci.yml"
+  release:
+    types: [published]
+
+# Cancel if a newer run with the same workflow name is queued
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: Run Tests - os:${{ matrix.os }} | python:${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11"]
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+
+      - name: Run tox env
+        run: |
+          tox
+
+      - name: Check for coverage report
+        if: always()
+        id: check_coverage_report
+        run: echo "coverage_report_exists=$(if [ -d htmlcov ]; then echo true; else echo false; fi)" >> $GITHUB_ENV
+
+      - name: Upload coverage report
+        if: always() && env.coverage_report_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  editorconfig:
+    name: Run editor config
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install -g editorconfig-checker
+
+      - name: Run EditorConfig Checker
+        run: editorconfig-checker --exclude '.git/*' .
+
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Prettier
+        run: npm install -g prettier
+
+      - name: Run Prettier
+        run: prettier --check "**/*.py"
+
+  black:
+    name: Black
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install '.[dev]'
+
+      - name: Run Black
+        run: black --check --diff .
+
+  isort:
+    name: isort
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install '.[dev]'
+
+      - name: Run isort
+        run: isort --check-only --diff .
+
+  pylint:
+    name: Pylint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install '.[dev]'
+
+      - name: Run Pylint
+        run: pylint **/*.py
+
+  ruff:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install '.[dev]'
+
+      - name: Run ruff
+        run: ruff check
