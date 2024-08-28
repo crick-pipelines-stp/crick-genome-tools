@@ -18,7 +18,7 @@ jobs:
     name: Push new Docker image to Docker Hub
     runs-on: ubuntu-latest
     # Only run for the main FrancisCrick repo
-    if: ${{ github.repository == 'FrancisCrickInstitute/crick-genome-tools' }}
+    if: ${{ github.repository == 'crick-pipelines-stp/crick-genome-tools' }}
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASS }}
