@@ -1,7 +1,7 @@
 [project]
-name="genome-tools"
+name="crick-genome-tools"
 version = "0.0.0" # Dynamically updated
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 description = "A set of helper functions for processing of genomics data."
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
@@ -11,11 +11,8 @@ authors = [
 ]
 urls = { "Homepage" = "https://github.com/crick-pipelines-stp/crick-genome-tools" }
 dependencies = [
-    "click",
-    "rich-click",
-    "rich",
 ]
-scripts = { "genome-tools" = "genome_tools.__main__:run_genome_tools" }
+# scripts = { "crick-genome-tools" = "crick_genome_tools.__main__:run_genome_tools" }
 
 [project.optional-dependencies]
 dev = [
@@ -58,7 +55,7 @@ norecursedirs = [
 line-length = 150
 target-version = ["py311"]
 exclude = '''
-    asf_tools/__main__.py
+    crick_genome_tools/__main__.py
     | .tox
     |  build
     |  prototype
@@ -116,6 +113,6 @@ max-line-length = 150
 
 [tool.coverage.run]
 omit = [
-    "genome_tools/__main__.py",
-    "genome_tools/io/log_subprocess.py",
+    "crick_genome_tools/__main__.py",
+    "crick_genome_tools/io/log_subprocess.py",
 ]
