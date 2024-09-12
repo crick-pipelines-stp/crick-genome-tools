@@ -1,5 +1,3 @@
-# pylint: disable=C0116,C0114
-
 import ctypes
 import ctypes.util
 import logging
@@ -7,12 +5,10 @@ import subprocess
 import sys
 from signal import SIGKILL
 
-
 log = logging.getLogger(__name__)
 
 LIBC = ctypes.CDLL(ctypes.util.find_library("c"))
 PR_SET_PDEATHSIG = ctypes.c_int(1)  # <sys/prctl.h>
-
 
 class LogSubprocess:
     """
@@ -21,15 +17,14 @@ class LogSubprocess:
 
     def __init__(self):
         """
-        Initialise the LogSubprocess object
+        Initialise the LogSubprocess object.
         """
         self.pdeathsig = self._child_preexec_set_pdeathsig()
 
     def _child_preexec_set_pdeathsig(self):
         """
-        When used as the preexec_fn argument for subprocess.Popen etc,
-        causes the subprocess to recieve SIGKILL if the parent process
-        terminates.
+        When used as the preexec_fn argument for subprocess.Popen,
+        causes the subprocess to receive SIGKILL if the parent process terminates.
         """
         if sys.platform.startswith("linux"):
             zero = ctypes.c_ulong(0)
@@ -37,47 +32,62 @@ class LogSubprocess:
         return None
 
     def _execute(self, method, *args, **kwargs):
+        """
+        General method to handle subprocess calls except Popen (which is deferred).
+        This handles errors immediately after the command completes.
+        """
         if "stderr" not in kwargs:
             kwargs["stderr"] = subprocess.PIPE
         if "preexec_fn" not in kwargs:
             kwargs["preexec_fn"] = self.pdeathsig
 
-        # For Popen, return the process object directly
-        if method == subprocess.Popen:
-            proc = method(*args, **kwargs)
-            returncode = proc.wait()
-            if returncode != 0:
-                stderr_output = proc.stderr.read() if proc.stderr else None
-                error_msg = f"Subprocess terminated with exit code {returncode}"
-                if stderr_output:
-                    error_msg += f"\nError output:\n{stderr_output.decode()}"
-                log.error(error_msg)
-                raise subprocess.CalledProcessError(returncode, proc.args, output=None, stderr=stderr_output)
+        # For methods that immediately return (like check_call, check_output)
+        try:
+            result = method(*args, **kwargs)
+            return result  # For check_call and check_output, this is either 0 or output
+        except subprocess.CalledProcessError as e:
+            stderr_output = e.stderr.decode() if e.stderr else "Unknown error"
+            log.error(f"Subprocess failed with exit code {e.returncode}.\nError output:\n{stderr_output}")
+            raise
 
-            return proc
-
-        # For check_call, check_output, and call
-        result = method(*args, **kwargs)
-        returncode = result if method == subprocess.call else 0  # pylint: disable=comparison-with-callable
-
-        stderr_output = None
-
-        if returncode != 0:
-            raise subprocess.CalledProcessError(returncode, args[0], output=None, stderr=stderr_output)
-
-        return result
-
-    def check_call(self, *args, **kwargs):
+    def check_call(self, *args, **kwargs):  # pylint: disable=missing-function-docstring
         return self._execute(subprocess.check_call, *args, **kwargs)
 
-    def check_output(self, *args, **kwargs):
+    def check_output(self, *args, **kwargs):  # pylint: disable=missing-function-docstring
         return self._execute(subprocess.check_output, *args, **kwargs)
 
-    def call(self, *args, **kwargs):
+    def call(self, *args, **kwargs):  # pylint: disable=missing-function-docstring
         return self._execute(subprocess.call, *args, **kwargs)
 
     def p_open(self, *args, **kwargs):
-        return self._execute(subprocess.Popen, *args, **kwargs)
+        """
+        Start a subprocess with deferred error handling. Returns the process object immediately,
+        and errors should be checked after the process completes.
+        """
+        if "stderr" not in kwargs:
+            kwargs["stderr"] = subprocess.PIPE  # Capture stderr for error handling
+        if "stdout" not in kwargs:
+            kwargs["stdout"] = subprocess.PIPE  # Capture stdout if not already handled
+        if "preexec_fn" not in kwargs:
+            kwargs["preexec_fn"] = self.pdeathsig  # Set preexec_fn to send SIGKILL
+
+        # Start the subprocess and return the process object
+        proc = subprocess.Popen(*args, **kwargs)
+
+        def check_return_code():
+            """
+            Check the return code and handle any errors after the process completes.
+            """
+            returncode = proc.wait()  # Wait for the process to finish
+            if returncode != 0:
+                stderr_output = proc.stderr.read().decode() if proc.stderr else "Unknown error"
+                error_msg = f"Subprocess terminated with exit code {returncode}\nError output:\n{stderr_output}"
+                log.error(error_msg)
+                raise subprocess.CalledProcessError(returncode, proc.args, output=None, stderr=stderr_output)
+
+        # Attach error-checking function to the process object
+        proc.check_return_code = check_return_code
+        return proc
 
     def stream_process(self, proc):
         """
@@ -88,12 +98,4 @@ class LogSubprocess:
                 yield line
             proc.stdout.close()
 
-        returncode = proc.wait()  # Now wait after the stream is done
-
-        if returncode != 0:
-            stderr_output = proc.stderr.read() if proc.stderr else None
-            error_msg = f"Subprocess terminated with exit code {returncode}"
-            if stderr_output:
-                error_msg += f"\nError output:\n{stderr_output.decode()}"
-            log.error(error_msg)
-            raise subprocess.CalledProcessError(returncode, proc.args, output=None, stderr=stderr_output)
+        proc.check_return_code()  # Ensure errors are handled after streaming

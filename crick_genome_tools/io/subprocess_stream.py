@@ -10,7 +10,6 @@ from crick_genome_tools.io.log_subprocess import LogSubprocess
 
 log = logging.getLogger(__name__)
 
-
 class SubprocessStream:
     """
     Wrap a subprocess that we stream from or stream to. Acts like an open filehandle by passing down
@@ -28,14 +27,17 @@ class SubprocessStream:
 
         kwargs["preexec_fn"] = os.setsid
         sys.stdout.flush()
+
+        # Use LogSubprocess.p_open to ensure proper error handling
         sub_proc = LogSubprocess()
-        self.proc = subprocess.Popen(*args, **kwargs)
+        self.proc = sub_proc.p_open(*args, **kwargs)
 
         if mode == "r":
             self.pipe = self.proc.stdout
         elif mode == "w":
             self.pipe = self.proc.stdin
 
+        # Use stream_process generator from LogSubprocess to stream the output
         self.stream_generator = sub_proc.stream_process(self.proc)
 
     def __enter__(self):
@@ -61,7 +63,13 @@ class SubprocessStream:
     def close(self):
         if not self.pipe.closed:
             self.pipe.close()
-        self.proc.wait()
+
+        # Use check_return_code to handle errors after the process is closed
+        try:
+            self.proc.check_return_code()
+        except subprocess.CalledProcessError as e:
+            log.error(f"Subprocess failed: {e}")
+            raise
 
     def __exit__(self, tp, val, tb):
         self.close()

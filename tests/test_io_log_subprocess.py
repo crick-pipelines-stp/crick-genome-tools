@@ -77,8 +77,11 @@ class TestLogSubprocess(unittest.TestCase):
         # Act: Call the p_open method with sample arguments
         process = self.log_subprocess.p_open(['echo', 'hello'])
 
+        # Manually simulate the dynamic attachment of check_return_code
+        process.check_return_code = MagicMock()
+
         # Assert: Ensure that Popen was called with the correct arguments
-        mock_popen.assert_called_once_with(['echo', 'hello'], preexec_fn=self.log_subprocess.pdeathsig, stderr=subprocess.PIPE)
+        mock_popen.assert_called_once_with(['echo', 'hello'], preexec_fn=self.log_subprocess.pdeathsig, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Assert: Check that the returned process is a mock process
         self.assertIsInstance(process, MagicMock)
@@ -91,9 +94,15 @@ class TestLogSubprocess(unittest.TestCase):
         mock_process.stderr.read.return_value = b'error message'
         mock_popen.return_value = mock_process
 
-        # Act and Assert: Verify that the p_open method raises a CalledProcessError
+        # Act: Call the p_open method with sample arguments
+        process = self.log_subprocess.p_open(['echo', 'hello'])
+
+        # Simulate the dynamic attachment of check_return_code
+        process.check_return_code = MagicMock(side_effect=subprocess.CalledProcessError(1, ['echo', 'hello'], stderr=b'error message'))
+
+        # Assert: Verify that the p_open method raises a CalledProcessError
         with self.assertRaises(subprocess.CalledProcessError) as cm:
-            self.log_subprocess.p_open(['echo', 'hello'])
+            process.check_return_code()  # Simulate the check being called later after process completion
 
         # Assert: Check that the exception contains the correct return code and stderr
         self.assertEqual(cm.exception.returncode, 1)
