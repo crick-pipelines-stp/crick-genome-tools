@@ -9,6 +9,7 @@ import subprocess
 from enum import Enum
 
 from crick_genome_tools.io.log_subprocess import LogSubprocess
+from crick_genome_tools.io.command_chain import CommandChain
 
 
 log = logging.getLogger(__name__)
@@ -117,35 +118,18 @@ class IterativeAlignment:
         # Switch on aligner
         if self.aligner == Aligner.BWA:
             # Call BWA index
-            LogSubprocess().p_open(["bwa", "index", ref_path])
+            LogSubprocess().p_open(["bwa", "index", ref_path]).check_return_code()
 
-            # Align
-            log_subprocess = LogSubprocess()
-            bwa_mem_cmd = ["bwa", "mem", "-t", str(self.num_cores), ref_path, read1_path, read2_path]
-            bwa_mem_proc = log_subprocess.p_open(bwa_mem_cmd, stdout=subprocess.PIPE)
-
-            # Convert to BAM
-            samtools_view_to_bam_cmd = ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"]
-            samtools_view_proc = log_subprocess.p_open(samtools_view_to_bam_cmd, stdin=bwa_mem_proc.stdout, stdout=subprocess.PIPE)
-            bwa_mem_proc.stdout.close()
-
-            # Sort
-            samtools_sort_cmd = [
-                "samtools",
-                "sort",
-                "-@",
-                str(self.num_cores),
-                "-o",
-                os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam"),
-                "-",
+            # Define the command chain
+            commands = [
+                ["bwa", "mem", "-t", str(self.num_cores), ref_path, read1_path, read2_path],  # BWA mem
+                ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"],  # Convert to BAM
+                ["samtools", "sort", "-@", str(self.num_cores), "-o", os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam"), "-"]  # Sort
             ]
-            samtools_sort_proc = log_subprocess.p_open(samtools_sort_cmd, stdin=samtools_view_proc.stdout)
-            samtools_view_proc.stdout.close()
 
-            # Error checking
-            bwa_mem_proc.check_return_code()
-            samtools_view_proc.check_return_code()
-            samtools_sort_proc.check_return_code()
+            # Run the chain
+            command_chain = CommandChain(commands)
+            command_chain.run()
 
 
 # per sample, per segment, per iteration
