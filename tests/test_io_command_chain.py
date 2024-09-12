@@ -1,16 +1,19 @@
 # pylint: disable=missing-function-docstring,missing-class-docstring,invalid-name
 
-import pytest
-import subprocess
-from unittest.mock import patch, MagicMock
-from crick_genome_tools.io.command_chain import CommandChain
-import unittest
-from tests.utils import with_temporary_folder
 import os
+import subprocess
+import unittest
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from crick_genome_tools.io.command_chain import CommandChain
+from tests.utils import with_temporary_folder
+
 
 class TestCommandChain(unittest.TestCase):
 
-    @patch('crick_genome_tools.io.command_chain.LogSubprocess')
+    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
     def test_command_chain_run_return_stream(self, MockLogSubprocess):
         mock_log_subprocess = MockLogSubprocess.return_value
         commands = [["echo", "hello"], ["grep", "hello"]]
@@ -36,12 +39,12 @@ class TestCommandChain(unittest.TestCase):
 
         command_chain.run()
 
-        with open(output_file, 'r', encoding="UTF-8") as f:
+        with open(output_file, "r", encoding="UTF-8") as f:
             output = f.read()
 
         self.assertEqual(output, "hello\n")
 
-    @patch('crick_genome_tools.io.command_chain.LogSubprocess')
+    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
     def test_command_chain_run_no_output(self, MockLogSubprocess):
         mock_log_subprocess = MockLogSubprocess.return_value
         commands = [["echo", "hello"], ["grep", "hello"]]
@@ -58,7 +61,7 @@ class TestCommandChain(unittest.TestCase):
         self.assertEqual(mock_log_subprocess.p_open.call_count, 2)
         mock_proc.check_return_code.assert_called()
 
-    @patch('crick_genome_tools.io.command_chain.LogSubprocess')
+    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
     def test_command_chain_run_single_command(self, MockLogSubprocess):
         mock_log_subprocess = MockLogSubprocess.return_value
         commands = [["echo", "hello"]]
@@ -76,7 +79,7 @@ class TestCommandChain(unittest.TestCase):
         self.assertEqual(mock_log_subprocess.p_open.call_count, 1)
         mock_proc.check_return_code.assert_called()
 
-    @patch('crick_genome_tools.io.command_chain.LogSubprocess')
+    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
     def test_command_chain_run_with_error(self, MockLogSubprocess):
         mock_log_subprocess = MockLogSubprocess.return_value
         commands = [["false"]]

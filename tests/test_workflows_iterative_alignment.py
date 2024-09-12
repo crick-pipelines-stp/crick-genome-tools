@@ -6,9 +6,10 @@ Tests for iterative alignment
 
 
 import unittest
+
+from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
 from tests.utils import with_temporary_folder
 
-from crick_genome_tools.workflows.iterative_alignment import IterativeAlignment, Aligner, IterationMode
 
 class TestLogSubprocess(unittest.TestCase):
 
@@ -19,5 +20,6 @@ class TestLogSubprocess(unittest.TestCase):
             "sample_01",
             "tests/data/workflows/iter_align/fastq/random_10K/illumina_pe_nextera_test_10k_R1.fastq.gz",
             "tests/data/workflows/iter_align/fastq/random_10K/illumina_pe_nextera_test_10k_R2.fastq.gz",
-            "tests/data/workflows/iter_align/refs/seg_ref_1.fasta")
+            "tests/data/workflows/iter_align/refs/seg_ref_1.fasta",
+        )
         raise NotImplementedError("Test not implemented")

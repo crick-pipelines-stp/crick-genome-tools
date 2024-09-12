@@ -3,7 +3,9 @@ Helper class for a chain of commands, piping output between them.
 """
 
 import subprocess
+
 from crick_genome_tools.io.log_subprocess import LogSubprocess
+
 
 class CommandChain:
     """
@@ -13,7 +15,7 @@ class CommandChain:
     def __init__(self, commands, return_stream=False, output_file=None):
         """
         Initialize the CommandChain with a list of commands.
-        
+
         Args:
             commands (list of list): Each inner list is a command (e.g., [["bwa", "mem", ...], ["samtools", "view", ...]]).
             return_stream (bool): Whether the final command should return a stream.
@@ -29,7 +31,7 @@ class CommandChain:
         """
         Run the chain of commands, piping output between them.
         Depending on options, either return a stream, write to a file, or complete without returning output.
-        
+
         Returns:
             If return_stream is True, returns an iterator for the final output stream.
             Otherwise, returns None.
@@ -47,7 +49,7 @@ class CommandChain:
                     proc = self.log_subprocess.p_open(cmd, stdin=previous_stdout, stdout=subprocess.PIPE)
                 elif self.output_file:
                     # Final command writes directly to the output file
-                    with open(self.output_file, 'w', encoding="UTF-8") as f_out:
+                    with open(self.output_file, "w", encoding="UTF-8") as f_out:
                         proc = self.log_subprocess.p_open(cmd, stdin=previous_stdout, stdout=f_out)
                 else:
                     # Final command executes without output piping

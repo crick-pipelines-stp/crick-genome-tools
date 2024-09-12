@@ -5,10 +5,12 @@ import subprocess
 import sys
 from signal import SIGKILL
 
+
 log = logging.getLogger(__name__)
 
 LIBC = ctypes.CDLL(ctypes.util.find_library("c"))
 PR_SET_PDEATHSIG = ctypes.c_int(1)  # <sys/prctl.h>
+
 
 class LogSubprocess:
     """
@@ -94,7 +96,7 @@ class LogSubprocess:
         Generator to stream output from a subprocess and handle errors after completion.
         """
         if proc.stdout:
-            for line in iter(proc.stdout.readline, b''):
+            for line in iter(proc.stdout.readline, b""):
                 yield line
             proc.stdout.close()
 
