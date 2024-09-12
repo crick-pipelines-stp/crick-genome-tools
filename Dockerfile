@@ -1,6 +1,13 @@
 FROM python:3.12
 LABEL authors="chris.cheshire@crick.ac.uk"
 
+# Install apt packages
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Update pip to latest version
 RUN python -m pip install --upgrade pip
 
