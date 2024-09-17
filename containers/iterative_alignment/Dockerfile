@@ -1,4 +1,5 @@
-FROM mambaorg/micromamba:latest
+# Base stage: Common setup for both test and prod
+FROM mambaorg/micromamba:latest AS base
 
 # Install apt packages
 USER root
@@ -13,19 +14,32 @@ USER $MAMBA_USER
 COPY --chown=$MAMBA_USER:$MAMBA_USER containers/iterative_alignment/env.yml /tmp/env.yml
 RUN micromamba install -y -n base -f /tmp/env.yml && \
     micromamba clean --all --yes
-ENV PATH /opt/conda/bin:$PATH
+
+ENV PATH=/opt/conda/bin:$PATH
 WORKDIR /home/mambauser
 USER root
 
-# Update pip to latest version
+# Update pip to the latest version
 RUN python -m pip install --upgrade pip
 
-# Add thesource files to the image
+# Production stage: Copies source code and installs it
+FROM base AS prod
+
+# Copy the source files
 COPY . /usr/src/crick_genome_tools
 WORKDIR /usr/src/crick_genome_tools
 
-# Install program
-RUN pip install '.[tests]'
-USER $MAMBA_USER
+# Install the program
+RUN pip install '.'
 
+USER $MAMBA_USER
+CMD ["bash"]
+
+# Test stage: Installs pytest but does not copy source code
+FROM base AS test
+
+# Install pytest
+RUN pip install pytest
+
+USER $MAMBA_USER
 CMD ["bash"]

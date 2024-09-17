@@ -5,7 +5,6 @@ Performs iterative alignment of sequences to a reference genome.
 import logging
 import os
 import shutil
-import subprocess
 from enum import Enum
 
 from crick_genome_tools.io.log_subprocess import LogSubprocess
@@ -60,12 +59,28 @@ class IterativeAlignment:
         #     self.hamming_distance = kwargs.get('hamming_distance', 5)
         #     log.info(f"Initialized with HAMMING mode, hamming_distance: {self.hamming_distance}")
 
+        # Aligner specific configurations
         if aligner == Aligner.BWA:
-            self.bwa_mem_args = kwargs.get("bwa_mem_args", "")
+            # Initialize dynamic params for BWA (mem, mmpen, gappen)
+            self.aligner_params = {
+                'bwa_args': kwargs.get('bwa_args', []),
+                'mem': kwargs.get('mem_start', 20),
+                'mmpen': kwargs.get('mmpen_start', 10),
+                'gappen': kwargs.get('gappen_start', 5)
+            }
+            self.aligner_param_increments = {
+                'mem': kwargs.get('mem_increment', 0),
+                'mmpen': kwargs.get('mmpen_increment', 0),
+                'gappen': kwargs.get('gappen_decrement', 0)
+            }
+            self.aligner_param_endpoints = {
+                'mem': kwargs.get('mem_end', None),
+                'mmpen': kwargs.get('mmpen_end', None),
+                'gappen': kwargs.get('gappen_end', None)
+            }
 
-        # Make output path if it doesn't exist
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
+            # Log these params
+            log.info(f"Initialized with BWA aligner, params: {self.aligner_params}, increments: {self.aligner_param_increments}, endpoints: {self.aligner_param_endpoints}")
 
     def run_sample(self, sample_id, read1_path, read2_path, ref_path: str):
         """
@@ -73,6 +88,10 @@ class IterativeAlignment:
         """
 
         log.info("Running iterative alignment on sample: %s", sample_id)
+
+        # Make output path if it doesn't exist
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
 
         # Create execution directory in output folder
         execution_dir = os.path.join(self.output_path, sample_id)
@@ -118,27 +137,42 @@ class IterativeAlignment:
         # Switch on aligner
         if self.aligner == Aligner.BWA:
             # Call BWA index
-            LogSubprocess().p_open(["bwa", "index", ref_path]).check_return_code()
+            LogSubprocess().p_open(["bwa-mem2", "index", ref_path]).check_return_code()
 
-            # Define the command chain
+            # Define the BWA mem command using dynamic params
+            bwa_command = [
+                "bwa-mem2", "mem",
+                "-t", str(self.num_cores),
+                "-R", f"@RG\tID:{sample_id}\tSM:{sample_id}\tLB:{sample_id}\tPL:ILLUMINA",
+                "-k", str(self.aligner_params['mem']),
+                "-B", str(self.aligner_params['mmpen']),
+                "-O", str(self.aligner_params['gappen'])] + self.aligner_params['bwa_args'] + [
+                ref_path, read1_path, read2_path
+            ]
+            log.debug(f"Running BWA mem with command: {bwa_command}")
+
+            # Define the command list
             commands = [
-                ["bwa", "mem", "-t", str(self.num_cores), ref_path, read1_path, read2_path],  # BWA mem
+                bwa_command,  # BWA mem
                 ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"],  # Convert to BAM
                 ["samtools", "sort", "-@", str(self.num_cores), "-o", os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam"), "-"]  # Sort
             ]
 
-            # Run the chain
+            # Run the commands
             command_chain = CommandChain(commands)
             command_chain.run()
 
+    def update_params(self, iteration: int):
+        """
+        Update the alignment parameters based on the param_mode and iteration number.
+        """
+        for param, increment in self.aligner_param_increments.items():
+            # Update the parameter value if increment is defined
+            if increment != 0:
+                self.aligner_params[param] += increment
 
-# per sample, per segment, per iteration
-
-# 1. Align the sequences to the reference genome
-# 2. Call variants
-# 3. Mask the reference genome with the variants"""
-
-
-# define enum for alignmer to use
-# define enum for variant caller to use
-# define enum for masking strategy
+            # Cap the parameter if an endpoint is defined
+            endpoint = self.aligner_param_endpoints.get(param)
+            if endpoint is not None and ((increment > 0 and self.aligner_params[param] > endpoint) or
+                                            (increment < 0 and self.aligner_params[param] < endpoint)):
+                self.aligner_params[param] = endpoint
