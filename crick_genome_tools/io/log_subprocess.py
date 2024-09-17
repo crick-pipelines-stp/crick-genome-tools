@@ -1,3 +1,7 @@
+"""
+Helper class with functions for logging calls to subprocesses.
+"""
+
 import ctypes
 import ctypes.util
 import logging
@@ -40,8 +44,8 @@ class LogSubprocess:
         """
         if "stderr" not in kwargs:
             kwargs["stderr"] = subprocess.PIPE
-        if "preexec_fn" not in kwargs:
-            kwargs["preexec_fn"] = self.pdeathsig
+        # if "preexec_fn" not in kwargs:
+        #     kwargs["preexec_fn"] = self.pdeathsig
 
         # For methods that immediately return (like check_call, check_output)
         try:
@@ -70,8 +74,8 @@ class LogSubprocess:
             kwargs["stderr"] = subprocess.PIPE  # Capture stderr for error handling
         if "stdout" not in kwargs:
             kwargs["stdout"] = subprocess.PIPE  # Capture stdout if not already handled
-        if "preexec_fn" not in kwargs:
-            kwargs["preexec_fn"] = self.pdeathsig  # Set preexec_fn to send SIGKILL
+        # if "preexec_fn" not in kwargs:
+        #     kwargs["preexec_fn"] = self.pdeathsig  # Set preexec_fn to send SIGKILL
 
         # Start the subprocess and return the process object
         proc = subprocess.Popen(*args, **kwargs)

@@ -26,7 +26,7 @@ class TestLogSubprocess(unittest.TestCase):
         self.log_subprocess.check_call(["echo", "hello"])
 
         # Assert: Ensure that check_call was called with the correct arguments
-        mock_check_call.assert_called_once_with(["echo", "hello"], preexec_fn=self.log_subprocess.pdeathsig, stderr=subprocess.PIPE)
+        mock_check_call.assert_called_once_with(["echo", "hello"], stderr=subprocess.PIPE)
 
     @patch("subprocess.check_call")
     def test_log_subprocess_check_call_failure(self, mock_check_call):
@@ -50,7 +50,7 @@ class TestLogSubprocess(unittest.TestCase):
         result = self.log_subprocess.check_output(["echo", "hello"])
 
         # Assert: Ensure that check_output was called with the correct arguments
-        mock_check_output.assert_called_once_with(["echo", "hello"], preexec_fn=self.log_subprocess.pdeathsig, stderr=subprocess.PIPE)
+        mock_check_output.assert_called_once_with(["echo", "hello"], stderr=subprocess.PIPE)
 
         # Assert: Check that the returned output is as expected
         self.assertEqual(result, b"output")
@@ -83,7 +83,7 @@ class TestLogSubprocess(unittest.TestCase):
 
         # Assert: Ensure that Popen was called with the correct arguments
         mock_popen.assert_called_once_with(
-            ["echo", "hello"], preexec_fn=self.log_subprocess.pdeathsig, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            ["echo", "hello"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
         )
 
         # Assert: Check that the returned process is a mock process
