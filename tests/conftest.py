@@ -2,10 +2,10 @@
 Custom pytest config
 """
 
-import pytest
-import subprocess
 import os
+import subprocess
 import tempfile
+import pytest
 
 
 def pytest_collection_modifyitems(config, items):
@@ -35,8 +35,9 @@ def pytest_runtest_call(item):
         if "image" not in container_marker.kwargs:
             pytest.fail("You must provide 'image' when using @pytest.mark.container.", pytrace=False)
 
-        # Extract the image_name from the marker arguments
+        # Extract var names
         image_name = container_marker.kwargs.get("image", None)
+        test_dir = container_marker.kwargs.get("test_dir", None)
 
         # Get test name
         test_name = item.location[2].split('.')[1]
@@ -46,6 +47,10 @@ def pytest_runtest_call(item):
         tmpdir = tempfile.mkdtemp()
         uid = os.getuid()
         gid = os.getgid()
+
+        # Overwrite with test dir if provided
+        if test_dir:
+            tmpdir = test_dir
 
         # Build the base command to run pytest inside the Docker container
         command = (
