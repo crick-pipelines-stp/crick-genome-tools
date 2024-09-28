@@ -76,3 +76,16 @@ class CommandChain:
         if self.return_stream:
             return self.log_subprocess.stream_process(self.processes[-1])
         return None
+
+    @staticmethod
+    def command_to_file(command, output_file):
+        """
+        Run a single command and write the output to a file.
+
+        Args:
+            command (list): Command to run.
+            output_file (str): File to write the output to.
+        """
+        with open(output_file, "w", encoding="UTF-8") as f_out:
+            proc = LogSubprocess().p_open(command, stdout=f_out)
+            proc.check_return_code()

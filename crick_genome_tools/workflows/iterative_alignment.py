@@ -134,6 +134,9 @@ class IterativeAlignment:
         """
         log.info("Aligning")
 
+        # Init file names
+        bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam")
+
         # Switch on aligner
         if self.aligner == Aligner.BWA:
             # Call BWA index
@@ -149,18 +152,22 @@ class IterativeAlignment:
                 "-O", str(self.aligner_params['gappen'])] + self.aligner_params['bwa_args'] + [
                 ref_path, read1_path, read2_path
             ]
-            log.debug(f"Running BWA mem with command: {bwa_command}")
+            log.info(f"Running BWA mem with command: {bwa_command}")
 
-            # Define the command list
+            # Define the alignment command chain and run
             commands = [
                 bwa_command,  # BWA mem
                 ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"],  # Convert to BAM
-                ["samtools", "sort", "-@", str(self.num_cores), "-o", os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam"), "-"]  # Sort
+                ["samtools", "sort", "-@", str(self.num_cores), "-o", bam_file, "-"]  # Sort
             ]
-
-            # Run the commands
             command_chain = CommandChain(commands)
             command_chain.run()
+
+        # Index the bam file
+        LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
+
+        # Run samtools flagstat
+        CommandChain.command_to_file(["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat"))
 
     def update_params(self, iteration: int):
         """
