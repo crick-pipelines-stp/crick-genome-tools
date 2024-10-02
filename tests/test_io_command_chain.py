@@ -96,41 +96,25 @@ class TestCommandChain(unittest.TestCase):
         self.assertEqual(mock_log_subprocess.p_open.call_count, 1)
         mock_proc.check_return_code.assert_called()
 
-
-    def test_command_chain_command_to_file_creates_output_file(self, mocker, tmp_path):
+    @with_temporary_folder
+    def test_command_chain_command_to_file_creates_output_file(self, tmp_path):
         command = ["echo", "hello"]
-        output_file = tmp_path / "output.txt"
-
-        mock_log_subprocess = mocker.patch('crick_genome_tools.io.command_chain.LogSubprocess')
-        mock_proc = mocker.Mock()
-        mock_proc.check_return_code.return_value = None
-        mock_log_subprocess.return_value.p_open.return_value = mock_proc
+        output_file = os.path.join(tmp_path, "output.txt")
 
         CommandChain.command_to_file(command, str(output_file))
 
-        assert output_file.exists()
+        assert os.path.exists(output_file)
         with open(output_file, "r", encoding="UTF-8") as f:
             assert f.read().strip() == "hello"
 
-    def test_command_chain_command_to_file_calls_p_open_with_correct_args(self, mocker, tmp_path):
-        command = ["echo", "hello"]
-        output_file = tmp_path / "output.txt"
-
-        mock_log_subprocess = mocker.patch('crick_genome_tools.io.command_chain.LogSubprocess')
-        mock_proc = mocker.Mock()
-        mock_log_subprocess.return_value.p_open.return_value = mock_proc
-
-        CommandChain.command_to_file(command, str(output_file))
-
-        mock_log_subprocess.return_value.p_open.assert_called_once_with(command, stdout=mocker.ANY)
-
-    def test_command_chain_command_to_file_handles_subprocess_error(self, mocker, tmp_path):
+    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
+    @with_temporary_folder
+    def test_command_chain_command_to_file_handles_subprocess_error(self, MockLogSubprocess, tmp_path):
         command = ["false"]  # This command will fail
-        output_file = tmp_path / "output.txt"
+        output_file = os.path.join(tmp_path, "output.txt")
 
-        mock_log_subprocess = mocker.patch('crick_genome_tools.io.command_chain.LogSubprocess')
-        mock_proc = mocker.Mock()
-        mock_log_subprocess.return_value.p_open.return_value = mock_proc
+        mock_proc = MockLogSubprocess.Mock()
+        MockLogSubprocess.return_value.p_open.return_value = mock_proc
         mock_proc.check_return_code.side_effect = subprocess.CalledProcessError(1, command)
 
         with pytest.raises(subprocess.CalledProcessError):
