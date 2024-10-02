@@ -80,7 +80,7 @@ class LogSubprocess:
         # Start the subprocess and return the process object
         proc = subprocess.Popen(*args, **kwargs)
 
-        def check_return_code():
+        def check_return_code(with_stdout = False):
             """
             Check the return code and handle any errors after the process completes.
             """
@@ -90,6 +90,10 @@ class LogSubprocess:
                 error_msg = f"Subprocess terminated with exit code {returncode}\nError output:\n{stderr_output}"
                 log.error(error_msg)
                 raise subprocess.CalledProcessError(returncode, proc.args, output=None, stderr=stderr_output)
+
+            if with_stdout:
+                stdout = proc.stdout.read().decode() if proc.stdout else ""
+                return stdout
 
         # Attach error-checking function to the process object
         proc.check_return_code = check_return_code

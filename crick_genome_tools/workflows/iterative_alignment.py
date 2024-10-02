@@ -115,20 +115,25 @@ class IterativeAlignment:
             if not os.path.exists(index_dir):
                 os.makedirs(index_dir)
 
+            # Create logs dir
+            log_dir = os.path.join(iteration_dir, "logs")
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+
             # Copy the previous reference genome to the iteration directory
             current_ref_path = os.path.join(index_dir, f"ref_iter_{i}.fasta")
             shutil.copy(previous_ref_path, current_ref_path)
 
             # Align the sequences to the reference genome
-            self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path)
+            self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path, log_dir)
 
-            # # Call variants
-            # self.call_variants(i, sample_id, execution_dir)
+            # Call variants
+            self.call_variants(sample_id, i, iteration_dir, current_ref_path, log_dir)
 
             # # Mask the reference genome with the variants
             # self.mask(i, sample_id, execution_dir, ref_path)
 
-    def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str):
+    def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str, log_dir: str):
         """
         Align the sequences to the reference genome.
         """
@@ -140,7 +145,9 @@ class IterativeAlignment:
         # Switch on aligner
         if self.aligner == Aligner.BWA:
             # Call BWA index
-            LogSubprocess().p_open(["bwa-mem2", "index", ref_path]).check_return_code()
+            stdout = LogSubprocess().p_open(["bwa-mem2", "index", ref_path]).check_return_code(with_stdout=True)
+            with open(os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"), "w", encoding="UTF-8") as f:
+                f.write(stdout)
 
             # Define the BWA mem command using dynamic params
             bwa_command = [
@@ -164,10 +171,25 @@ class IterativeAlignment:
             command_chain.run()
 
         # Index the bam file
-        LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
+        stdout = LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
 
         # Run samtools flagstat
         CommandChain.command_to_file(["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat"))
+
+    def call_variants(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str):
+        """
+        Call variants on the aligned sequences.
+        """
+        log.info("Calling variants")
+
+        # Init file names
+        bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam")
+        var_prefix = f"{sample_id}_iter_{iter_num}.fixed"
+
+        # Call variants with pilon
+        stdout = LogSubprocess().p_open(["pilon", "--threads", str(self.num_cores), "--genome", ref_path, "--frags", bam_file, "--output", var_prefix, "--outdir", iteration_dir]).check_return_code(with_stdout=True)
+        with open(os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.indel.log"), "w", encoding="UTF-8") as f:
+            f.write(stdout)
 
     def update_params(self, iteration: int):
         """
