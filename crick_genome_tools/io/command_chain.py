@@ -89,3 +89,17 @@ class CommandChain:
         with open(output_file, "w", encoding="UTF-8") as f_out:
             proc = LogSubprocess().p_open(command, stdout=f_out)
             proc.check_return_code()
+
+    @staticmethod
+    def command_to_logfile(command, output_file):
+        """
+        Run a single command and write the output to a file.
+
+        Args:
+            command (list): Command to run.
+            output_file (str): File to write the output to.
+        """
+        stdout, stderr = LogSubprocess().p_open(command).check_return_code(with_output=True)
+        with open(output_file, "w", encoding="UTF-8") as f:
+            f.write(stdout)
+            f.write(stderr)
