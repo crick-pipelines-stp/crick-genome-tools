@@ -128,13 +128,13 @@ class IterativeAlignment:
             shutil.copy(previous_ref_path, current_ref_path)
 
             # Align the sequences to the reference genome
-            self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path, log_dir)
+            bam_file = self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path, log_dir)
 
             # Call variants
-            self.call_variants(sample_id, i, iteration_dir, current_ref_path, log_dir)
+            realigned_bam_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
-            # # Mask the reference genome with the variants
-            # self.mask(i, sample_id, execution_dir, ref_path)
+            # Generate a consensus sequence
+            consensus_fasta = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
 
     def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str, log_dir: str):
         """
@@ -172,23 +172,52 @@ class IterativeAlignment:
             command_chain.run()
 
         # Index the bam file
-        stdout = LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
+        LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
 
         # Run samtools flagstat
         CommandChain.command_to_file(["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat"))
 
-    def call_variants(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str):
+        return bam_file
+
+    def realign_sequences(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str):
         """
         Call variants on the aligned sequences.
         """
-        log.info("Calling variants")
+        log.info("Realigning")
 
         # Init file names
-        bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam")
         realigned_bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.realigned.bam")
 
         # Realign bam with abra2
         CommandChain.command_to_logfile(["abra2", "--threads", str(self.num_cores), "--in", bam_file, "--out", realigned_bam_file, "--ref", ref_path, "--index"], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.realign.log"))
+
+        return realigned_bam_file
+
+    def gen_consesnsus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str):
+        """
+        Generate a consensus sequence from the aligned sequences.
+        """
+        log.info("Generating consensus")
+
+        # Init file names
+        vcf_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.vcf.gz")
+        fasta_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.consensus.fasta")
+
+        # Call variants
+        commands = [
+            ["bcftools", "mpileup", "--threads", str(self.num_cores), "-Q 20", "-L 10000", "-Ep", "-f", ref_path, bam_file],  # pileup
+            ["bcftools", "call", "--threads", str(self.num_cores), "-c", "-Oz", "-"],  # call
+        ]
+        command_chain = CommandChain(commands, output_file=vcf_file)
+        command_chain.run()
+
+        # Index the vcf file
+        LogSubprocess().p_open(["bcftools", "index", vcf_file]).check_return_code()
+
+        # Generate consensus
+        CommandChain.command_to_logfile(["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log"))
+
+        return fasta_file
 
     def update_params(self, iteration: int):
         """
