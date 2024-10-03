@@ -82,6 +82,9 @@ class IterativeAlignment:
             # Log these params
             log.info(f"Initialized with BWA aligner, params: {self.aligner_params}, increments: {self.aligner_param_increments}, endpoints: {self.aligner_param_endpoints}")
 
+        # Init other params
+        # self.num_iterations = kwargs.get("realignment_minqscore", 1)
+
     def run_sample(self, sample_id, read1_path, read2_path, ref_path: str):
         """
         Run the iterative alignment on a sample.
@@ -145,9 +148,7 @@ class IterativeAlignment:
         # Switch on aligner
         if self.aligner == Aligner.BWA:
             # Call BWA index
-            stdout = LogSubprocess().p_open(["bwa-mem2", "index", ref_path]).check_return_code(with_stdout=True)
-            with open(os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"), "w", encoding="UTF-8") as f:
-                f.write(stdout)
+            CommandChain.command_to_logfile(["bwa-mem2", "index", ref_path], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"))
 
             # Define the BWA mem command using dynamic params
             bwa_command = [
@@ -184,12 +185,10 @@ class IterativeAlignment:
 
         # Init file names
         bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam")
-        var_prefix = f"{sample_id}_iter_{iter_num}.fixed"
+        realigned_bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.realigned.bam")
 
-        # Call variants with pilon
-        stdout = LogSubprocess().p_open(["pilon", "--threads", str(self.num_cores), "--genome", ref_path, "--frags", bam_file, "--output", var_prefix, "--outdir", iteration_dir]).check_return_code(with_stdout=True)
-        with open(os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.indel.log"), "w", encoding="UTF-8") as f:
-            f.write(stdout)
+        # Realign bam with abra2
+        CommandChain.command_to_logfile(["abra2", "--threads", str(self.num_cores), "--in", bam_file, "--out", realigned_bam_file, "--ref", ref_path, "--index"], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.realign.log"))
 
     def update_params(self, iteration: int):
         """
