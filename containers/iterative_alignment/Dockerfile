@@ -1,5 +1,5 @@
 # Base stage: Common setup for both test and prod
-FROM mambaorg/micromamba:latest AS base
+FROM condaforge/miniforge3 AS base
 
 # Install apt packages
 USER root
@@ -9,18 +9,22 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Set up conda channels with priority
+RUN conda config --add channels defaults \
+    && conda config --add channels bioconda \
+    && conda config --add channels conda-forge \
+    && conda config --set channel_priority strict
+
 # Install conda packages
-USER $MAMBA_USER
-COPY --chown=$MAMBA_USER:$MAMBA_USER containers/iterative_alignment/env.yml /tmp/env.yml
-RUN micromamba install -y -n base -f /tmp/env.yml && \
-    micromamba clean --all --yes
+RUN mamba install -y python=3.12
+RUN mamba install -y bwa-mem2
+RUN mamba install -y samtools
+RUN mamba install -y bcftools
+RUN mamba install -y abra2
+RUN mamba clean --all --yes
 
 ENV PATH=/opt/conda/bin:$PATH
-WORKDIR /home/mambauser
-USER root
-
-# Update pip to the latest version
-RUN python -m pip install --upgrade pip
+WORKDIR /home
 
 # Production stage: Copies source code and installs it
 FROM base AS prod
@@ -32,7 +36,6 @@ WORKDIR /usr/src/crick_genome_tools
 # Install the program
 RUN pip install '.'
 
-USER $MAMBA_USER
 CMD ["bash"]
 
 # Test stage: Installs pytest but does not copy source code
@@ -41,5 +44,4 @@ FROM base AS test
 # Install pytest
 RUN pip install pytest
 
-USER $MAMBA_USER
 CMD ["bash"]
