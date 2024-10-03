@@ -80,7 +80,7 @@ class LogSubprocess:
         # Start the subprocess and return the process object
         proc = subprocess.Popen(*args, **kwargs)
 
-        def check_return_code(with_output = False):
+        def check_return_code(with_output=False):
             """
             Check the return code and handle any errors after the process completes.
             """

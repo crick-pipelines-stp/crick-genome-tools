@@ -5,6 +5,7 @@ Custom pytest config
 import os
 import subprocess
 import tempfile
+
 import pytest
 
 
@@ -40,7 +41,7 @@ def pytest_runtest_call(item):
         test_dir = container_marker.kwargs.get("test_dir", None)
 
         # Get test name
-        test_name = item.location[2].split('.')[1]
+        test_name = item.location[2].split(".")[1]
 
         # Setup folders and permissions
         root_dir = os.getcwd()
@@ -60,7 +61,7 @@ def pytest_runtest_call(item):
             f"-u {uid}:{gid} "
         )
 
-        # Complete and run command
+        # Complete and run command
         command += f"{image_name} pytest -k {test_name}"
         result = subprocess.run(command, shell=True, check=True)
 

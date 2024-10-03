@@ -82,9 +82,7 @@ class TestLogSubprocess(unittest.TestCase):
         process.check_return_code = MagicMock()
 
         # Assert: Ensure that Popen was called with the correct arguments
-        mock_popen.assert_called_once_with(
-            ["echo", "hello"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        )
+        mock_popen.assert_called_once_with(["echo", "hello"], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Assert: Check that the returned process is a mock process
         self.assertIsInstance(process, MagicMock)

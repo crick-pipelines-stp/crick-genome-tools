@@ -5,9 +5,10 @@ Tests for iterative alignment
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-import unittest
-import pytest
 import os
+import unittest
+
+import pytest
 
 from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
 
@@ -25,7 +26,7 @@ class TestIterativeAlignment(unittest.TestCase):
             aligner=Aligner.BWA,
             iteration_mode=IterationMode.COUNT,
             num_iterations=1,
-            bwa_args=["-T10"]
+            bwa_args=["-T10"],
         )
 
         iter_align.run_sample(

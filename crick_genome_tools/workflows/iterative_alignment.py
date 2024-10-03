@@ -7,8 +7,8 @@ import os
 import shutil
 from enum import Enum
 
-from crick_genome_tools.io.log_subprocess import LogSubprocess
 from crick_genome_tools.io.command_chain import CommandChain
+from crick_genome_tools.io.log_subprocess import LogSubprocess
 
 
 log = logging.getLogger(__name__)
@@ -59,28 +59,30 @@ class IterativeAlignment:
         #     self.hamming_distance = kwargs.get('hamming_distance', 5)
         #     log.info(f"Initialized with HAMMING mode, hamming_distance: {self.hamming_distance}")
 
-        # Aligner specific configurations
+        # Aligner specific configurations
         if aligner == Aligner.BWA:
             # Initialize dynamic params for BWA (mem, mmpen, gappen)
             self.aligner_params = {
-                'bwa_args': kwargs.get('bwa_args', []),
-                'mem': kwargs.get('mem_start', 20),
-                'mmpen': kwargs.get('mmpen_start', 10),
-                'gappen': kwargs.get('gappen_start', 5)
+                "bwa_args": kwargs.get("bwa_args", []),
+                "mem": kwargs.get("mem_start", 20),
+                "mmpen": kwargs.get("mmpen_start", 10),
+                "gappen": kwargs.get("gappen_start", 5),
             }
             self.aligner_param_increments = {
-                'mem': kwargs.get('mem_increment', 0),
-                'mmpen': kwargs.get('mmpen_increment', 0),
-                'gappen': kwargs.get('gappen_decrement', 0)
+                "mem": kwargs.get("mem_increment", 0),
+                "mmpen": kwargs.get("mmpen_increment", 0),
+                "gappen": kwargs.get("gappen_decrement", 0),
             }
             self.aligner_param_endpoints = {
-                'mem': kwargs.get('mem_end', None),
-                'mmpen': kwargs.get('mmpen_end', None),
-                'gappen': kwargs.get('gappen_end', None)
+                "mem": kwargs.get("mem_end", None),
+                "mmpen": kwargs.get("mmpen_end", None),
+                "gappen": kwargs.get("gappen_end", None),
             }
 
-            # Log these params
-            log.info(f"Initialized with BWA aligner, params: {self.aligner_params}, increments: {self.aligner_param_increments}, endpoints: {self.aligner_param_endpoints}")
+            # Log these params
+            log.info(
+                f"Initialized with BWA aligner, params: {self.aligner_params}, increments: {self.aligner_param_increments}, endpoints: {self.aligner_param_endpoints}"
+            )
 
         # Init other params
         # self.num_iterations = kwargs.get("realignment_minqscore", 1)
@@ -151,22 +153,31 @@ class IterativeAlignment:
             CommandChain.command_to_logfile(["bwa-mem2", "index", ref_path], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"))
 
             # Define the BWA mem command using dynamic params
-            bwa_command = [
-                "bwa-mem2", "mem",
-                "-t", str(self.num_cores),
-                "-R", f"@RG\tID:{sample_id}\tSM:{sample_id}\tLB:{sample_id}\tPL:ILLUMINA",
-                "-k", str(self.aligner_params['mem']),
-                "-B", str(self.aligner_params['mmpen']),
-                "-O", str(self.aligner_params['gappen'])] + self.aligner_params['bwa_args'] + [
-                ref_path, read1_path, read2_path
-            ]
+            bwa_command = (
+                [
+                    "bwa-mem2",
+                    "mem",
+                    "-t",
+                    str(self.num_cores),
+                    "-R",
+                    f"@RG\tID:{sample_id}\tSM:{sample_id}\tLB:{sample_id}\tPL:ILLUMINA",
+                    "-k",
+                    str(self.aligner_params["mem"]),
+                    "-B",
+                    str(self.aligner_params["mmpen"]),
+                    "-O",
+                    str(self.aligner_params["gappen"]),
+                ]
+                + self.aligner_params["bwa_args"]
+                + [ref_path, read1_path, read2_path]
+            )
             log.info(f"Running BWA mem with command: {bwa_command}")
 
-            # Define the alignment command chain and run
+            # Define the alignment command chain and run
             commands = [
                 bwa_command,  # BWA mem
                 ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"],  # Convert to BAM
-                ["samtools", "sort", "-@", str(self.num_cores), "-o", bam_file, "-"]  # Sort
+                ["samtools", "sort", "-@", str(self.num_cores), "-o", bam_file, "-"],  # Sort
             ]
             command_chain = CommandChain(commands)
             command_chain.run()
@@ -175,7 +186,9 @@ class IterativeAlignment:
         LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
 
         # Run samtools flagstat
-        CommandChain.command_to_file(["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat"))
+        CommandChain.command_to_file(
+            ["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat")
+        )
 
         return bam_file
 
@@ -189,7 +202,10 @@ class IterativeAlignment:
         realigned_bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.realigned.bam")
 
         # Realign bam with abra2
-        CommandChain.command_to_logfile(["abra2", "--threads", str(self.num_cores), "--in", bam_file, "--out", realigned_bam_file, "--ref", ref_path, "--index"], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.realign.log"))
+        CommandChain.command_to_logfile(
+            ["abra2", "--threads", str(self.num_cores), "--in", bam_file, "--out", realigned_bam_file, "--ref", ref_path, "--index"],
+            os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.realign.log"),
+        )
 
         return realigned_bam_file
 
@@ -203,7 +219,7 @@ class IterativeAlignment:
         vcf_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.vcf.gz")
         fasta_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.consensus.fasta")
 
-        # Call variants
+        # Call variants
         commands = [
             ["bcftools", "mpileup", "--threads", str(self.num_cores), "-Q 20", "-L 10000", "-Ep", "-f", ref_path, bam_file],  # pileup
             ["bcftools", "call", "--threads", str(self.num_cores), "-c", "-Oz", "-"],  # call
@@ -215,7 +231,9 @@ class IterativeAlignment:
         LogSubprocess().p_open(["bcftools", "index", vcf_file]).check_return_code()
 
         # Generate consensus
-        CommandChain.command_to_logfile(["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log"))
+        CommandChain.command_to_logfile(
+            ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+        )
 
         return fasta_file
 
@@ -230,6 +248,7 @@ class IterativeAlignment:
 
             # Cap the parameter if an endpoint is defined
             endpoint = self.aligner_param_endpoints.get(param)
-            if endpoint is not None and ((increment > 0 and self.aligner_params[param] > endpoint) or
-                                            (increment < 0 and self.aligner_params[param] < endpoint)):
+            if endpoint is not None and (
+                (increment > 0 and self.aligner_params[param] > endpoint) or (increment < 0 and self.aligner_params[param] < endpoint)
+            ):
                 self.aligner_params[param] = endpoint
