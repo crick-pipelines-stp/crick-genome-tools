@@ -9,6 +9,8 @@ from enum import Enum
 
 from crick_genome_tools.io.command_chain import CommandChain
 from crick_genome_tools.io.log_subprocess import LogSubprocess
+from crick_genome_tools.io.fasta import Fasta
+from crick_genome_tools.seq.utils import cumulative_hamming_distance
 
 
 log = logging.getLogger(__name__)
@@ -52,9 +54,9 @@ class IterativeAlignment:
         self.iteration_mode = iteration_mode
 
         # Mode-specific configurations
-        if iteration_mode == IterationMode.COUNT:
-            self.num_iterations = kwargs.get("num_iterations", 1)
-            log.info(f"Initialized with COUNT mode, num_iterations: {self.num_iterations}")
+        # if iteration_mode == IterationMode.COUNT:
+        #     self.num_iterations = kwargs.get("num_iterations", 1)
+        #     log.info(f"Initialized with COUNT mode, num_iterations: {self.num_iterations}")
         # elif iteration_mode == IterationMode.HAMMING:
         #     self.hamming_distance = kwargs.get('hamming_distance', 5)
         #     log.info(f"Initialized with HAMMING mode, hamming_distance: {self.hamming_distance}")
@@ -64,19 +66,19 @@ class IterativeAlignment:
             # Initialize dynamic params for BWA (mem, mmpen, gappen)
             self.aligner_params = {
                 "bwa_args": kwargs.get("bwa_args", []),
-                "mem": kwargs.get("mem_start", 20),
+                "mem": kwargs.get("mem_start", 18),
                 "mmpen": kwargs.get("mmpen_start", 10),
                 "gappen": kwargs.get("gappen_start", 5),
             }
             self.aligner_param_increments = {
-                "mem": kwargs.get("mem_increment", 0),
-                "mmpen": kwargs.get("mmpen_increment", 0),
-                "gappen": kwargs.get("gappen_decrement", 0),
+                "mem": kwargs.get("mem_increment", 2),
+                "mmpen": kwargs.get("mmpen_increment", 1),
+                "gappen": kwargs.get("gappen_increment", 1),
             }
             self.aligner_param_endpoints = {
-                "mem": kwargs.get("mem_end", None),
-                "mmpen": kwargs.get("mmpen_end", None),
-                "gappen": kwargs.get("gappen_end", None),
+                "mem": kwargs.get("mem_end", 30),
+                "mmpen": kwargs.get("mmpen_end", 15),
+                "gappen": kwargs.get("gappen_end", 10),
             }
 
             # Log these params
@@ -136,7 +138,21 @@ class IterativeAlignment:
             realigned_bam_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
             # Generate a consensus sequence
-            consensus_fasta = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
+            consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
+
+            # Check diff
+            prev_fasta = Fasta.read_fasta_file(previous_ref_path)
+            con_fasta = Fasta.read_fasta_file(consensus_fasta_path)
+            hamming_dist = cumulative_hamming_distance(prev_fasta, con_fasta)
+            log.info(f"Hamming distance: {hamming_dist}")
+            print(f"Hamming distance: {hamming_dist}")
+
+            # Update the alignment parameters
+            log.info("Updating params")
+            self.update_params(i)
+
+            # Update the reference path for the next iteration
+            previous_ref_path = consensus_fasta_path
 
     def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str, log_dir: str):
         """
@@ -172,6 +188,7 @@ class IterativeAlignment:
                 + [ref_path, read1_path, read2_path]
             )
             log.info(f"Running BWA mem with command: {bwa_command}")
+            print(bwa_command)
 
             # Define the alignment command chain and run
             commands = [

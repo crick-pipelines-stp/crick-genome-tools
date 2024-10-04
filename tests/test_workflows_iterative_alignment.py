@@ -22,10 +22,9 @@ class TestIterativeAlignment(unittest.TestCase):
             # output_path=os.environ.get('TMPDIR'),
             output_path="/Users/cheshic/dev/test_data/iter_alignment",
             min_iterations=1,
-            max_iterations=1,
+            max_iterations=2,
             aligner=Aligner.BWA,
             iteration_mode=IterationMode.COUNT,
-            num_iterations=1,
             bwa_args=["-T10"],
         )
 
