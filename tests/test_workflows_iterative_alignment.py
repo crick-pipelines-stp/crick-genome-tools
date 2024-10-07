@@ -16,13 +16,14 @@ from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationM
 
 class TestIterativeAlignment(unittest.TestCase):
 
-    @pytest.mark.container(image="thecrick/pipetech_iterative_alignment:test")
+    @pytest.mark.container(image="thecrick/pipetech_iterative_alignment:test", test_dir="/Users/cheshic/dev/test_data/iter_alignment")
     def test_iterative_alignment(self):
         if not os.getenv("IN_CONTAINER"):
             return
 
         # Setup
-        output_path = os.environ.get("TMPDIR")
+        # output_path = os.environ.get("TMPDIR")
+        output_path = "/Users/cheshic/dev/test_data/iter_alignment"
         iter_align = IterativeAlignment(
             num_cores=8,
             output_path=output_path,

@@ -2,6 +2,7 @@
 Performs iterative alignment of sequences to a reference genome.
 """
 
+import csv
 import logging
 import os
 import shutil
@@ -10,6 +11,7 @@ from enum import Enum
 from crick_genome_tools.io.command_chain import CommandChain
 from crick_genome_tools.io.fasta import Fasta
 from crick_genome_tools.io.log_subprocess import LogSubprocess
+from crick_genome_tools.io.samtools import parse_flagstat
 from crick_genome_tools.seq.utils import cumulative_hamming_distance
 
 
@@ -107,6 +109,7 @@ class IterativeAlignment:
 
         # Setup
         previous_ref_path = ref_path
+        iteration_metrics = []
 
         # Iterate over the number of iterations
         for i in range(1, self.max_iterations + 1):
@@ -140,6 +143,9 @@ class IterativeAlignment:
             # Generate a consensus sequence
             consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
 
+            # Parse the flagstat file
+            total_reads, mapped_reads, alignment_rate = parse_flagstat(flagstat_file)
+
             # Check diff
             prev_fasta = Fasta.read_fasta_file(previous_ref_path)
             con_fasta = Fasta.read_fasta_file(consensus_fasta_path)
@@ -149,6 +155,17 @@ class IterativeAlignment:
             # Update the alignment parameters
             log.info("Updating params")
             self.update_params(i)
+
+            # Store metrics for this iteration
+            metrics = {
+                "Sample Id": sample_id,
+                "Iteration": i,
+                "Total Reads": total_reads,
+                "Mapped Reads": mapped_reads,
+                "Alignment Rate (%)": alignment_rate,
+                "Hamming Distance": hamming_dist,
+            }
+            iteration_metrics.append(metrics)
 
             # Update the reference path for the next iteration
             previous_ref_path = consensus_fasta_path
@@ -168,6 +185,16 @@ class IterativeAlignment:
         # Copy the final flagstat file to the output directory
         final_flagstat_path = os.path.join(execution_dir, f"{sample_id}_final.flagstat")
         shutil.copy(flagstat_file, final_flagstat_path)
+
+        # Output the iteration metrics to a CSV file
+        metrics_file = os.path.join(execution_dir, f"{sample_id}_iteration_metrics.csv")
+        with open(metrics_file, "w", newline="", encoding="UTF-8") as csvfile:
+            fieldnames = ["Sample Id", "Iteration", "Total Reads", "Mapped Reads", "Alignment Rate (%)", "Hamming Distance"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            writer.writeheader()
+            for data in iteration_metrics:
+                writer.writerow(data)
 
     def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str, log_dir: str):
         """
