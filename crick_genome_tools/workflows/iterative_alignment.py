@@ -8,8 +8,8 @@ import shutil
 from enum import Enum
 
 from crick_genome_tools.io.command_chain import CommandChain
-from crick_genome_tools.io.log_subprocess import LogSubprocess
 from crick_genome_tools.io.fasta import Fasta
+from crick_genome_tools.io.log_subprocess import LogSubprocess
 from crick_genome_tools.seq.utils import cumulative_hamming_distance
 
 

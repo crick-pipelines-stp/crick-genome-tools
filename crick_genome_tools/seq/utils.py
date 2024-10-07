@@ -33,7 +33,7 @@ def cumulative_hamming_distance(dict1, dict2):
     Calculate the cumulative Hamming distance between two dictionaries of sequences.
 
     The function compares sequences stored in two dictionaries (dict1 and dict2) by their keys.
-    If a key exists in only one dictionary, the sequence from the other dictionary is considered 
+    If a key exists in only one dictionary, the sequence from the other dictionary is considered
     an empty string, and the total distance for that entry is the full length of the sequence.
     The Hamming distance is calculated for each matching entry and summed up to get the total.
 
