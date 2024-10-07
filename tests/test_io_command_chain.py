@@ -1,3 +1,7 @@
+"""
+Command chain tests
+"""
+
 # pylint: disable=missing-function-docstring,missing-class-docstring,invalid-name
 
 import os
