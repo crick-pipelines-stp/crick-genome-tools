@@ -89,7 +89,7 @@ class IterativeAlignment:
         # Init other params
         # self.num_iterations = kwargs.get("realignment_minqscore", 1)
 
-    def run_sample(self, sample_id, read1_path, read2_path, ref_path: str):
+    def run_sample(self, sample_id: str, read1_path: str, read2_path: str, ref_path: str):
         """
         Run the iterative alignment on a sample.
         """
@@ -145,7 +145,6 @@ class IterativeAlignment:
             con_fasta = Fasta.read_fasta_file(consensus_fasta_path)
             hamming_dist = cumulative_hamming_distance(prev_fasta, con_fasta)
             log.info(f"Hamming distance: {hamming_dist}")
-            print(f"Hamming distance: {hamming_dist}")
 
             # Update the alignment parameters
             log.info("Updating params")
@@ -205,7 +204,6 @@ class IterativeAlignment:
                 + [ref_path, read1_path, read2_path]
             )
             log.info(f"Running BWA mem with command: {bwa_command}")
-            print(bwa_command)
 
             # Define the alignment command chain and run
             commands = [
@@ -220,9 +218,7 @@ class IterativeAlignment:
         LogSubprocess().p_open(["samtools", "index", "-@", str(self.num_cores), bam_file]).check_return_code()
 
         # Run samtools flagstat
-        CommandChain.command_to_file(
-            ["samtools", "flagstat", "-@", str(self.num_cores), bam_file], flagstat_file
-        )
+        CommandChain.command_to_file(["samtools", "flagstat", "-@", str(self.num_cores), bam_file], flagstat_file)
 
         return bam_file, flagstat_file
 
