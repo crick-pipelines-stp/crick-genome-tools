@@ -10,6 +10,7 @@ from crick_genome_tools.io.log_subprocess import LogSubprocess
 
 log = logging.getLogger(__name__)
 
+
 class SubprocessStream:
     """
     Wrap a subprocess that we stream from or stream to. Acts like an open filehandle by passing down

@@ -103,4 +103,4 @@ class Fasta:
             for tag, seq in fasta_data.items():
                 file.write(f">{tag}\n")
                 for i in range(0, len(seq), column_width):
-                    file.write(seq[i:i+column_width] + "\n")
+                    file.write(seq[i : i + column_width] + "\n")

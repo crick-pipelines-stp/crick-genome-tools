@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   push_dockerhub:
-    name: Push new Docker image to Docker Hub
+    name: Docker push Main Library
     runs-on: ubuntu-latest
     # Only run for the main FrancisCrick repo
     if: ${{ github.repository == 'crick-pipelines-stp/crick-genome-tools' }}
@@ -46,3 +46,36 @@ jobs:
         run: |
           echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
           docker push thecrick/pipetech_genome_tools:${{ steps.set-docker-tag.outputs.tag }}
+
+  push_iter_align:
+    name: Docker push Iter Align
+    runs-on: ubuntu-latest
+    # Only run for the main FrancisCrick repo
+    if: ${{ github.repository == 'crick-pipelines-stp/crick-genome-tools' }}
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASS }}
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history and tags
+
+      - name: Set Docker tag
+        id: set-docker-tag
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "::set-output name=tag::latest"
+          elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            echo "::set-output name=tag::dev"
+          fi
+
+      - name: Build Docker image
+        run: docker build --no-cache --target prod -f containers/iterative_alignment/Dockerfile -t thecrick/pipetech_iterative_alignment:${{ steps.set-docker-tag.outputs.tag }} .
+
+      - name: Push Docker images to DockerHub (release)
+        run: |
+          echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          docker push thecrick/pipetech_iterative_alignment:${{ steps.set-docker-tag.outputs.tag }}

@@ -1,3 +1,7 @@
+"""
+Helper class with functions for logging calls to subprocesses.
+"""
+
 import ctypes
 import ctypes.util
 import logging
@@ -5,10 +9,12 @@ import subprocess
 import sys
 from signal import SIGKILL
 
+
 log = logging.getLogger(__name__)
 
 LIBC = ctypes.CDLL(ctypes.util.find_library("c"))
 PR_SET_PDEATHSIG = ctypes.c_int(1)  # <sys/prctl.h>
+
 
 class LogSubprocess:
     """
@@ -38,8 +44,8 @@ class LogSubprocess:
         """
         if "stderr" not in kwargs:
             kwargs["stderr"] = subprocess.PIPE
-        if "preexec_fn" not in kwargs:
-            kwargs["preexec_fn"] = self.pdeathsig
+        # if "preexec_fn" not in kwargs:
+        #     kwargs["preexec_fn"] = self.pdeathsig
 
         # For methods that immediately return (like check_call, check_output)
         try:
@@ -68,13 +74,13 @@ class LogSubprocess:
             kwargs["stderr"] = subprocess.PIPE  # Capture stderr for error handling
         if "stdout" not in kwargs:
             kwargs["stdout"] = subprocess.PIPE  # Capture stdout if not already handled
-        if "preexec_fn" not in kwargs:
-            kwargs["preexec_fn"] = self.pdeathsig  # Set preexec_fn to send SIGKILL
+        # if "preexec_fn" not in kwargs:
+        #     kwargs["preexec_fn"] = self.pdeathsig  # Set preexec_fn to send SIGKILL
 
         # Start the subprocess and return the process object
         proc = subprocess.Popen(*args, **kwargs)
 
-        def check_return_code():
+        def check_return_code(with_output=False):
             """
             Check the return code and handle any errors after the process completes.
             """
@@ -85,6 +91,11 @@ class LogSubprocess:
                 log.error(error_msg)
                 raise subprocess.CalledProcessError(returncode, proc.args, output=None, stderr=stderr_output)
 
+            if with_output:
+                stdout = proc.stdout.read().decode() if proc.stdout else ""
+                stderr = proc.stderr.read().decode() if proc.stderr else ""
+                return stdout, stderr
+
         # Attach error-checking function to the process object
         proc.check_return_code = check_return_code
         return proc
@@ -94,7 +105,7 @@ class LogSubprocess:
         Generator to stream output from a subprocess and handle errors after completion.
         """
         if proc.stdout:
-            for line in iter(proc.stdout.readline, b''):
+            for line in iter(proc.stdout.readline, b""):
                 yield line
             proc.stdout.close()
 
