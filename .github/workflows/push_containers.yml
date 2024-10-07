@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   push_dockerhub:
-    name: Push new Docker image to Docker Hub
+    name: Docker push Main Library
     runs-on: ubuntu-latest
     # Only run for the main FrancisCrick repo
     if: ${{ github.repository == 'crick-pipelines-stp/crick-genome-tools' }}
@@ -48,7 +48,7 @@ jobs:
           docker push thecrick/pipetech_genome_tools:${{ steps.set-docker-tag.outputs.tag }}
 
   push_iter_align:
-    name: Push new Docker image to Docker Hub
+    name: Docker push Iter Align
     runs-on: ubuntu-latest
     # Only run for the main FrancisCrick repo
     if: ${{ github.repository == 'crick-pipelines-stp/crick-genome-tools' }}
@@ -73,7 +73,7 @@ jobs:
           fi
 
       - name: Build Docker image
-        run: docker build --no-cache  --target prod . -t thecrick/pipetech_iterative_alignment:${{ steps.set-docker-tag.outputs.tag }}
+        run: docker build --no-cache --target prod -f containers/iterative_alignment/Dockerfile -t thecrick/pipetech_iterative_alignment:${{ steps.set-docker-tag.outputs.tag }} .
 
       - name: Push Docker images to DockerHub (release)
         run: |
