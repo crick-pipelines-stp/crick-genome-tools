@@ -6,6 +6,7 @@ Tests for samtools.
 
 
 from io import StringIO
+
 import pytest
 
 from crick_genome_tools.io.samtools import parse_flagstat
@@ -25,7 +26,7 @@ class TestSamtools:
     0 + 0 duplicates
     80000 + 0 mapped (80.00%)
     """
-        monkeypatch.setattr('builtins.open', lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
+        monkeypatch.setattr("builtins.open", lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
 
         total_reads, mapped_reads, alignment_rate = parse_flagstat("fake_file.txt")
         assert total_reads == 100000
@@ -40,7 +41,7 @@ class TestSamtools:
     0 + 0 duplicates
     0 + 0 mapped (0.00%)
     """
-        monkeypatch.setattr('builtins.open', lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
+        monkeypatch.setattr("builtins.open", lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
 
         total_reads, mapped_reads, alignment_rate = parse_flagstat("fake_file.txt")
         assert total_reads == 0
@@ -55,7 +56,7 @@ class TestSamtools:
     Not the right line
     0 + 0 mapped (100.00%)
     """
-        monkeypatch.setattr('builtins.open', lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
+        monkeypatch.setattr("builtins.open", lambda *args, **kwargs: self.mock_open_flagstat(mock_flagstat_content))
 
         with pytest.raises(ValueError):
             parse_flagstat("fake_file.txt")
