@@ -132,10 +132,10 @@ class IterativeAlignment:
             shutil.copy(previous_ref_path, current_ref_path)
 
             # Align the sequences to the reference genome
-            bam_file = self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path, log_dir)
+            bam_file, flagstat_file = self.align(sample_id, i, iteration_dir, read1_path, read2_path, current_ref_path, log_dir)
 
             # Call variants
-            realigned_bam_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
+            realigned_bam_file, realigned_bai_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
             # Generate a consensus sequence
             consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
@@ -154,6 +154,22 @@ class IterativeAlignment:
             # Update the reference path for the next iteration
             previous_ref_path = consensus_fasta_path
 
+        log.info("Finished iterative alignment")
+
+        # Copy the final consensus sequence to the output directory
+        final_consensus_path = os.path.join(execution_dir, f"{sample_id}_final_consensus.fasta")
+        shutil.copy(consensus_fasta_path, final_consensus_path)
+
+        # Copy the final bam and bai files to the output directory
+        final_bam_path = os.path.join(execution_dir, f"{sample_id}_final.bam")
+        final_bai_path = os.path.join(execution_dir, f"{sample_id}_final.bai")
+        shutil.copy(realigned_bam_file, final_bam_path)
+        shutil.copy(realigned_bai_file, final_bai_path)
+
+        # Copy the final flagstat file to the output directory
+        final_flagstat_path = os.path.join(execution_dir, f"{sample_id}_final.flagstat")
+        shutil.copy(flagstat_file, final_flagstat_path)
+
     def align(self, sample_id: str, iter_num: int, iteration_dir: str, read1_path: str, read2_path: str, ref_path: str, log_dir: str):
         """
         Align the sequences to the reference genome.
@@ -162,6 +178,7 @@ class IterativeAlignment:
 
         # Init file names
         bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.bam")
+        flagstat_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat")
 
         # Switch on aligner
         if self.aligner == Aligner.BWA:
@@ -204,10 +221,10 @@ class IterativeAlignment:
 
         # Run samtools flagstat
         CommandChain.command_to_file(
-            ["samtools", "flagstat", "-@", str(self.num_cores), bam_file], os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.flagstat")
+            ["samtools", "flagstat", "-@", str(self.num_cores), bam_file], flagstat_file
         )
 
-        return bam_file
+        return bam_file, flagstat_file
 
     def realign_sequences(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str):
         """
@@ -217,6 +234,7 @@ class IterativeAlignment:
 
         # Init file names
         realigned_bam_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.realigned.bam")
+        realigned_bai_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.realigned.bai")
 
         # Realign bam with abra2
         CommandChain.command_to_logfile(
@@ -224,7 +242,7 @@ class IterativeAlignment:
             os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.realign.log"),
         )
 
-        return realigned_bam_file
+        return realigned_bam_file, realigned_bai_file
 
     def gen_consesnsus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str):
         """
