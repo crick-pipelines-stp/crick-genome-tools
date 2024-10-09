@@ -10,8 +10,11 @@ def parse_flagstat(flagstat_file):
     with open(flagstat_file, "r", encoding="UTF-8") as f:
         lines = f.readlines()
 
-    total_reads_line = lines[0]
-    mapped_reads_line = lines[6]
+    total_reads_line = next((line for line in lines if 'total' in line.lower()), None)
+    mapped_reads_line = next((line for line in lines if 'mapped' in line.lower()), None)
+
+    if total_reads_line is None or mapped_reads_line is None:
+        raise ValueError("Required lines not found in the flagstat file.")
 
     # Extract total reads
     total_reads = int(total_reads_line.split("+")[0].strip())
