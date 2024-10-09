@@ -31,10 +31,10 @@ class TestBuildFastaFromTopHits(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             build_fasta_from_top_hits(os.path.join(FASTA_SOURCE_FOLDER, "not_found.fasta"), os.path.join(BLAST_FOLDER_VALID, "viral_top_hits.txt"))
 
-    def test_build_fasta_from_top_hits_success(self):
+    def test_build_fasta_from_top_hits_single(self):
         # Test
         result = build_fasta_from_top_hits(
-            os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_VALID, "viral_top_hits.txt")
+            os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_VALID, "viral_top_hits_single.txt")
         )
 
         # Assert
@@ -45,12 +45,17 @@ class TestBuildFastaFromTopHits(unittest.TestCase):
         self.assertTrue("fake_1" not in result)
         self.assertTrue("fake_2" not in result)
 
-    def test_build_fasta_from_top_hits_duplicate_hits(self):
-        # Test and Assert
-        with self.assertRaises(ValueError):
-            build_fasta_from_top_hits(
-                os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_INVALID, "duplicate_hits.txt")
-            )
+    def test_build_fasta_from_top_hits_multi(self):
+        # Test
+        result = build_fasta_from_top_hits(
+            os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_VALID, "viral_top_hits_multi.txt")
+        )
+
+        # Assert
+        self.assertTrue("H1N1pdm_PA" in result)
+        self.assertTrue("H1N1pdm_HA" in result)
+        self.assertTrue("H1N1pdm_NA" in result)
+        self.assertTrue("H1N1pdm_NS" in result)
 
     def test_build_fasta_from_top_hits_hit_not_found(self):
         # Test and Assert
