@@ -3,8 +3,8 @@ Utility functions for the blast application.
 """
 
 import os
-from typing import Dict
 from collections import defaultdict
+from typing import Dict
 
 from crick_genome_tools.io.fasta import Fasta
 
