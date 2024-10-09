@@ -3,6 +3,7 @@ Utility functions for the blast application.
 """
 
 import os
+from collections import defaultdict
 from typing import Dict
 
 from crick_genome_tools.io.fasta import Fasta
@@ -27,7 +28,7 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
     if not os.path.exists(blast_path):
         raise FileNotFoundError(f"File does not exist: {blast_path}")
 
-    # parse the blast duke
+    # parse the blast file
     with open(blast_path, "r", encoding="UTF-8") as in_f:
         blast_lines = in_f.readlines()
 
@@ -35,14 +36,21 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
     if len(blast_lines) == 0:
         raise ValueError("Error: No top hits detected in the blast file.")
 
-    # build list of the second column of the blast file
-    top_blast_hits = []
+    # parse the blast lines and group by query
+    blast_hits = defaultdict(list)
     for line in blast_lines:
-        top_blast_hits.append(line.split("\t")[1])
+        parts = line.split("\t")
+        query = parts[0]
+        hit = parts[1]
+        e_value = float(parts[10])
+        coverage = float(parts[2])
+        blast_hits[query].append((hit, e_value, coverage))
 
-    # if there are duplicates, error out
-    if len(top_blast_hits) != len(set(top_blast_hits)):
-        raise ValueError("Error: Duplicate hits in the top blast hits.")
+    # select the best hit for each query
+    top_blast_hits = []
+    for query, hits in blast_hits.items():
+        best_hit = min(hits, key=lambda x: (x[1], -x[2]))  # lowest e-value, highest coverage
+        top_blast_hits.append(best_hit[0])
 
     # parse the reference fasta file
     fasta_data = Fasta.read_fasta_file(fasta_path)
