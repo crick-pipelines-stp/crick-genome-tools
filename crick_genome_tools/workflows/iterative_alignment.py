@@ -43,7 +43,16 @@ class IterativeAlignment:
     """
 
     def __init__(
-        self, num_cores: int, output_path: str, min_iterations: int, max_iterations: int, aligner: Aligner, iteration_mode: IterationMode, **kwargs
+        self,
+        num_cores: int,
+        output_path: str,
+        min_iterations: int,
+        max_iterations:int,
+        aligner: Aligner,
+        iteration_mode: IterationMode,
+        var_thresh: float,
+        min_coverage: int,
+        **kwargs
     ):
         """
         Initialise the IterativeAlignment object
@@ -54,6 +63,8 @@ class IterativeAlignment:
         self.max_iterations = max_iterations
         self.aligner = aligner
         self.iteration_mode = iteration_mode
+        self.var_thresh = var_thresh
+        self.min_coverage = min_coverage
 
         # Mode-specific configurations
         # if iteration_mode == IterationMode.COUNT:
@@ -73,15 +84,25 @@ class IterativeAlignment:
                 "gappen": kwargs.get("gappen_start", 5),
             }
             self.aligner_param_increments = {
-                "mem": kwargs.get("mem_increment", 2),
-                "mmpen": kwargs.get("mmpen_increment", 1),
-                "gappen": kwargs.get("gappen_increment", 1),
+                "mem": kwargs.get("mem_increment", 0),
+                "mmpen": kwargs.get("mmpen_increment", 0),
+                "gappen": kwargs.get("gappen_increment", 0),
             }
             self.aligner_param_endpoints = {
-                "mem": kwargs.get("mem_end", 30),
-                "mmpen": kwargs.get("mmpen_end", 15),
-                "gappen": kwargs.get("gappen_end", 10),
+                "mem": kwargs.get("mem_end", 18),
+                "mmpen": kwargs.get("mmpen_end", 10),
+                "gappen": kwargs.get("gappen_end", 5),
             }
+            # self.aligner_param_increments = {
+            #     "mem": kwargs.get("mem_increment", 2),
+            #     "mmpen": kwargs.get("mmpen_increment", 1),
+            #     "gappen": kwargs.get("gappen_increment", 1),
+            # }
+            # self.aligner_param_endpoints = {
+            #     "mem": kwargs.get("mem_end", 30),
+            #     "mmpen": kwargs.get("mmpen_end", 15),
+            #     "gappen": kwargs.get("gappen_end", 10),
+            # }
 
             # Log these params
             log.info(
@@ -141,7 +162,7 @@ class IterativeAlignment:
             realigned_bam_file, realigned_bai_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
             # Generate a consensus sequence
-            consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file)
+            consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file, i == self.max_iterations)
 
             # Parse the flagstat file
             total_reads, mapped_reads, alignment_rate = parse_flagstat(flagstat_file)
@@ -267,7 +288,7 @@ class IterativeAlignment:
 
         return realigned_bam_file, realigned_bai_file
 
-    def gen_consesnsus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str):
+    def gen_consesnsus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str, output_n: bool):
         """
         Generate a consensus sequence from the aligned sequences.
         """
@@ -275,23 +296,32 @@ class IterativeAlignment:
 
         # Init file names
         vcf_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.vcf.gz")
+        vcf_file_filt = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.filt.vcf.gz")
         fasta_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.consensus.fasta")
 
         # Call variants
         commands = [
             ["bcftools", "mpileup", "--threads", str(self.num_cores), "-Q 20", "-L 10000", "-Ep", "-f", ref_path, bam_file],  # pileup
-            ["bcftools", "call", "--threads", str(self.num_cores), "-c", "-Oz", "-"],  # call
+            ["bcftools", "call", "--threads", str(self.num_cores), "-c", "-Oz", "-p", str(self.var_thresh), "-"],  # call
         ]
         command_chain = CommandChain(commands, output_file=vcf_file)
         command_chain.run()
 
+        # Filter the VCF
+        LogSubprocess().p_open(["bcftools", "view", "--threads", str(self.num_cores), "-o", vcf_file_filt, "-i", f"DP>={self.min_coverage}", vcf_file]).check_return_code()
+
         # Index the vcf file
-        LogSubprocess().p_open(["bcftools", "index", vcf_file]).check_return_code()
+        LogSubprocess().p_open(["bcftools", "index", vcf_file_filt]).check_return_code()
 
         # Generate consensus
-        CommandChain.command_to_logfile(
-            ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
-        )
+        if output_n:
+            CommandChain.command_to_logfile(
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, "-a", "N", vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+            )
+        else:
+            CommandChain.command_to_logfile(
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+            )
 
         return fasta_file
 
