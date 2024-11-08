@@ -162,7 +162,7 @@ class IterativeAlignment:
             realigned_bam_file, realigned_bai_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
             # Generate a consensus sequence
-            consensus_fasta_path = self.gen_consesnsus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file, i == self.max_iterations)
+            consensus_fasta_path, consensus_fasta_path_wn = self.gen_consensus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file, i == self.max_iterations)
 
             # Parse the flagstat file
             total_reads, mapped_reads, alignment_rate = parse_flagstat(flagstat_file)
@@ -193,9 +193,15 @@ class IterativeAlignment:
 
         log.info("Finished iterative alignment")
 
+        # Copy the final reference genome to the output directory
+        final_ref_path = os.path.join(execution_dir, f"{sample_id}_final_ref.fasta")
+        shutil.copy(current_ref_path, final_ref_path)
+
         # Copy the final consensus sequence to the output directory
         final_consensus_path = os.path.join(execution_dir, f"{sample_id}_final_consensus.fasta")
+        final_consensus_path_wn = os.path.join(execution_dir, f"{sample_id}_final_consensus.wn.fasta")
         shutil.copy(consensus_fasta_path, final_consensus_path)
+        shutil.copy(consensus_fasta_path_wn, final_consensus_path_wn)
 
         # Copy the final bam and bai files to the output directory
         final_bam_path = os.path.join(execution_dir, f"{sample_id}_final.bam")
@@ -288,7 +294,7 @@ class IterativeAlignment:
 
         return realigned_bam_file, realigned_bai_file
 
-    def gen_consesnsus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str, output_n: bool):
+    def gen_consensus(self, sample_id: str, iter_num: int, iteration_dir: str, ref_path: str, log_dir: str, bam_file: str, output_n: bool):
         """
         Generate a consensus sequence from the aligned sequences.
         """
@@ -298,6 +304,7 @@ class IterativeAlignment:
         vcf_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.vcf.gz")
         vcf_file_filt = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.filt.vcf.gz")
         fasta_file = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.consensus.fasta")
+        fasta_file_wn = os.path.join(iteration_dir, f"{sample_id}_iter_{iter_num}.consensus.wn.fasta")
 
         # Call variants
         commands = [
@@ -316,14 +323,18 @@ class IterativeAlignment:
         # Generate consensus
         if output_n:
             CommandChain.command_to_logfile(
-                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, "-a", "N", vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file_wn, "-a", "N", vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus_wn.log")
+            )
+
+            CommandChain.command_to_logfile(
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
             )
         else:
             CommandChain.command_to_logfile(
                 ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
             )
 
-        return fasta_file
+        return fasta_file, fasta_file_wn
 
     def update_params(self, iteration: int):
         """

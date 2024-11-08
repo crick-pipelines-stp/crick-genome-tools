@@ -42,14 +42,14 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
         parts = line.split("\t")
         query = parts[0]
         hit = parts[1]
-        e_value = float(parts[10])
+        bitscore = float(parts[11])
         coverage = float(parts[2])
-        blast_hits[query].append((hit, e_value, coverage))
+        blast_hits[query].append((hit, bitscore, coverage))
 
     # select the best hit for each query
     top_blast_hits = []
     for query, hits in blast_hits.items():
-        best_hit = min(hits, key=lambda x: (x[1], -x[2]))  # lowest e-value, highest coverage
+        best_hit = max(hits, key=lambda x: (x[2], x[1]))  # highest coverage, highest bitscore
         top_blast_hits.append(best_hit[0])
 
     # parse the reference fasta file
@@ -62,5 +62,8 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
             fasta_top_hits[hit] = fasta_data[hit]
         else:
             raise ValueError(f"Error: Hit {hit} not found in the reference fasta file.")
+
+    # sort the fasta data
+    fasta_top_hits = dict(sorted(fasta_top_hits.items()))
 
     return fasta_top_hits
