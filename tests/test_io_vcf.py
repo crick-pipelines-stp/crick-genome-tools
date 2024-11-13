@@ -69,7 +69,7 @@ class TestVcf(unittest.TestCase):
                     ]
 
         # Test
-        variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"], 20)
+        variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"])
 
         # Assert variant count
         self.assertEqual(len(variants), 148)
@@ -85,6 +85,6 @@ class TestVcf(unittest.TestCase):
     #                 ]
 
     #     # Test
-    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["medaka", "clair3", "lofreq", "snpeff"], 20, "output.tsv")
+    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["medaka", "clair3", "lofreq", "snpeff"], "output.tsv")
 
     #     raise NotImplementedError("Test not implemented")
