@@ -28,7 +28,7 @@ def determine_variant_type(ref, alt):
         return 'DEL'
     return 'INDEL'
 
-def generate_merged_vcf_report(vcf_files: list, tool_names: list, min_dp: int, output_file: str = None):
+def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: str = None):
     """
     Generate a report from a list of VCF files. The first tool must be the consensus tool, 
     the second tools must be the primary variant caller.

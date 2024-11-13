@@ -34,7 +34,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, ["test"], 20)
+            generate_merged_vcf_report(vcf_files, ["test"])
 
     def test_generate_merged_vcf_report_insufficient_vcf_files(self):
         # Setup
@@ -42,7 +42,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, ["medaka"], 20)
+            generate_merged_vcf_report(vcf_files, ["medaka"])
 
 
     def test_generate_merged_vcf_report_tool_number_mismatch(self):
@@ -55,7 +55,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, tool_names, 20)
+            generate_merged_vcf_report(vcf_files, tool_names)
 
 
     def test_generate_merged_vcf_report(self):
