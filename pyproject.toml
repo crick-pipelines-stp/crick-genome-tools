@@ -11,6 +11,7 @@ authors = [
 ]
 urls = { "Homepage" = "https://github.com/crick-pipelines-stp/crick-genome-tools" }
 dependencies = [
+    "pysam"
 ]
 # scripts = { "crick-genome-tools" = "crick_genome_tools.__main__:run_genome_tools" }
 

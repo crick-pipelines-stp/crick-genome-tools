@@ -28,6 +28,7 @@ RUN mamba install -y bwa-mem2
 RUN mamba install -y samtools
 RUN mamba install -y bcftools
 RUN mamba install -y abra2
+RUN mamba install -y pysam
 RUN mamba clean --all --yes
 
 ENV PATH=/opt/conda/bin:$PATH
@@ -41,7 +42,7 @@ COPY . /usr/src/crick_genome_tools
 WORKDIR /usr/src/crick_genome_tools
 
 # Install the program
-RUN pip install '.'
+RUN pip install .
 
 CMD ["bash"]
 
