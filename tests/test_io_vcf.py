@@ -34,7 +34,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, ["test"], 20)
+            generate_merged_vcf_report(vcf_files, ["test"])
 
     def test_generate_merged_vcf_report_insufficient_vcf_files(self):
         # Setup
@@ -42,7 +42,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, ["medaka"], 20)
+            generate_merged_vcf_report(vcf_files, ["medaka"])
 
 
     def test_generate_merged_vcf_report_tool_number_mismatch(self):
@@ -55,7 +55,7 @@ class TestVcf(unittest.TestCase):
 
         # Test and Assert
         with self.assertRaises(ValueError):
-            generate_merged_vcf_report(vcf_files, tool_names, 20)
+            generate_merged_vcf_report(vcf_files, tool_names)
 
 
     def test_generate_merged_vcf_report(self):
@@ -69,7 +69,7 @@ class TestVcf(unittest.TestCase):
                     ]
 
         # Test
-        variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"], 20)
+        variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"])
 
         # Assert variant count
         self.assertEqual(len(variants), 148)
@@ -78,13 +78,14 @@ class TestVcf(unittest.TestCase):
     # def test_generate_merged_vcf_report_dev(self):
     #     # Setup
     #     vcf_files = [
-    #                  "tests/data/io/vcf/FAY66992_BC15.pass.vcf",
     #                  "tests/data/io/vcf/FAY66992_BC15.clair3.merge_output.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.pass.vcf",
     #                  "tests/data/io/vcf/FAY66992_BC15.lofreq.vcf",
-    #                  "tests/data/io/vcf/FAY66992_BC15.snpeff.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.sniffles.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.snpeff.vcf"
     #                 ]
 
     #     # Test
-    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["medaka", "clair3", "lofreq", "snpeff"], 20, "output.tsv")
+    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"], "output.tsv")
 
     #     raise NotImplementedError("Test not implemented")
