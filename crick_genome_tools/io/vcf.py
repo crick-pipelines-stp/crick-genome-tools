@@ -30,7 +30,7 @@ def determine_variant_type(ref, alt):
 
 def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: str = None):
     """
-    Generate a report from a list of VCF files. The first tool must be the consensus tool, 
+    Generate a report from a list of VCF files. The first tool must be the consensus tool,
     the second tools must be the primary variant caller.
 
     Args:
@@ -189,7 +189,22 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
     # Add snpeff specific fields
     if "snpeff" in tool_names:
         header += [
-            "snpeff_annotation"
+            "annotation_allele",
+            "annotation",
+            "annotation_impact",
+            "gene_name",
+            "gene_id",
+            "feature_type",
+            "feature_id",
+            "transcript_biotype",
+            "rank",
+            "hgvs_c",
+            "hgvs_p",
+            "cdna_pos/cdna_length",
+            "cds_pos/cds_length",
+            "AA.pos/AA.length",
+            "distance",
+            "errors_warnings_info"
         ]
 
     # Create blank default row entry from header
@@ -280,8 +295,17 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             if snpeff_var:
                 snpeff_var = snpeff_var[0]
                 # Find snpeff specific positions and assign
-                annotation_pos = header.index("snpeff_annotation")
-                new_row[annotation_pos] = snpeff_var["annotation"]
+                annotation_pos = header.index("annotation_allele")
+                text_ann = snpeff_var["annotation"]
+
+                # Split annotation into parts and assign to columns
+                for i, allele in enumerate(text_ann):
+                    parts = allele.split("|")
+                    for j, part in enumerate(parts):
+                        if i == 0:
+                            new_row[annotation_pos + j] = part
+                        else:
+                            new_row[annotation_pos + j] += f" | {part}"
 
         # Add to processed variants
         processed_variants.append(new_row)

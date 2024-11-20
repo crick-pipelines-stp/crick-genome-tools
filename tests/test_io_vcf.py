@@ -78,13 +78,14 @@ class TestVcf(unittest.TestCase):
     # def test_generate_merged_vcf_report_dev(self):
     #     # Setup
     #     vcf_files = [
-    #                  "tests/data/io/vcf/FAY66992_BC15.pass.vcf",
     #                  "tests/data/io/vcf/FAY66992_BC15.clair3.merge_output.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.pass.vcf",
     #                  "tests/data/io/vcf/FAY66992_BC15.lofreq.vcf",
-    #                  "tests/data/io/vcf/FAY66992_BC15.snpeff.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.sniffles.vcf",
+    #                  "tests/data/io/vcf/FAY66992_BC15.snpeff.vcf"
     #                 ]
 
     #     # Test
-    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["medaka", "clair3", "lofreq", "snpeff"], "output.tsv")
+    #     variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"], "output.tsv")
 
     #     raise NotImplementedError("Test not implemented")
