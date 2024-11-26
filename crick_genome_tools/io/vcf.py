@@ -105,6 +105,12 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 depth_alt_fwd = info["DP4"][2]
                 depth_alt_rev = info["DP4"][3]
 
+            # Tool specific info: freebayes
+            if tool == "freebayes":
+                depth = info["DP"]
+                allele_freq = info["AF"]
+                allele_freq = round(float(allele_freq[0]),4)
+
             # Tool specific info: sniffles
             if tool == "sniffles":
                 depth = info["DP"]
@@ -178,6 +184,12 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             "lofreq_depth_ref_rev",
             "lofreq_depth_alt_fwd",
             "lofreq_depth_alt_rev"
+        ]
+
+    # Add freebayes specific fields
+    if "freebayes" in tool_names:
+        header += [
+            "freebayes_allele_freq",
         ]
 
     # Add sniffles specific fields
@@ -279,6 +291,14 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 new_row[depth_ref_rev_pos] = lofreq_var["depth_ref_rev"]
                 new_row[depth_alt_fwd_pos] = lofreq_var["depth_alt_fwd"]
                 new_row[depth_alt_rev_pos] = lofreq_var["depth_alt_rev"]
+
+        # Process freebayes specific fields
+        if "freebayes" in tool_names:
+            freebayes_var = [v for v in var_list if v["tool"] == "freebayes"]
+            if freebayes_var:
+                freebayes_var = freebayes_var[0]
+                allele_freq_pos = header.index("freebayes_allele_freq")
+                new_row[allele_freq_pos] = freebayes_var["allele_freq"]
 
         # Process sniffles specific fields
         if "sniffles" in tool_names:

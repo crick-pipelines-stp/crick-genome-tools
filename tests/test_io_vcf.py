@@ -22,7 +22,7 @@ class TestVcf(unittest.TestCase):
 
     def test_determine_variant_type_del(self):
         self.assertEqual(determine_variant_type("AT", "A"), "DEL")
- 
+
 
     def test_determine_variant_type_indel(self):
         self.assertEqual(determine_variant_type("AT", "GC"), "INDEL")
@@ -58,7 +58,7 @@ class TestVcf(unittest.TestCase):
             generate_merged_vcf_report(vcf_files, tool_names)
 
 
-    def test_generate_merged_vcf_report(self):
+    def test_generate_merged_vcf_report_nanopore(self):
         # Setup
         vcf_files = [
                      "tests/data/io/vcf/FAY66992_BC15.clair3.merge_output.vcf",
@@ -73,6 +73,21 @@ class TestVcf(unittest.TestCase):
 
         # Assert variant count
         self.assertEqual(len(variants), 148)
+
+
+    def test_generate_merged_vcf_report_illumina(self):
+        # Setup
+        vcf_files = [
+                     "tests/data/io/vcf/20-A_Tajikistan_12-928_2023.lofreq.vcf",
+                     "tests/data/io/vcf/20-A_Tajikistan_12-928_2023.freebayes.vcf",
+                     "tests/data/io/vcf/20-A_Tajikistan_12-928_2023.snpeff.vcf",
+                    ]
+
+        # Test
+        variants, header, report = generate_merged_vcf_report(vcf_files, ["lofreq", "freebayes", "snpeff"])
+
+        # Assert variant count
+        self.assertEqual(len(variants), 260)
 
 
     # def test_generate_merged_vcf_report_dev(self):
