@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history and tags
 
-      - name: Set Docker tag
+      - name: Set Docker general tag
         id: set-docker-tag
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
@@ -39,13 +39,24 @@ jobs:
             echo "::set-output name=tag::dev"
           fi
 
+      - name: Get Version from Code
+        id: get_version
+        run: |
+          pip install toml
+          python update_version.py
+          VERSION=$(python -c "import toml; print(toml.load(open('pyproject.toml', 'r'))['project']['version'])")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Build Docker image
-        run: docker build --no-cache . -t thecrick/pipetech_genome_tools:${{ steps.set-docker-tag.outputs.tag }}
+        run: |
+          docker build --no-cache . -t thecrick/pipetech_genome_tools:${{ steps.set-docker-tag.outputs.tag }}
+          docker build --no-cache . -t thecrick/pipetech_genome_tools:${{ env.VERSION }}
 
       - name: Push Docker images to DockerHub (release)
         run: |
           echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
           docker push thecrick/pipetech_genome_tools:${{ steps.set-docker-tag.outputs.tag }}
+          docker push thecrick/pipetech_genome_tools:${{ env.VERSION }}
 
   push_iter_align:
     name: Docker push Iter Align
