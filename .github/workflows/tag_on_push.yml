@@ -21,7 +21,7 @@ jobs:
     - name: Get Version from Code
       id: get_version
       run: |
-        VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))["project"]["version"])")
+        VERSION=$(python -c "import toml; print(toml.load(open('pyproject.toml', 'r'))["project"]["version"])")
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Log Version
