@@ -1,0 +1,33 @@
+name: Auto Tag on push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Git
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Get Version from Code
+      id: get_version
+      run: |
+        VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))["project"]["version"])")
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Log Version
+      run: echo "Version is ${{ env.VERSION }}"
+
+    # - name: Create Tag
+    #   run: |
+    #     git tag -a v${{ env.VERSION }} -m "Version ${{ env.VERSION }}"
+    #     git push origin v${{ env.VERSION }}
