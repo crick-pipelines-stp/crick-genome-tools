@@ -6,9 +6,10 @@ Tests for samtools utils.
 
 import os
 import unittest
-from tests.utils import with_temporary_folder
 
 from crick_genome_tools.samtools.utils import count_table_from_pileup
+from tests.utils import with_temporary_folder
+
 
 class TestSamtoolsUtils(unittest.TestCase):
 

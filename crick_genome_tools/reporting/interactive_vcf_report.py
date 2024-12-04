@@ -1,13 +1,9 @@
 import argparse
 
-import streamlit as st
 import pandas as pd
-from pandas.api.types import (
-    is_categorical_dtype,
-    is_datetime64_any_dtype,
-    is_numeric_dtype,
-    is_object_dtype,
-)
+import streamlit as st
+from pandas.api.types import is_categorical_dtype, is_datetime64_any_dtype, is_numeric_dtype, is_object_dtype
+
 
 def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -83,8 +79,9 @@ def run(data_path):
     st.subheader("Variant Comparison Report")
     st.dataframe(filter_dataframe(df))
 
+
 if __name__ == "__main__":
-    # Check args
+    # Check args
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path")
     args, _ = parser.parse_known_args()

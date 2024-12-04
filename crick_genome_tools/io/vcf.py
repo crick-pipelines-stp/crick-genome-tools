@@ -9,6 +9,7 @@ import pysam
 
 log = logging.getLogger(__name__)
 
+
 def determine_variant_type(ref, alt):
     """
     Determine the type of variant (SNP, INS, DEL, INDEL)
@@ -21,12 +22,13 @@ def determine_variant_type(ref, alt):
         str: Type of variant
     """
     if len(ref) == len(alt) == 1:
-        return 'SNV'
-    if len(ref) < len(alt) and ref == alt[:len(ref)]:
-        return 'INS'
-    if len(ref) > len(alt) and alt == ref[:len(alt)]:
-        return 'DEL'
-    return 'INDEL'
+        return "SNV"
+    if len(ref) < len(alt) and ref == alt[: len(ref)]:
+        return "INS"
+    if len(ref) > len(alt) and alt == ref[: len(alt)]:
+        return "DEL"
+    return "INDEL"
+
 
 def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: str = None):
     """
@@ -44,11 +46,11 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         curr_vcf = pysam.VariantFile(vcf_file)  # pylint: disable=no-member
         vcf_data.append(curr_vcf)
 
-    # Check we have at least 2 tools
+    # Check we have at least 2 tools
     if len(vcf_data) < 2:
         raise ValueError("At least two VCF files are required for comparison")
 
-    # Error if files and tool len mismatch
+    # Error if files and tool len mismatch
     if len(vcf_data) != len(tool_names):
         raise ValueError("Number of VCF files and tool names must match")
 
@@ -57,17 +59,17 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
     for idx, vcf_file in enumerate(vcf_data):
         tool = tool_names[idx]
         for record in vcf_file.fetch():
-            # Extract basic information
+            # Extract basic information
             chrom = record.chrom
             pos = record.pos
             ref = record.ref
             alt_list = [str(a) for a in record.alts]
-            alt = ','.join(alt_list)
+            alt = ",".join(alt_list)
             var_type = determine_variant_type(ref, alt_list[0])
-            qual = round(float(record.qual),2)
+            qual = round(float(record.qual), 2)
             info = record.info
 
-            # Init optional fields
+            # Init optional fields
             depth = None
             depth_fwd = None
             depth_rev = None
@@ -93,13 +95,13 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 depth_ref = sample["AD"][0]
                 depth_alt = sample["AD"][1]
                 allele_freq = sample["AF"][0]
-                allele_freq = round(float(allele_freq),4)
+                allele_freq = round(float(allele_freq), 4)
 
             # Tool specific info: lofreq
             if tool == "lofreq":
                 depth = info["DP"]
                 allele_freq = info["AF"]
-                allele_freq = round(float(allele_freq),4)
+                allele_freq = round(float(allele_freq), 4)
                 depth_ref_fwd = info["DP4"][0]
                 depth_ref_rev = info["DP4"][1]
                 depth_alt_fwd = info["DP4"][2]
@@ -109,13 +111,13 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             if tool == "freebayes":
                 depth = info["DP"]
                 allele_freq = info["AF"]
-                allele_freq = round(float(allele_freq[0]),4)
+                allele_freq = round(float(allele_freq[0]), 4)
 
             # Tool specific info: sniffles
             if tool == "sniffles":
                 depth = info["DP"]
                 allele_freq = info["AF"]
-                allele_freq = round(float(allele_freq),4)
+                allele_freq = round(float(allele_freq), 4)
 
             # Tool specific info: sniffles
             if tool == "snpeff":
@@ -140,7 +142,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 "depth_alt_fwd": depth_alt_fwd,
                 "depth_alt_rev": depth_alt_rev,
                 "allele_freq": allele_freq,
-                "annotation": annotation
+                "annotation": annotation,
             }
 
             # Add to variants
@@ -168,7 +170,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         if tool != "snpeff":
             header += [f"{tool}_depth"]
 
-    # Add clair3 specific fields
+    # Add clair3 specific fields
     if "clair3" in tool_names:
         header += [
             "clair3_allele_freq",
@@ -176,29 +178,21 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             "clair3_depth_alt",
         ]
 
-    # Add lofreq specific fields
+    # Add lofreq specific fields
     if "lofreq" in tool_names:
-        header += [
-            "lofreq_allele_freq",
-            "lofreq_depth_ref_fwd",
-            "lofreq_depth_ref_rev",
-            "lofreq_depth_alt_fwd",
-            "lofreq_depth_alt_rev"
-        ]
+        header += ["lofreq_allele_freq", "lofreq_depth_ref_fwd", "lofreq_depth_ref_rev", "lofreq_depth_alt_fwd", "lofreq_depth_alt_rev"]
 
-    # Add freebayes specific fields
+    # Add freebayes specific fields
     if "freebayes" in tool_names:
         header += [
             "freebayes_allele_freq",
         ]
 
-    # Add sniffles specific fields
+    # Add sniffles specific fields
     if "sniffles" in tool_names:
-        header += [
-            "sniffles_allele_freq"
-        ]
+        header += ["sniffles_allele_freq"]
 
-    # Add snpeff specific fields
+    # Add snpeff specific fields
     if "snpeff" in tool_names:
         header += [
             "annotation_allele",
@@ -216,13 +210,13 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             "cds_pos/cds_length",
             "AA.pos/AA.length",
             "distance",
-            "errors_warnings_info"
+            "errors_warnings_info",
         ]
 
-    # Create blank default row entry from header
+    # Create blank default row entry from header
     default_row = ["" for _ in header]
 
-    # Process variants into data table
+    # Process variants into data table
     processed_variants = []
     for var_list in variants.values():
         # Init new row
@@ -236,12 +230,12 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         new_row[3] = curr_var["ref"]
         new_row[4] = curr_var["alt"]
 
-        # Process qual section
+        # Process qual section
         for tool in tool_names:
             if tool == "snpeff":
                 continue
 
-            # Check if tool exists in this var
+            # Check if tool exists in this var
             tool_var = [v for v in var_list if v["tool"] == tool]
             if tool_var:
                 tool_var = tool_var[0]
@@ -254,7 +248,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             if tool == "snpeff":
                 continue
 
-            # Check if tool exists in this var
+            # Check if tool exists in this var
             tool_var = [v for v in var_list if v["tool"] == tool]
             if tool_var:
                 tool_var = tool_var[0]
@@ -262,7 +256,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 depth_pos = header.index(f"{tool}_depth")
                 new_row[depth_pos] = tool_var["depth"]
 
-        # Process clair3 specific fields
+        # Process clair3 specific fields
         if "clair3" in tool_names:
             clair3_var = [v for v in var_list if v["tool"] == "clair3"]
             if clair3_var:
@@ -275,7 +269,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 new_row[depth_alt_pos] = clair3_var["depth_alt"]
                 new_row[allele_freq_pos] = clair3_var["allele_freq"]
 
-        # Process lofreq specific fields
+        # Process lofreq specific fields
         if "lofreq" in tool_names:
             lofreq_var = [v for v in var_list if v["tool"] == "lofreq"]
             if lofreq_var:
@@ -292,7 +286,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 new_row[depth_alt_fwd_pos] = lofreq_var["depth_alt_fwd"]
                 new_row[depth_alt_rev_pos] = lofreq_var["depth_alt_rev"]
 
-        # Process freebayes specific fields
+        # Process freebayes specific fields
         if "freebayes" in tool_names:
             freebayes_var = [v for v in var_list if v["tool"] == "freebayes"]
             if freebayes_var:
@@ -300,7 +294,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 allele_freq_pos = header.index("freebayes_allele_freq")
                 new_row[allele_freq_pos] = freebayes_var["allele_freq"]
 
-        # Process sniffles specific fields
+        # Process sniffles specific fields
         if "sniffles" in tool_names:
             sniffles_var = [v for v in var_list if v["tool"] == "sniffles"]
             if sniffles_var:
@@ -309,7 +303,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 allele_freq_pos = header.index("sniffles_allele_freq")
                 new_row[allele_freq_pos] = sniffles_var["allele_freq"]
 
-        # Process snpeff specific fields
+        # Process snpeff specific fields
         if "snpeff" in tool_names:
             snpeff_var = [v for v in var_list if v["tool"] == "snpeff"]
             if snpeff_var:
@@ -318,7 +312,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
                 annotation_pos = header.index("annotation_allele")
                 text_ann = snpeff_var["annotation"]
 
-                # Split annotation into parts and assign to columns
+                # Split annotation into parts and assign to columns
                 for i, allele in enumerate(text_ann):
                     parts = allele.split("|")
                     for j, part in enumerate(parts):
@@ -330,7 +324,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         # Add to processed variants
         processed_variants.append(new_row)
 
-    # Write to file
+    # Write to file
     if output_file:
         with open(output_file, "w", encoding="UTF-8") as f:
             f.write("\t".join(header) + "\n")
