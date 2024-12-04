@@ -25,7 +25,7 @@ jobs:
       run: |
         pip install toml
         python update_version.py
-        VERSION=$(python -c "import toml; print(toml.load(open("pyproject.toml", 'r'))["project"]["version"]))"
+        VERSION=$(python -c "import toml; print(toml.load(open("pyproject.toml", 'r'))["project"]["version"])"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Log Version
