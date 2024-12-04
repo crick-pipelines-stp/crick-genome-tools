@@ -47,12 +47,12 @@ class IterativeAlignment:
         num_cores: int,
         output_path: str,
         min_iterations: int,
-        max_iterations:int,
+        max_iterations: int,
         aligner: Aligner,
         iteration_mode: IterationMode,
         var_thresh: float,
         min_coverage: int,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialise the IterativeAlignment object
@@ -162,7 +162,9 @@ class IterativeAlignment:
             realigned_bam_file, realigned_bai_file = self.realign_sequences(sample_id, i, iteration_dir, current_ref_path, log_dir, bam_file)
 
             # Generate a consensus sequence
-            consensus_fasta_path, consensus_fasta_path_wn = self.gen_consensus(sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file, i == self.max_iterations)
+            consensus_fasta_path, consensus_fasta_path_wn = self.gen_consensus(
+                sample_id, i, iteration_dir, current_ref_path, log_dir, realigned_bam_file, i == self.max_iterations
+            )
 
             # Parse the flagstat file
             total_reads, mapped_reads, alignment_rate = parse_flagstat(flagstat_file)
@@ -314,8 +316,10 @@ class IterativeAlignment:
         command_chain = CommandChain(commands, output_file=vcf_file)
         command_chain.run()
 
-        # Filter the VCF
-        LogSubprocess().p_open(["bcftools", "view", "--threads", str(self.num_cores), "-o", vcf_file_filt, "-i", f"DP>={self.min_coverage}", vcf_file]).check_return_code()
+        # Filter the VCF
+        LogSubprocess().p_open(
+            ["bcftools", "view", "--threads", str(self.num_cores), "-o", vcf_file_filt, "-i", f"DP>={self.min_coverage}", vcf_file]
+        ).check_return_code()
 
         # Index the vcf file
         LogSubprocess().p_open(["bcftools", "index", vcf_file_filt]).check_return_code()
@@ -323,15 +327,18 @@ class IterativeAlignment:
         # Generate consensus
         if output_n:
             CommandChain.command_to_logfile(
-                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file_wn, "-a", "N", vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus_wn.log")
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file_wn, "-a", "N", vcf_file_filt],
+                os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus_wn.log"),
             )
 
             CommandChain.command_to_logfile(
-                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt],
+                os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log"),
             )
         else:
             CommandChain.command_to_logfile(
-                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log")
+                ["bcftools", "consensus", "-f", ref_path, "-o", fasta_file, vcf_file_filt],
+                os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.consensus.log"),
             )
 
         return fasta_file, fasta_file_wn

@@ -14,7 +14,6 @@ dependencies = [
     "pysam",
     "streamlit",
 ]
-# scripts = { "crick-genome-tools" = "crick_genome_tools.__main__:run_genome_tools" }
 
 [project.optional-dependencies]
 dev = [

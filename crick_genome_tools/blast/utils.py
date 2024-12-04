@@ -63,7 +63,7 @@ def build_fasta_from_top_hits(fasta_path, blast_path) -> Dict[str, str]:
         else:
             raise ValueError(f"Error: Hit {hit} not found in the reference fasta file.")
 
-    # sort the fasta data
+    # sort the fasta data
     fasta_top_hits = dict(sorted(fasta_top_hits.items()))
 
     return fasta_top_hits
