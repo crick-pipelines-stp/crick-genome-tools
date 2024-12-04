@@ -10,9 +10,9 @@ import toml
 
 def get_version():
     """
-    Generate a version string based on the latest Git tag and the current branch.
+    Generate a version string based on the latest Git tag on main and the current branch.
 
-    This function uses `git describe --tags` to get the most recent tag and the number
+    This function uses `git describe --tags main` to get the most recent tag on main and the number
     of commits since that tag. If the current branch is not `main`, it appends `-dev`
     to the version string. If no tag is found, it defaults to `0.1`.
 
@@ -20,7 +20,8 @@ def get_version():
         str: The generated version string.
     """
     try:
-        tag = subprocess.check_output(["git", "describe", "--tags"]).strip().decode("utf-8")
+        # Get the latest tag from the main branch
+        tag = subprocess.check_output(["git", "describe", "--tags", "main"]).strip().decode("utf-8")
         if "-" in tag:
             tag, commits, _ = tag.split("-")
             version = f"{tag}.{commits}"
@@ -29,6 +30,7 @@ def get_version():
     except subprocess.CalledProcessError:
         version = "0.1"
 
+    # Get the current branch name
     branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode("utf-8")
     if branch != "main":
         version += "-dev"
