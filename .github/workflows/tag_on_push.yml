@@ -31,7 +31,7 @@ jobs:
     - name: Log Version
       run: echo "Version is ${{ env.VERSION }}"
 
-    # - name: Create Tag
-    #   run: |
-    #     git tag -a v${{ env.VERSION }} -m "Version ${{ env.VERSION }}"
-    #     git push origin v${{ env.VERSION }}
+    - name: Create Tag
+      run: |
+        git tag -a ${{ env.VERSION }} -m "Version ${{ env.VERSION }}"
+        git push origin v${{ env.VERSION }}
