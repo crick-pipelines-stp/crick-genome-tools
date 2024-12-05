@@ -64,3 +64,32 @@ def update_pyproject_version():
 
 if __name__ == "__main__":
     update_pyproject_version()
+
+
+    # # Get the current branch name
+    # branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode("utf-8")
+    # if branch == "main":
+    #     # Round up version to the nearest decimal
+    #     version_parts = version.split('.')
+    #     if len(version_parts) >= 2:
+    #         major = version_parts[0]
+    #         minor = version_parts[1]
+    #         try:
+    #             new_minor = int(minor) + 1
+    #             version = f"{major}.{new_minor}"
+    #         except ValueError:
+    #             # If minor is not an integer, keep the version as is
+    #             pass
+    #     else:
+    #         # If version is like '0', increment it to '1'
+    #         try:
+    #             new_major = int(version_parts[0]) + 1
+    #             version = f"{new_major}"
+    #         except ValueError:
+    #             # If major is not an integer, keep the version as is
+    #             pass
+    # else:
+    #     # Append '-dev' for non-main branches
+    #     version += "-dev"
+
+    # return version
