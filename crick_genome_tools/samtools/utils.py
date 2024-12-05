@@ -2,16 +2,17 @@
 Samtools utility functions.
 """
 
-# import os
-# from collections import defaultdict
-# from typing import Dict
-
-# from crick_genome_tools.io.fasta import Fasta
-
 from collections import defaultdict
 
 
 def count_table_from_pileup(pileup_path: str, output_path: str):
+    """
+    Generate a count table from a samtools mpileup file.
+
+    Args:
+        pileup_path (str): The path to the samtools mpileup file.
+        output_path (str): The path to write the count table to.
+    """
     # Read the pileup file
     with open(pileup_path, "r", encoding="UTF-8") as pileup_file:
         pileup_lines = pileup_file.readlines()
@@ -30,8 +31,11 @@ def count_table_from_pileup(pileup_path: str, output_path: str):
         qualities = fields[5]
 
         # Decode quality scores and get average
-        qualities = [ord(quality) - 33 for quality in qualities]
-        avg_quality = int(sum(qualities) / len(qualities))
+        if len(qualities) > 0:
+            qualities = [ord(quality) - 33 for quality in qualities]
+            avg_quality = int(sum(qualities) / len(qualities))
+        else:
+            avg_quality = 0
 
         # Loop each base and count
         forward_count = 0
@@ -54,9 +58,13 @@ def count_table_from_pileup(pileup_path: str, output_path: str):
             count_data[base] += 1
 
         # Turn count data to percentage rounded to 2 decimal places
-        for base in count_data:
-            count_data[base] = count_data[base] / coverage
-            count_data[base] = round(count_data[base] * 100, 2)
+        if coverage > 0:
+            for base in count_data:
+                count_data[base] = count_data[base] / coverage
+                count_data[base] = round(count_data[base] * 100, 2)
+        else:
+            for base in count_data:
+                count_data[base] = 0.0
 
         # Create data row
         data[position] = {
