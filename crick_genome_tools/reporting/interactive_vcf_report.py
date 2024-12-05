@@ -2,7 +2,7 @@ import argparse
 
 import pandas as pd
 import streamlit as st
-from pandas.api.types import is_categorical_dtype, is_datetime64_any_dtype, is_numeric_dtype, is_object_dtype
+from pandas.api.types import is_categorical_dtype, is_datetime64_any_dtype, is_numeric_dtype
 
 
 def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -26,7 +26,7 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     with modification_container:
         to_filter_columns = st.multiselect("Filter dataframe on", df.columns)
         for column in to_filter_columns:
-            left, right = st.columns((1, 20))
+            _, right = st.columns((1, 20))
             # Treat columns with < 10 unique values as categorical
             if is_categorical_dtype(df[column]) or df[column].nunique() < 10:
                 user_cat_input = right.multiselect(

@@ -57,7 +57,7 @@ jobs:
         run: |
           docker build --no-cache  -f ${{ matrix.dockerfile }} -t ${{ matrix.image }}:${{ steps.set-docker-tag.outputs.tag }} -f ${{ matrix.dockerfile }} .
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            docker build --no-cache -f ${{ matrix.dockerfile }} -t ${{ matrix.image }}:${{ env.VERSION }} .
+            docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }}:${{ env.VERSION }} .
           fi
 
       - name: Push Docker images

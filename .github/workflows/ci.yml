@@ -41,6 +41,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tox
 
+      - name: Build Docker images
+        run: docker build --no-cache -f containers/iterative_alignment/Dockerfile -t thecrick/pipetech_iterative_alignment:test .
+
       - name: Run tox env
         run: |
           tox

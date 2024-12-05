@@ -59,7 +59,7 @@ class TestVcf(unittest.TestCase):
         ]
 
         # Test
-        variants, header, report = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"])
+        variants, _, _ = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"])
 
         # Assert variant count
         self.assertEqual(len(variants), 148)
@@ -73,7 +73,7 @@ class TestVcf(unittest.TestCase):
         ]
 
         # Test
-        variants, header, report = generate_merged_vcf_report(vcf_files, ["lofreq", "freebayes", "snpeff"])
+        variants, _, _ = generate_merged_vcf_report(vcf_files, ["lofreq", "freebayes", "snpeff"])
 
         # Assert variant count
         self.assertEqual(len(variants), 260)
