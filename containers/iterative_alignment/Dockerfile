@@ -1,5 +1,5 @@
 # Base stage: Common setup for both test and prod
-FROM condaforge/miniforge3 AS base
+FROM condaforge/miniforge3
 
 # Install apt packages
 USER root
@@ -34,22 +34,12 @@ RUN mamba clean --all --yes
 ENV PATH=/opt/conda/bin:$PATH
 WORKDIR /home
 
-# Production stage: Copies source code and installs it
-FROM base AS prod
-
 # Copy the source files
 COPY . /usr/src/crick_genome_tools
 WORKDIR /usr/src/crick_genome_tools
 
 # Install the program
-RUN pip install .
-
-CMD ["bash"]
-
-# Test stage: Installs pytest but does not copy source code
-FROM base AS test
-
-# Install pytest
 RUN pip install pytest
+RUN pip install .
 
 CMD ["bash"]
