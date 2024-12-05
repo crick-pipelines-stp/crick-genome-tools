@@ -2,16 +2,17 @@
 Samtools utility functions.
 """
 
-# import os
-# from collections import defaultdict
-# from typing import Dict
-
-# from crick_genome_tools.io.fasta import Fasta
-
 from collections import defaultdict
 
 
 def count_table_from_pileup(pileup_path: str, output_path: str):
+    """
+    Generate a count table from a samtools mpileup file.
+
+    Args:
+        pileup_path (str): The path to the samtools mpileup file.
+        output_path (str): The path to write the count table to.
+    """
     # Read the pileup file
     with open(pileup_path, "r", encoding="UTF-8") as pileup_file:
         pileup_lines = pileup_file.readlines()
