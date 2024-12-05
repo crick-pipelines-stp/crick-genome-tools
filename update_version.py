@@ -65,7 +65,6 @@ def update_pyproject_version():
 if __name__ == "__main__":
     update_pyproject_version()
 
-
     # # Get the current branch name
     # branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode("utf-8")
     # if branch == "main":
