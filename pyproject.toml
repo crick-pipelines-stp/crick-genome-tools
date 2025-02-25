@@ -13,6 +13,8 @@ urls = { "Homepage" = "https://github.com/crick-pipelines-stp/crick-genome-tools
 dependencies = [
     "pysam",
     "streamlit",
+    "numpy",
+    "pandas",
 ]
 
 [project.optional-dependencies]
