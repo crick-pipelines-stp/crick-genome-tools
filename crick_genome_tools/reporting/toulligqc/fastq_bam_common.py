@@ -1,7 +1,8 @@
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-def extract_headerTag(header, tagGroup, tag, defaultValue = None):
+
+def extract_headerTag(header, tagGroup, tag, defaultValue=None):
 
     if tagGroup not in header:
         if defaultValue is not None:
@@ -22,7 +23,7 @@ def extract_headerTag(header, tagGroup, tag, defaultValue = None):
 
 def batch_iterator(iterator, batch_size):
     batch = []
-    i=0
+    i = 0
     for entry in iterator:
         i += 1
         batch.append(entry.to_string())
@@ -34,7 +35,7 @@ def batch_iterator(iterator, batch_size):
         yield batch
 
 
-def multiprocessing_submit(func, iterator, n_process=mp.cpu_count()-1 ,pbar = True, pbar_update = 500,  *arg, **kwargs):
+def multiprocessing_submit(func, iterator, n_process=mp.cpu_count() - 1, pbar=True, pbar_update=500, *arg, **kwargs):
     executor = ProcessPoolExecutor(n_process)
 
     max_queue = n_process * 2
@@ -51,7 +52,7 @@ def multiprocessing_submit(func, iterator, n_process=mp.cpu_count()-1 ,pbar = Tr
 
         job = next(as_completed(futures), None)
 
-        # no more job  
+        # no more job
         if job is None:
             break
         else:

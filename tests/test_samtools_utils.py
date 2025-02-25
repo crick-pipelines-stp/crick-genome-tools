@@ -60,4 +60,3 @@ class TestSamtoolsUtils(unittest.TestCase):
         with open(output_path, "r", encoding="UTF-8") as output_file:
             output_lines = output_file.readlines()
             self.assertEqual(len(output_lines), 2)
-
