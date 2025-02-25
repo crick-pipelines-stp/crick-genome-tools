@@ -57,6 +57,5 @@ def multiprocessing_submit(func, iterator, n_process=mp.cpu_count() - 1, pbar=Tr
             break
         else:
             n_job_in_queue -= 1
-            pbar.update(pbar_update)
             yield job
             del futures[job]

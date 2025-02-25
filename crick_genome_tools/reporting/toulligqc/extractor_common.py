@@ -27,7 +27,7 @@ import time
 from datetime import datetime
 
 import pandas as pd
-from toulligqc import common
+from crick_genome_tools.reporting.toulligqc import common
 
 
 def set_result_value(extractor, result_dict, key: str, value):

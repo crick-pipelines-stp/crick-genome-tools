@@ -4,9 +4,9 @@ import time
 
 import numpy as np
 import pandas as pd
-from toulligqc.common import is_numpy_1_24
-from toulligqc.common_statistics import avg_qual, compute_LXX, compute_NXX, occupancy_channel
-from toulligqc.extractor_common import (
+from crick_genome_tools.reporting.toulligqc.common import is_numpy_1_24
+from crick_genome_tools.reporting.toulligqc.common_statistics import avg_qual, compute_LXX, compute_NXX, occupancy_channel
+from crick_genome_tools.reporting.toulligqc.extractor_common import (
     add_image_to_result,
     check_result_values,
     count_boolean_elements,
@@ -19,7 +19,7 @@ from toulligqc.extractor_common import (
     set_result_value,
     timeISO_to_float,
 )
-from toulligqc.fastq_bam_common import multiprocessing_submit
+from crick_genome_tools.reporting.toulligqc.fastq_bam_common import multiprocessing_submit
 
 
 # from toulligqc import plotly_graph_generator as pgg
