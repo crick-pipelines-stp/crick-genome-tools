@@ -6,8 +6,6 @@ Tests for toulligqc.
 
 
 import unittest
-import os
-import pytest
 
 from crick_genome_tools.reporting.toulligqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.toulligqc.fastq_extractor import fastqExtractor
@@ -18,7 +16,7 @@ class TestToilligqc(unittest.TestCase):
     def test_toulligqc_extract_fastq_results_dict(self):
         # Setup
         config = ToulligqcConf()
-        config["fastq"] = "tests/data/reporting/aav/STR7502A1.filtered.merged.fastq.gz"
+        config["fastq"] = "tests/data/reporting/aav/toulligqc/STR7502A1.filtered.merged.fastq.gz"
         config["images_directory"] = "data/reporting/aav/images"
         config["threshold"] = "10"
         config["batch_size"] = "1000"
