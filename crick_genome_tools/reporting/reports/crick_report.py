@@ -18,7 +18,6 @@ class CrickReport:
         st.set_page_config(
             page_title=report_title,
             page_icon="favicon.ico",
-            layout="wide",
             initial_sidebar_state="expanded",
         )
 

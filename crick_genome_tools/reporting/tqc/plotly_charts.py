@@ -15,9 +15,9 @@ from crick_genome_tools.reporting.plotly_graph_common import title
 from crick_genome_tools.reporting.plotly_graph_common import transparent_colors
 from crick_genome_tools.reporting.plotly_graph_common import xaxis
 from crick_genome_tools.reporting.plotly_graph_common import yaxis
-from crick_genome_tools.reporting.plotly_graph_common import dataFrame_to_html
 from crick_genome_tools.reporting.plotly_graph_common import format_int
 from crick_genome_tools.reporting.plotly_graph_common import format_float
+from crick_genome_tools.reporting.plotly_graph_common import read_length_distribution
 
 
 def read_count_histogram(result_dict):
@@ -29,7 +29,6 @@ def read_count_histogram(result_dict):
     """
 
     graph_name = 'Read count histogram'
-    print("HERE4")
 
     # Histogram with barcoded read counts
     if 'basecaller.sequencing.summary.1d.extractor.read.pass.barcoded.count' in result_dict:
@@ -100,11 +99,6 @@ def read_count_histogram(result_dict):
         dataframe = pd.DataFrame(array, index=['count', 'percent'],
                                  columns=["All reads", "Pass reads", "Fail reads"])
 
-    # layout = go.Layout(
-    #     **title(graph_name),
-    #     **default_graph_layout,
-    #     hovermode="x")
-
     layout = go.Layout(
         **title(graph_name),
         **default_graph_layout,
@@ -115,9 +109,22 @@ def read_count_histogram(result_dict):
     fig = go.Figure(data=trace, layout=layout)
     st.plotly_chart(fig, use_container_width=True)
 
-    # # HTML table
-    # dataframe.iloc[0] = dataframe.iloc[0].astype(int).apply(lambda x: format_int(x))
-    # dataframe.iloc[1:] = dataframe.iloc[1:].applymap(format_float)
+    # HTML table
+    dataframe.iloc[0] = dataframe.iloc[0].astype(int).apply(lambda x: format_int(x))
+    dataframe.iloc[1:] = dataframe.iloc[1:].applymap(format_float)
+    st.dataframe(dataframe, use_container_width=True)
     # table_html = dataFrame_to_html(dataframe)
+    # st.markdown(table_html, unsafe_allow_html=True)
 
-    # return graph_name, table_html
+
+def read_length_scatterplot(dataframe_dict):
+    graph_name = "Distribution of read lengths"
+
+    return read_length_distribution(graph_name=graph_name,
+                                    all_reads=dataframe_dict['all.reads.sequence.length'],
+                                    pass_reads=dataframe_dict['pass.reads.sequence.length'],
+                                    fail_reads=dataframe_dict['fail.reads.sequence.length'],
+                                    all_color=crick_colors['all'],
+                                    pass_color=crick_colors['pass'],
+                                    fail_color=crick_colors['fail'],
+                                    xaxis_title='Read length (bp)')

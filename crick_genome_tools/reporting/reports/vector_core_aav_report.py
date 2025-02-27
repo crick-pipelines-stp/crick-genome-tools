@@ -4,7 +4,7 @@ Class for generating vector core AAV report.
 
 import logging
 from crick_genome_tools.reporting.reports.crick_report import CrickReport
-from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram
+from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot
 
 import streamlit as st
 
@@ -44,3 +44,4 @@ class VectorCoreAavReport(CrickReport):
 
         # Place charts and tables
         read_count_histogram(results_dict[selected_dataset]["toulligqc"])
+        read_length_scatterplot(dataframe_dict[selected_dataset]["toulligqc"])

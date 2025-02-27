@@ -12,6 +12,10 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as py
+import streamlit as st
+from scipy.interpolate import interp1d
+from scipy.ndimage.filters import gaussian_filter1d
+# from sklearn.utils import resample
 
 figure_image_width = 1000
 figure_image_height = 562
@@ -46,6 +50,14 @@ default_graph_layout = dict(
     height=figure_image_height,
     width=figure_image_width
 )
+interpolation_point_count_dict = {
+    'tqc_read_length_distribution': (None, 10000, 3),
+    'tqc_yield_plot': (None, 10000, 3),
+    'tqc_phred_score_density': (None, 1000, 3),
+    'tqc_over_time_graph': (None, 1000, 3),
+    'tqc_scatterplot': (10000, 4000, 3),
+    'tqc_phred_violin': (10000, 4000, 3),
+}
 
 def title(graph_title):
     """
@@ -130,7 +142,7 @@ def xaxis(axis_title, args=None):
     """
     axis_dict = dict(
         title='<b>' + axis_title + '</b>',
-        titlefont_size=axis_title_font_size,
+        # titlefont_size=axis_title_font_size,
         tickfont_size=axis_font_size)
 
     if args is not None:
@@ -152,7 +164,7 @@ def yaxis(axis_title, args=None):
     """
     axis_dict = dict(
         title='<b>' + axis_title + '</b>',
-        titlefont_size=axis_title_font_size,
+        # titlefont_size=axis_title_font_size,
         tickfont_size=axis_font_size,
         fixedrange=True)
 
@@ -160,6 +172,22 @@ def yaxis(axis_title, args=None):
         axis_dict.update(dict(**args))
 
     return dict(yaxis=axis_dict)
+
+
+def legend(legend_title='Legend', args=None):
+    legend_dict = dict(
+        x=1.02,
+        y=.95,
+        title_text="<b>" + legend_title + "</b>",
+        title=dict(font=dict(size=legend_font_size)),
+        bgcolor='white',
+        bordercolor='white',
+        font=dict(size=legend_font_size))
+
+    if args is not None:
+        legend_dict.update(dict(**args))
+
+    return dict(legend=legend_dict)
 
 
 def dataFrame_to_html(df):
@@ -183,3 +211,239 @@ def format_float(f):
 
 def format_percent(f):
     return percent_format_str.format(f)
+
+
+def interpolation_points(series, graph_name):
+    count = len(series)
+    threshold, npoints, sigma = interpolation_point_count_dict[graph_name]
+
+    if threshold is not None:
+        if count > threshold:
+            result = npoints
+        else:
+            result = count
+    else:
+        result = npoints
+
+    return result, sigma
+
+
+def smooth_data(npoints: int, sigma: int, data, min_arg=None, max_arg=None, weights=None, density=False):
+    """
+    Function for smmothing data with numpy histogram function
+    Returns a tuple of smooth data (ndarray)
+    :param data: must be array-like data
+    :param npoints: number of desired points for smoothing
+    :param sigma: sigma value of the gaussian filter
+    """
+
+    if min_arg is None:
+        min_arg = 0 if len(data) == 0 else np.nanmin(data)
+
+    if max_arg is None:
+        max_arg = 0 if len(data) == 0 else np.nanmax(data)
+
+    # Compute the bin
+    bins = np.linspace(min_arg, max_arg, num=npoints)
+
+    # Compute the histogram
+    y, bin_edges = np.histogram(a=data, bins=bins, weights=weights, density=density)
+
+    # Cumulative Y
+    cum_y = np.cumsum(y)
+
+    # Center histogram
+    x = bin_edges[:-1] + np.diff(bin_edges) / 2
+
+    if min_arg == 0:
+        x = np.insert(x, 0, 0)
+        y = np.insert(y, 0, 0)
+
+    if density:
+        y = gaussian_filter1d(y * len(data), sigma=sigma)
+        cum_y = gaussian_filter1d(cum_y * len(data), sigma=sigma)
+    else:
+        y = gaussian_filter1d(y, sigma=sigma)
+        cum_y = gaussian_filter1d(cum_y, sigma=sigma)
+
+    return x, y, cum_y
+
+
+def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_color, pass_color, fail_color,
+                              xaxis_title):
+    npoints, sigma = interpolation_points(all_reads, 'tqc_read_length_distribution')
+    min_all_reads = min(all_reads)
+    max_all_reads = max(all_reads)
+
+    count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=all_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=pass_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    count_x3, count_y3, cum_count_y3 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=fail_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+
+    sum_x1, sum_y1, cum_sum_y1 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=all_reads, weights=all_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    sum_x2, sum_y2, cum_sum_y2 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=pass_reads,weights=pass_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    sum_x3, sum_y3, cum_sum_y3 = smooth_data(npoints=npoints, sigma=sigma,
+                                                    data=fail_reads, weights=fail_reads,
+                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+
+    # Find 50 percentile for zoomed range on x axis
+    max_x_range = np.percentile(all_reads, 99)
+
+    coef = max_all_reads / npoints
+
+    max_y = max(max(count_y1), max(count_y2), max(count_y3)) / coef
+    max_sum_y = max(max(sum_y1), max(sum_y2), max(sum_y3)) / coef
+
+    fig = go.Figure()
+
+    # Read graphs
+    fig.add_trace(go.Scatter(x=count_x1,
+                             y=count_y1 / coef,
+                             name='All reads',
+                             fill='tozeroy',
+                             marker_color=all_color,
+                             visible=True
+                             ))
+    fig.add_trace(go.Scatter(x=count_x2,
+                             y=count_y2 / coef,
+                             name='Pass reads',
+                             fill='tozeroy',
+                             marker_color=pass_color,
+                             visible=True
+                             ))
+    fig.add_trace(go.Scatter(x=count_x3,
+                             y=count_y3 / coef,
+                             name='Fail reads',
+                             fill='tozeroy',
+                             marker_color=fail_color,
+                             visible=True
+                             ))
+
+    # Threshold
+    for p in [25, 50, 75]:
+        x0 = np.percentile(all_reads, p)
+        if p == 50:
+            t = 'median<br>all reads'
+        else:
+            t = str(p) + "%<br>all reads"
+        fig.add_trace(go.Scatter(
+            mode="lines+text",
+            name='All reads',
+            x=[x0, x0],
+            y=[0, max_y],
+            line=dict(color="gray", width=1, dash="dot"),
+            text=["", t],
+            textposition="top center",
+            hoverinfo="skip",
+            showlegend=False,
+            visible=True
+        ))
+
+    # Base plots
+    # Read graphs
+    fig.add_trace(go.Scatter(x=sum_x1,
+                             y=sum_y1 / coef,
+                             name='All reads',
+                             fill='tozeroy',
+                             marker_color=all_color,
+                             visible=False
+                             ))
+    fig.add_trace(go.Scatter(x=sum_x2,
+                             y=sum_y2 / coef,
+                             name='Pass reads',
+                             fill='tozeroy',
+                             marker_color=pass_color,
+                             visible=False
+                             ))
+    fig.add_trace(go.Scatter(x=sum_x3,
+                             y=sum_y3 / coef,
+                             name='Fail reads',
+                             fill='tozeroy',
+                             marker_color=fail_color,
+                             visible=False
+                             ))
+
+    # Threshold
+    for p in [25, 50, 75]:
+        x0 = np.percentile(all_reads, p)
+        if p == 50:
+            t = 'median<br>all reads'
+        else:
+            t = str(p) + "%<br>all reads"
+        fig.add_trace(go.Scatter(
+            mode="lines+text",
+            name='All reads',
+            x=[x0, x0],
+            y=[0, max_y],
+            line=dict(color="gray", width=1, dash="dot"),
+            text=["", t],
+            textposition="top center",
+            hoverinfo="skip",
+            showlegend=False,
+            visible=False
+        ))
+
+    fig.update_layout(
+        **title(graph_name),
+        **default_graph_layout,
+        **legend(args=dict(y=0.75)),
+        hovermode='x',
+        **xaxis(xaxis_title, dict(range=[min_all_reads, max_x_range], type="linear")),
+        **yaxis('Read count', dict(range=[0, max_y * 1.10])),
+    )
+
+    # Add buttons
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="down",
+                buttons=list([
+                    dict(
+                        args=[{'visible': [True, True, True, True, True, True, False, False, False]},
+                              {"xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
+                               "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]}}],
+                        label="Reads linear",
+                        method="update"
+                    ),
+                    dict(
+                        args=[{'visible': [True, True, True, True, True, True, False, False, False]},
+                              {"xaxis": {"type": "log"},
+                               "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]}}],
+                        label="Reads log",
+                        method="update"
+                    ),
+                    dict(
+                        args=[{'visible': [False, False, False, False, False, False, True, True, True]},
+                              {"xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
+                               "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]}}],
+                        label="Bases linear",
+                        method="update"
+                    ),
+                    dict(
+                        args=[{'visible': [False, False, False, False, False, False, True, True, True]},
+                              {"xaxis": {"type": "log"},
+                               "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]}}],
+                        label="Bases log",
+                        method="update"
+                    ),
+                ]),
+                pad={"r": 20, "t": 20, "l": 20, "b": 20},
+                showactive=True,
+                x=1.0,
+                xanchor="left",
+                y=1.25,
+                yanchor="top"
+            ),
+        ]
+    )
+    st.plotly_chart(fig, use_container_width=True)
