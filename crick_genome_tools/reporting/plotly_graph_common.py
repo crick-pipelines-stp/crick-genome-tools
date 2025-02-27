@@ -213,6 +213,20 @@ def format_percent(f):
     return percent_format_str.format(f)
 
 
+def make_describe_dataframe(value):
+    """
+    Creation of a statistics table printed with the graph in report.html
+    :param value: information measured (series)
+    """
+
+    desc = value.describe()
+    desc.loc['count'] = desc.loc['count'].astype(int).apply(lambda x: format_int(x))
+    desc.iloc[1:] = desc.iloc[1:].applymap(lambda x: format_float(x))
+    desc.rename({'50%': 'median'}, axis='index', inplace=True)
+
+    return desc
+
+
 def interpolation_points(series, graph_name):
     count = len(series)
     threshold, npoints, sigma = interpolation_point_count_dict[graph_name]
@@ -447,3 +461,8 @@ def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_
         ]
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    table_df = pd.concat([pd.Series(all_reads), pass_reads, fail_reads], axis=1,
+                         keys=['All reads', 'Pass reads', 'Fail reads'])
+    table_df = make_describe_dataframe(table_df)
+    st.dataframe(table_df, use_container_width=True)

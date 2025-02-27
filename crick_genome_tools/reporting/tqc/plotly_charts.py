@@ -113,8 +113,6 @@ def read_count_histogram(result_dict):
     dataframe.iloc[0] = dataframe.iloc[0].astype(int).apply(lambda x: format_int(x))
     dataframe.iloc[1:] = dataframe.iloc[1:].applymap(format_float)
     st.dataframe(dataframe, use_container_width=True)
-    # table_html = dataFrame_to_html(dataframe)
-    # st.markdown(table_html, unsafe_allow_html=True)
 
 
 def read_length_scatterplot(dataframe_dict):
