@@ -2,13 +2,13 @@ import argparse
 import os
 import sys
 
-from crick_genome_tools.reporting.reports.crick_report import CrickReport
+from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCoreAavReport
 
 def run(data_path, report_type):
     print(f"Running with data_path: {data_path}, report_type: {report_type}")
 
-    report = CrickReport(data_path)
-    report.generate_report("Vectorcore AAV Report")
+    report = VectorCoreAavReport(data_path)
+    report.generate_report([])
 
 if __name__ == "__main__":
     # Check args
