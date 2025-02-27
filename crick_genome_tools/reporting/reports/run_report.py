@@ -7,7 +7,7 @@ from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCo
 def run(data_path, report_type):
     print(f"Running with data_path: {data_path}, report_type: {report_type}")
 
-    report = VectorCoreAavReport(data_path)
+    report = VectorCoreAavReport(data_path, "nanopore")
     report.generate_report([])
 
 if __name__ == "__main__":

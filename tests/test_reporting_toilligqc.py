@@ -7,8 +7,8 @@ Tests for toulligqc.
 
 import unittest
 
-from crick_genome_tools.reporting.toulligqc.configuration import ToulligqcConf
-from crick_genome_tools.reporting.toulligqc.fastq_extractor import fastqExtractor
+from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
+from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 
 
 class TestToilligqc(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestToilligqc(unittest.TestCase):
         config["barcode_selection"] = []
 
         # Test
-        extractor = fastqExtractor(config)
+        extractor = FastqExtractor(config)
         extractor.init()
         result_dict = {}
         extractor.extract(result_dict)

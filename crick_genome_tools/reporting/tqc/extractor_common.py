@@ -27,7 +27,7 @@ import time
 from datetime import datetime
 
 import pandas as pd
-from crick_genome_tools.reporting.toulligqc import common
+from crick_genome_tools.reporting.tqc.common import format_duration
 
 
 def set_result_value(extractor, result_dict, key: str, value):
@@ -388,7 +388,7 @@ def _barcode_bases(extractor, barcode_selection, result_dict, entry: str, df_fil
 def log_task(quiet, msg, start_time, end_time):
     if not quiet:
         delta = end_time - start_time
-        print("  - {:} in {:}".format(msg, common.format_duration(delta)))
+        print("  - {:} in {:}".format(msg, format_duration(delta)))
 
 
 def add_image_to_result(quiet, image_list, start_time, image):

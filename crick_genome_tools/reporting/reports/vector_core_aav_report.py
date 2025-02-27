@@ -4,6 +4,7 @@ Class for generating vector core AAV report.
 
 import logging
 from crick_genome_tools.reporting.reports.crick_report import CrickReport
+from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram
 
 import streamlit as st
 
@@ -11,16 +12,13 @@ log = logging.getLogger(__name__)
 
 class VectorCoreAavReport(CrickReport):
 
-    def __init__(self, data_path):
+    def __init__(self, data_path, seq_mode):
+        self.seq_mode = seq_mode
         super().__init__(data_path, "Vectorcore AAV Report")
 
     def generate_report(self, section_headers):
         section_headers = [
-            "Introduction",
-            "Data Overview",
-            "Analysis",
-            "Results",
-            "Conclusion"
+            "Read QC",
         ]
         super().generate_report(section_headers)
 
@@ -31,17 +29,18 @@ class VectorCoreAavReport(CrickReport):
         # Display the selected section content
         st.title(st.session_state.selected_section)
 
-        if st.session_state.selected_section == "Introduction":
-            st.write("Welcome to the report. This section provides an overview of the study.")
+        if st.session_state.selected_section == "Read QC":
+            self._read_qc_section()
 
-        elif st.session_state.selected_section == "Data Overview":
-            st.write("This section covers data sources, preprocessing, and key statistics.")
+    def _read_qc_section(self):
+        # Init
+        dp = st.session_state.data_parser
+        results_dict = dp.result_dict
+        dataframe_dict = dp.dataframe_dict
+        # st.write("This section shows read quality reporting.")
 
-        elif st.session_state.selected_section == "Analysis":
-            st.write("Here, we dive into the data analysis with visualizations and insights.")
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(results_dict.keys()))
 
-        elif st.session_state.selected_section == "Results":
-            st.write("Summary of the findings and key takeaways.")
-
-        elif st.session_state.selected_section == "Conclusion":
-            st.write("Final thoughts and recommendations based on the analysis.")
+        # Place charts and tables
+        read_count_histogram(results_dict[selected_dataset]["toulligqc"])

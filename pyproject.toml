@@ -15,6 +15,7 @@ dependencies = [
     "streamlit",
     "numpy",
     "pandas",
+    "plotly",
 ]
 
 [project.optional-dependencies]

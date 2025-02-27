@@ -1,13 +1,16 @@
+"""
+This module is used to extract information from FASTQ files for stats.
+"""
+
 import gzip
 import os
 import time
 
 import numpy as np
 import pandas as pd
-from crick_genome_tools.reporting.toulligqc.common import is_numpy_1_24
-from crick_genome_tools.reporting.toulligqc.common_statistics import avg_qual, compute_LXX, compute_NXX, occupancy_channel
-from crick_genome_tools.reporting.toulligqc.extractor_common import (
-    add_image_to_result,
+from crick_genome_tools.reporting.tqc.common import is_numpy_1_24
+from crick_genome_tools.reporting.tqc.common_statistics import avg_qual, compute_LXX, compute_NXX, occupancy_channel
+from crick_genome_tools.reporting.tqc.extractor_common import (
     check_result_values,
     count_boolean_elements,
     describe_dict,
@@ -19,14 +22,13 @@ from crick_genome_tools.reporting.toulligqc.extractor_common import (
     set_result_value,
     timeISO_to_float,
 )
-from crick_genome_tools.reporting.toulligqc.fastq_bam_common import multiprocessing_submit
+from crick_genome_tools.reporting.tqc.fastq_bam_common import multiprocessing_submit
 
 
 # from toulligqc import plotly_graph_generator as pgg
 
 
-class fastqExtractor:
-
+class FastqExtractor:
     def __init__(self, config_dictionary):
         self.config_dictionary = config_dictionary
         self.fastq = config_dictionary["fastq"].split("\t")

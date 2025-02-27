@@ -5,8 +5,9 @@ Class for parsing report data.
 import logging
 import os
 
-from crick_genome_tools.reporting.toulligqc.configuration import ToulligqcConf
-from crick_genome_tools.reporting.toulligqc.fastq_extractor import fastqExtractor
+from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
+from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
+
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class ReportDataParser:
                 self.dataframe_dict[sample_id] = {}
 
             # Extract data
-            extractor = fastqExtractor(config)
+            extractor = FastqExtractor(config)
             extractor.init()
             result_dict = {}
             extractor.extract(result_dict)
