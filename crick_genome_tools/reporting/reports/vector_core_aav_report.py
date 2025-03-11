@@ -4,13 +4,16 @@ Class for generating vector core AAV report.
 
 import logging
 from crick_genome_tools.reporting.reports.crick_report import CrickReport
-from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot
+from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot
 
 import streamlit as st
 
 log = logging.getLogger(__name__)
 
 class VectorCoreAavReport(CrickReport):
+    """
+    Class for generating vector core AAV report.
+    """
 
     def __init__(self, data_path, seq_mode):
         self.seq_mode = seq_mode
@@ -53,6 +56,17 @@ class VectorCoreAavReport(CrickReport):
         # Init
         dp = st.session_state.data_parser
 
+        # Prepare data
+        host_df = dp.merged_dataframe_dict["samtools_host"]
+        contam_df = dp.merged_dataframe_dict["samtools_contam"]
+        host_df = host_df.reset_index(drop=True)
+        contam_df = contam_df.reset_index(drop=True)
+        contam_df.insert(2, "Host", host_df["Mapped"])
+        contam_df.insert(1, "Total", contam_df.iloc[:, 1:].sum(axis=1))
+        columns = contam_df.columns[2:].tolist()
+        columns.remove("Unmapped")
+
         # Place charts and tables
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_host"], "Host Alignment")
-        mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_contam"], "Contaminent Alignment")
+        mqc_samtools_contig_bar_plot(contam_df, "Contaminant Alignment", columns)
+        # mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_contam"], "Contaminent Alignment")

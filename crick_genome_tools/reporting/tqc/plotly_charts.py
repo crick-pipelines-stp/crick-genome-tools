@@ -174,3 +174,58 @@ def mqc_samtools_bar_plot(data_frame, graph_name):
     data_frame.index = data_frame["Sample"]
     data_frame = data_frame.drop(columns=["Sample"])
     st.dataframe(data_frame, use_container_width=True)
+
+
+def mqc_samtools_contig_bar_plot(data_frame, graph_name, contigs):
+    # Init
+    mapped_colors = [crick_colors['pass']] * len(data_frame)
+    unmapped_colors = [crick_colors['fail']] * len(data_frame)
+    extra_colors = crick_colors['pie_chart_palette']
+    extra_color_idx = 0
+    traces = []
+
+    trace_mapped = go.Bar(
+        x=data_frame["Sample"], y=data_frame[contigs[0]],
+        hovertemplate='<b>%{x} - Primary</b><br>%{y:,}<extra></extra>',
+        marker_color=transparent_colors(mapped_colors, plotly_background_color, .5),
+        marker_line_color=mapped_colors,
+        marker_line_width=line_width,
+        name=contigs[0])
+    traces.append(trace_mapped)
+
+    for contig in contigs[1:]:
+        contig_colours = [extra_colors[extra_color_idx]] * len(data_frame)
+        trace_extra = go.Bar(
+            x=data_frame["Sample"], y=data_frame[contig],
+            hovertemplate=f"<b>%{{x}} - {contig}</b><br>%{{y:,}}<extra></extra>",
+            marker_color=transparent_colors(contig_colours, plotly_background_color, .5),
+            marker_line_color=contig_colours,
+            marker_line_width=line_width,
+            name=contig)
+        extra_color_idx += 1
+        if extra_color_idx == len(extra_colors):
+            extra_color_idx = 0
+        traces.append(trace_extra)
+
+    trace_unmapped = go.Bar(
+        x=data_frame["Sample"], y=data_frame["Unmapped"],
+        hovertemplate='<b>%{x} - Unmapped</b><br>%{y:,}<extra></extra>',
+        marker_color=transparent_colors(unmapped_colors, plotly_background_color, .5),
+        marker_line_color=unmapped_colors,
+        marker_line_width=line_width,
+        name="Unmapped")
+    traces.append(trace_unmapped)
+
+    layout = go.Layout(
+        **title(graph_name),
+        **default_graph_layout,
+        barmode="stack",
+        hovermode="x",
+        **xaxis('Sample', dict(fixedrange=True)),
+        **yaxis('Read count'))
+
+    fig = go.Figure(data=traces, layout=layout)
+    st.plotly_chart(fig, use_container_width=True)
+    data_frame.index = data_frame["Sample"]
+    data_frame = data_frame.drop(columns=["Sample"])
+    st.dataframe(data_frame, use_container_width=True)

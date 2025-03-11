@@ -9,7 +9,7 @@ import pandas as pd
 
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 
 
 log = logging.getLogger(__name__)
@@ -108,6 +108,36 @@ class ReportDataParser:
         df = pd.DataFrame(rows)
         df = df.sort_values(by=['Sample'])
 
+        # Add data to merged
+        self.merged_dataframe_dict["samtools_" + data_suffix] = df
+
+    def get_samtools_contam_data(self, folder_path, clean_ext, data_suffix):
+        """
+        Get data from samtools reports
+        """
+        # Parse data
+        data_dict = parse_samtools_idxstats(folder_path, clean_ext)
+
+        # Extract summary table for primary reads
+        rows = []
+        for sample, metrics in data_dict.items():
+            contigs = metrics.keys()
+            row_data = {}
+            row_data["Sample"] = sample
+            for idx, contig in enumerate(contigs):
+                column_name = contig
+                if contig == "*":
+                    column_name = "Unmapped"
+                    row_data[column_name] = metrics[contig]["mapped"]
+                elif idx == 0:
+                    column_name = "Primary"
+                    row_data[column_name] = metrics[contig]["reads"]
+                else:
+                    row_data[column_name] = metrics[contig]["reads"]
+            rows.append(row_data)
+
+        df = pd.DataFrame(rows)
+        df = df.sort_values(by=['Sample'])
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df

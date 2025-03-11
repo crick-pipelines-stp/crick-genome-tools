@@ -51,7 +51,6 @@ class TestSamtoolsParser:
     def test_parse_samtools_idxstats(self, tmp_path):
         sample_clean = "sample_"
 
-
         # Create a temporary flagstat file
         idxstat_content = """P281_AAV_5256bp	5256	98964	0
     pHelper	11635	18121	0
