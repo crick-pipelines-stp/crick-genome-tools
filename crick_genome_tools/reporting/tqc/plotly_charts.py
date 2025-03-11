@@ -116,6 +116,19 @@ def read_count_histogram(result_dict):
 
 
 def read_length_scatterplot(dataframe_dict):
+    """
+    Generates a scatter plot for the distribution of read lengths.
+
+    Parameters:
+    dataframe_dict (dict): A dictionary containing the following keys:
+        - 'all.reads.sequence.length': Data for all reads.
+        - 'pass.reads.sequence.length': Data for reads that passed quality control.
+        - 'fail.reads.sequence.length': Data for reads that failed quality control.
+
+    Returns:
+    plotly.graph_objs._figure.Figure: A Plotly figure object representing the scatter plot.
+
+    """
     graph_name = "Distribution of read lengths"
 
     return read_length_distribution(graph_name=graph_name,
@@ -126,3 +139,38 @@ def read_length_scatterplot(dataframe_dict):
                                     pass_color=crick_colors['pass'],
                                     fail_color=crick_colors['fail'],
                                     xaxis_title='Read length (bp)')
+
+def mqc_samtools_bar_plot(data_frame, graph_name):
+    # Init
+    mapped_colors = [crick_colors['pass']] * len(data_frame)
+    unmapped_colors = [crick_colors['fail']] * len(data_frame)
+
+    trace_mapped = go.Bar(
+        x=data_frame["Sample"], y=data_frame["Mapped"],
+        hovertemplate='<b>%{x}</b><br>%{y:,}<extra></extra>',
+        marker_color=transparent_colors(mapped_colors, plotly_background_color, .5),
+        marker_line_color=mapped_colors,
+        marker_line_width=line_width,
+        name="Mapped")
+
+    trace_unmapped = go.Bar(
+        x=data_frame["Sample"], y=data_frame["Unmapped"],
+        hovertemplate='<b>%{x}</b><br>%{y:,}<extra></extra>',
+        marker_color=transparent_colors(unmapped_colors, plotly_background_color, .5),
+        marker_line_color=unmapped_colors,
+        marker_line_width=line_width,
+        name="Unmapped")
+
+    layout = go.Layout(
+        **title(graph_name),
+        **default_graph_layout,
+        barmode="stack",
+        hovermode="x",
+        **xaxis('Sample', dict(fixedrange=True)),
+        **yaxis('Read count'))
+
+    fig = go.Figure(data=[trace_mapped, trace_unmapped], layout=layout)
+    st.plotly_chart(fig, use_container_width=True)
+    data_frame.index = data_frame["Sample"]
+    data_frame = data_frame.drop(columns=["Sample"])
+    st.dataframe(data_frame, use_container_width=True)

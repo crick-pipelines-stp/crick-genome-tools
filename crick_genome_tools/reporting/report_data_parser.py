@@ -5,8 +5,11 @@ Class for parsing report data.
 import logging
 import os
 
+import pandas as pd
+
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat
 
 
 log = logging.getLogger(__name__)
@@ -16,6 +19,7 @@ class ReportDataParser:
         self.data_folder = data_folder
         self.result_dict = {}
         self.dataframe_dict = {}
+        self.merged_dataframe_dict = {}
 
         # List dir to get folders only
         self.folder_names = os.listdir(data_folder)
@@ -34,8 +38,16 @@ class ReportDataParser:
             # Switch data source
             if folder_name == "toulligqc":
                 self.get_toulligqc_data(folder_path)
+            elif folder_name == "samtools_host":
+                self.get_samtools_host_data(folder_path, ".host", "host")
+            elif folder_name == "samtools_contaminent":
+                self.get_samtools_contam_data(folder_path, ".contam", "contam")
             else:
                 log.error(f"Unknown folder: {folder_name}")
+
+        # Sort all dictionaries by sample_id
+        self.result_dict = dict(sorted(self.result_dict.items()))
+        self.dataframe_dict = dict(sorted(self.dataframe_dict.items()))
 
     def get_toulligqc_data(self, folder_path):
         """
@@ -76,3 +88,26 @@ class ReportDataParser:
             self.result_dict[sample_id]["toulligqc"] = result_dict
             self.dataframe_dict[sample_id]["toulligqc"] = extractor.dataframe_dict
             log.info(f"Processed fastq file: {fastq_file}")
+
+    def get_samtools_host_data(self, folder_path, clean_ext, data_suffix):
+        """
+        Get data from samtools reports
+        """
+        # Parse data
+        data_dict = parse_samtools_flagstat(folder_path, clean_ext)
+
+        # Extract summary table for primary reads
+        rows = []
+        for sample, metrics in data_dict.items():
+            mapped = metrics['primary_mapped']
+            total = metrics['primary']
+            unmapped = total - mapped
+            percent_mapped = round((mapped / total) * 100, 2)
+            rows.append({'Sample': sample, 'Total': total, 'Mapped': mapped, 'Unmapped': unmapped, 'Percent mapped (%)': percent_mapped})
+
+        df = pd.DataFrame(rows)
+        df = df.sort_values(by=['Sample'])
+
+
+        # Add data to merged
+        self.merged_dataframe_dict["samtools_" + data_suffix] = df
