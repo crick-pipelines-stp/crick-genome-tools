@@ -4,7 +4,7 @@ Tests reporting custom.
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 import os
 
 class TestSamtoolsParser:
@@ -46,3 +46,25 @@ class TestSamtoolsParser:
         assert result["test"]["primary_duplicates"] == 0
         assert result["test"]["mapped"] == 1482
         assert result["test"]["primary_mapped"] == 679
+
+
+    def test_parse_samtools_idxstats(self, tmp_path):
+        sample_clean = "sample_"
+
+
+        # Create a temporary flagstat file
+        idxstat_content = """P281_AAV_5256bp	5256	98964	0
+    pHelper	11635	18121	0
+    aav2_1	7409	20969	0
+    *	0	0	1257"""
+        idxstat_file = os.path.join(tmp_path, "sample_test.idxstats")
+        with open(idxstat_file, "w", encoding="UTF-8") as f:
+            f.write(idxstat_content)
+
+        # Run the parser
+        result = parse_samtools_idxstats(tmp_path, sample_clean)
+
+        # Check the results
+        assert "test" in result
+        assert result["test"]["P281_AAV_5256bp"]["length"] == 5256
+        assert result["test"]["pHelper"]["reads"] == 18121

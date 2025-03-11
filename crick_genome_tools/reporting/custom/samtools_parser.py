@@ -66,3 +66,39 @@ def parse_samtools_flagstat(data_folder, sample_clean):
                 elif "mapped" in line:
                     data[sample_name]["mapped"] = int(line.split()[0])
     return data
+
+def parse_samtools_idxstats(data_folder, sample_clean):
+    """
+    Parse samtools idxstats data.
+
+    P281_AAV_5256bp	5256	98964	0
+    pHelper	11635	18121	0
+    aav2_1	7409	20969	0
+    *	0	0	1257
+    """
+    # Init
+    data = {}
+
+    # Find files in folder with .flagstat extension
+    file_list = []
+    for file in os.listdir(data_folder):
+        if file.endswith(".idxstats"):
+            file_list.append(file)
+
+    # Cycle through files
+    for file_name in file_list:
+        # Clean file name
+        sample_name = file_name.replace(sample_clean, "").replace(".idxstats", "")
+        data[sample_name] = {}
+        log.debug(f"Processing {file_name} for {sample_name}.")
+
+        # Parse data
+        with open(os.path.join(data_folder, file_name), "r", encoding="UTF-8") as file:
+            for line in file:
+                line_data = line.split()
+                data[sample_name][line_data[0]] = {
+                    "length": int(line_data[1]),
+                    "reads": int(line_data[2]),
+                    "mapped": int(line_data[3])
+                }
+    return data
