@@ -110,8 +110,8 @@ def read_count_histogram(result_dict):
     st.plotly_chart(fig, use_container_width=True)
 
     # HTML table
-    dataframe.iloc[0] = dataframe.iloc[0].astype(int).apply(lambda x: format_int(x))
-    dataframe.iloc[1:] = dataframe.iloc[1:].applymap(format_float)
+    dataframe.iloc[0] = dataframe.iloc[0].astype(int).apply(lambda x: int(format_int(x).replace(',', '')))
+    dataframe.iloc[1:] = dataframe.iloc[1:].map(lambda x: float(format_float(x).replace(',', '')))
     st.dataframe(dataframe, use_container_width=True)
 
 

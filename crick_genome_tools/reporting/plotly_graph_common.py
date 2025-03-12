@@ -220,8 +220,8 @@ def make_describe_dataframe(value):
     """
 
     desc = value.describe()
-    desc.loc['count'] = desc.loc['count'].astype(int).apply(lambda x: format_int(x))
-    desc.iloc[1:] = desc.iloc[1:].applymap(lambda x: format_float(x))
+    desc.loc['count'] = desc.loc['count'].astype(int).apply(lambda x: int(format_int(x).replace(',', '')))
+    desc.iloc[1:] = desc.iloc[1:].map(lambda x: float(format_float(x).replace(',', '')))
     desc.rename({'50%': 'median'}, axis='index', inplace=True)
 
     return desc
