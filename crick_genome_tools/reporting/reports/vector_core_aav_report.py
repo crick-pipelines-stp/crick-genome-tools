@@ -59,14 +59,16 @@ class VectorCoreAavReport(CrickReport):
         # Prepare data
         host_df = dp.merged_dataframe_dict["samtools_host"]
         contam_df = dp.merged_dataframe_dict["samtools_contam"]
+        contam_columns = contam_df.columns[1:].tolist()
+        contam_columns.remove("Unmapped")
         host_df = host_df.reset_index(drop=True)
-        contam_df = contam_df.reset_index(drop=True)
-        contam_df.insert(2, "Host", host_df["Mapped"])
-        contam_df.insert(1, "Total", contam_df.iloc[:, 1:].sum(axis=1))
-        columns = contam_df.columns[2:].tolist()
-        columns.remove("Unmapped")
+        combined_df = contam_df.reset_index(drop=True)
+        combined_df.insert(2, "Host", host_df["Mapped"])
+        combined_df.insert(1, "Total", contam_df.iloc[:, 1:].sum(axis=1))
+        combined_columns = combined_df.columns[2:].tolist()
+        combined_columns.remove("Unmapped")
 
         # Place charts and tables
+        mqc_samtools_contig_bar_plot(combined_df, "Summary", combined_columns)
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_host"], "Host Alignment")
-        mqc_samtools_contig_bar_plot(contam_df, "Contaminant Alignment", columns)
-        # mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_contam"], "Contaminent Alignment")
+        mqc_samtools_contig_bar_plot(contam_df, "Contaminent Alignment", contam_columns)
