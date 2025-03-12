@@ -4,6 +4,7 @@ Class for parsing report data.
 
 import logging
 import os
+import pickle
 
 import pandas as pd
 
@@ -48,6 +49,13 @@ class ReportDataParser:
         # Sort all dictionaries by sample_id
         self.result_dict = dict(sorted(self.result_dict.items()))
         self.dataframe_dict = dict(sorted(self.dataframe_dict.items()))
+
+    def save_data(self, output_file):
+        """
+        Save data to pickle file.
+        """
+        with open(output_file, "wb") as f:
+            pickle.dump(self, f)
 
     def get_toulligqc_data(self, folder_path):
         """

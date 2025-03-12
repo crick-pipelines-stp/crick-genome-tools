@@ -19,7 +19,7 @@ class VectorCoreAavReport(CrickReport):
         self.seq_mode = seq_mode
         super().__init__(data_path, "Vectorcore AAV Report")
 
-    def generate_report(self, section_headers):
+    def generate_report(self, section_headers = []):
         section_headers = [
             "Read QC",
             "Contaminant Removal",
@@ -34,11 +34,11 @@ class VectorCoreAavReport(CrickReport):
         st.title(st.session_state.selected_section)
 
         if st.session_state.selected_section == "Read QC":
-            self._read_qc_section()
+            self.read_qc_section()
         elif st.session_state.selected_section == "Contaminant Removal":
-            self._contaminant_removal_section()
+            self.contaminant_removal_section()
 
-    def _read_qc_section(self):
+    def read_qc_section(self):
         # Init
         dp = st.session_state.data_parser
         results_dict = dp.result_dict
@@ -52,7 +52,7 @@ class VectorCoreAavReport(CrickReport):
         read_count_histogram(results_dict[selected_dataset]["toulligqc"])
         read_length_scatterplot(dataframe_dict[selected_dataset]["toulligqc"])
 
-    def _contaminant_removal_section(self):
+    def contaminant_removal_section(self):
         # Init
         dp = st.session_state.data_parser
 

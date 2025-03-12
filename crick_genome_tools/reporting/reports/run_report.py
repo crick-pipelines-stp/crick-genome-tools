@@ -8,7 +8,7 @@ def run(data_path, report_type):
     print(f"Running with data_path: {data_path}, report_type: {report_type}")
 
     report = VectorCoreAavReport(data_path, "nanopore")
-    report.generate_report([])
+    report.generate_report()
 
 if __name__ == "__main__":
     # Check args
