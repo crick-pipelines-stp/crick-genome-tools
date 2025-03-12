@@ -40,6 +40,6 @@ WORKDIR /usr/src/crick_genome_tools
 
 # Install the program
 RUN pip install pytest
-RUN pip install .
+RUN pip install .[tests]
 
 CMD ["bash"]
