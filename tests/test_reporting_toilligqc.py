@@ -16,7 +16,7 @@ class TestToilligqc(unittest.TestCase):
     def test_toulligqc_extract_fastq_results_dict(self):
         # Setup
         config = ToulligqcConf()
-        config["fastq"] = "tests/data/reporting/aav/toulligqc/STR7502A1.filtered.merged.fastq.gz"
+        config["fastq"] = "tests/data/reporting/aav/toulligqc/P220.sub.1000.fastq.gz"
         config["images_directory"] = "data/reporting/aav/images"
         config["threshold"] = "10"
         config["batch_size"] = "1000"
