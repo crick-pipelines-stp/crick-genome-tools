@@ -11,10 +11,9 @@ import pickle
 log = logging.getLogger(__name__)
 
 class CrickReport:
-    def __init__(self, data_path, report_title):
+    def __init__(self, report_title, data_path = None, data_obj = None):
         self.data_path = data_path
         self.report_title = report_title
-        log.info(f"Creating report with data_path: {data_path}, report_title: {report_title}")
 
         # Set page config
         st.set_page_config(
@@ -41,14 +40,17 @@ class CrickReport:
 
         # Load data once and store it in session state
         if "data_parser" not in st.session_state:
-            # Check if data_path is a pickle file
-            if data_path.endswith(".pkl"):
-                with open(data_path, "rb") as f:
-                    st.session_state.data_parser = pickle.load(f)
+            if data_path is not None:
+                # Check if data_path is a pickle file
+                if data_path.endswith(".pkl"):
+                    with open(data_path, "rb") as f:
+                        st.session_state.data_parser = pickle.load(f)
+                else:
+                    # Load fresh data
+                    st.session_state.data_parser = ReportDataParser(data_path)
+                    st.session_state.data_parser.get_data()
             else:
-                # Load fresh data
-                st.session_state.data_parser = ReportDataParser(data_path)
-                st.session_state.data_parser.get_data()
+                st.session_state.data_parser = data_obj
 
     def generate_report(self, section_headers):
         """
