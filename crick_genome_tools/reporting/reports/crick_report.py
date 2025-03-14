@@ -15,13 +15,6 @@ class CrickReport:
         self.data_path = data_path
         self.report_title = report_title
 
-        # Set page config
-        st.set_page_config(
-            page_title=report_title,
-            page_icon="favicon.ico",
-            initial_sidebar_state="expanded",
-        )
-
         # Custom CSS to control sidebar width and button styling
         st.markdown(
             """
