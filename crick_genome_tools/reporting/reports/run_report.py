@@ -12,7 +12,7 @@ from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCo
 
 def run(data_path, report_type):
     if report_type == "aav":
-        report = VectorCoreAavReport(data_path, "nanopore")
+        report = VectorCoreAavReport(data_path)
         report.generate_report()
     else:
         print(f"ERROR: Unknown report type: {report_type}")
