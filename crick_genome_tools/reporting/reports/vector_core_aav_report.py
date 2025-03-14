@@ -15,9 +15,8 @@ class VectorCoreAavReport(CrickReport):
     Class for generating vector core AAV report.
     """
 
-    def __init__(self, data_path, seq_mode):
-        self.seq_mode = seq_mode
-        super().__init__(data_path, "Vectorcore AAV Report")
+    def __init__(self, data_path = None, data_obj = None):
+        super().__init__("Vectorcore AAV Report", data_path, data_obj)
 
     def generate_report(self, section_headers = []):
         section_headers = [

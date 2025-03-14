@@ -18,6 +18,7 @@ dependencies = [
     "plotly",
     "scipy",
     "multiqc",
+    "asf-tools @ git+https://github.com/FrancisCrickInstitute/asf-tools.git@main",
 ]
 
 [project.optional-dependencies]
