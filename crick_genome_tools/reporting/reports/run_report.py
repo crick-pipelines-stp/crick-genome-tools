@@ -12,7 +12,7 @@ from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCo
 
 def run(data_path, report_type):
     if report_type == "aav":
-        report = VectorCoreAavReport("test_run_id", data_path)
+        report = VectorCoreAavReport("20241119_1033_P2S-02348-A_PAY61327_7eb45677", data_path)
         report.generate_report()
     else:
         print(f"ERROR: Unknown report type: {report_type}")

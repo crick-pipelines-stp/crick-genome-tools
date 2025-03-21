@@ -20,7 +20,7 @@ class VectorCoreAavReport(CrickReport):
     """
 
     def __init__(self, run_id, data_path = None, data_obj = None):
-        super().__init__("Vectorcore AAV Report - " + run_id, data_path, data_obj)
+        super().__init__("Vectorcore AAV Report", data_path, data_obj)
         self.run_id = run_id
 
     def generate_report(self, section_headers = []):
@@ -28,8 +28,10 @@ class VectorCoreAavReport(CrickReport):
             "Pipeline Summary",
             "Read QC",
             "Contaminant Removal",
+            "Alignment",
         ]
         super().generate_report(section_headers)
+        st.subheader(self.run_id)
 
         # Activate current section
         self.activate_section()
@@ -41,10 +43,12 @@ class VectorCoreAavReport(CrickReport):
 
         if st.session_state.selected_section == "Pipeline Summary":
             self.summary_section(dp)
-        if st.session_state.selected_section == "Read QC":
+        elif st.session_state.selected_section == "Read QC":
             self.read_qc_section(dp)
         elif st.session_state.selected_section == "Contaminant Removal":
             self.contaminant_removal_section(dp)
+        elif st.session_state.selected_section == "Alignment":
+            self.alignment_section(dp)
 
     def render_table(self, param_dict):
         lines = ["| Parameter | Value |", "|---|---|"]
@@ -87,3 +91,7 @@ class VectorCoreAavReport(CrickReport):
         mqc_samtools_contig_bar_plot(combined_df, "Summary", combined_columns)
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_host"], "Host Alignment")
         mqc_samtools_contig_bar_plot(contam_df, "Contaminent Alignment", contam_columns)
+
+    def alignment_section(self, dp):
+        # Place charts and tables
+        mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_align"], "AAV Alignment")

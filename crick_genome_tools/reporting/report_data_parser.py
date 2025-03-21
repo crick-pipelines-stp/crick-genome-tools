@@ -47,9 +47,11 @@ class ReportDataParser:
             if folder_name == "toulligqc":
                 self.get_toulligqc_data(folder_path)
             elif folder_name == "samtools_host":
-                self.get_samtools_host_data(folder_path, ".host", "host")
+                self.get_samtools_flagstat_data(folder_path, ".host", "host")
             elif folder_name == "samtools_contaminent":
                 self.get_samtools_contam_data(folder_path, ".contam", "contam")
+            elif folder_name == "samtools_alignment":
+                self.get_samtools_flagstat_data(folder_path, ".viral", "align")
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -104,7 +106,7 @@ class ReportDataParser:
             self.dataframe_dict[sample_id]["toulligqc"] = extractor.dataframe_dict
             log.info(f"Processed fastq file: {fastq_file}")
 
-    def get_samtools_host_data(self, folder_path, clean_ext, data_suffix):
+    def get_samtools_flagstat_data(self, folder_path, clean_ext, data_suffix):
         """
         Get data from samtools reports
         """
