@@ -5,6 +5,7 @@ Class for parsing report data.
 import logging
 import os
 import pickle
+import json
 
 import pandas as pd
 
@@ -21,6 +22,7 @@ class ReportDataParser:
         self.result_dict = {}
         self.dataframe_dict = {}
         self.merged_dataframe_dict = {}
+        self.summary_data = None
 
         # List dir to get folders only
         self.folder_names = os.listdir(data_folder)
@@ -30,6 +32,11 @@ class ReportDataParser:
         """
         Get data from all sources.
         """
+        # Get summary data
+        summary_file = os.path.join(self.data_folder, "summary.json")
+        if os.path.exists(summary_file):
+            with open(summary_file, "r", encoding="UTF-8") as f:
+                self.summary_data = json.load(f)
 
         # Process each folder
         for folder_name in self.folder_names:
