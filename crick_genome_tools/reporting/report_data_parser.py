@@ -12,6 +12,7 @@ import pandas as pd
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
+from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
 
 
 log = logging.getLogger(__name__)
@@ -52,6 +53,8 @@ class ReportDataParser:
                 self.get_samtools_contam_data(folder_path, ".contam", "contam")
             elif folder_name == "samtools_alignment":
                 self.get_samtools_flagstat_data(folder_path, ".viral", "align")
+            elif folder_name == "coverage":
+                self.get_mosdepth_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -158,3 +161,9 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+
+    def get_mosdepth_data(self, folder_path):
+        """
+        Get data from mosdepth reports.
+        """
+        self.dataframe_dict["coverage_per_base"] = parse_mosdepth_per_base(folder_path)

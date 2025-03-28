@@ -9,7 +9,7 @@ import logging
 import streamlit as st
 
 from crick_genome_tools.reporting.reports.crick_report import CrickReport
-from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot
+from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot, coverage_plot
 
 
 log = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ class VectorCoreAavReport(CrickReport):
             "Read QC",
             "Contaminant Removal",
             "Alignment",
+            "Coverage"
         ]
         super().generate_report(section_headers)
         st.subheader(self.run_id)
@@ -49,6 +50,8 @@ class VectorCoreAavReport(CrickReport):
             self.contaminant_removal_section(dp)
         elif st.session_state.selected_section == "Alignment":
             self.alignment_section(dp)
+        elif st.session_state.selected_section == "Coverage":
+            self.coverage_section(dp)
 
     def render_table(self, param_dict):
         lines = ["| Parameter | Value |", "|---|---|"]
@@ -95,3 +98,14 @@ class VectorCoreAavReport(CrickReport):
     def alignment_section(self, dp):
         # Place charts and tables
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_align"], "AAV Alignment")
+
+    def coverage_section(self, dp):
+        # Get data
+        coverage_data = dp.dataframe_dict["coverage_per_base"]
+
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(coverage_data.keys()))
+
+        # Place chart for each contig
+        for contig, df in coverage_data[selected_dataset].items():
+            coverage_plot(df, contig)

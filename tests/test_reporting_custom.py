@@ -4,8 +4,12 @@ Tests reporting custom.
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 import os
+
+from assertpy import assert_that
+
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
+from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
 
 class TestSamtoolsParser:
     def test_parse_samtools_flagstat(self, tmp_path):
@@ -37,15 +41,16 @@ class TestSamtoolsParser:
         result = parse_samtools_flagstat(tmp_path, sample_clean)
 
         # Check the results
-        assert "test" in result
-        assert result["test"]["total_aligned"] == 123018
-        assert result["test"]["primary"] == 122215
-        assert result["test"]["secondary"] == 180
-        assert result["test"]["supplementary"] == 623
-        assert result["test"]["duplicates"] == 0
-        assert result["test"]["primary_duplicates"] == 0
-        assert result["test"]["mapped"] == 1482
-        assert result["test"]["primary_mapped"] == 679
+        assert_that(result).is_not_none()
+        assert_that("test").is_in(result)
+        assert_that(result["test"]["total_aligned"]).is_equal_to(123018)
+        assert_that(result["test"]["primary"]).is_equal_to(122215)
+        assert_that(result["test"]["secondary"]).is_equal_to(180)
+        assert_that(result["test"]["supplementary"]).is_equal_to(623)
+        assert_that(result["test"]["duplicates"]).is_equal_to(0)
+        assert_that(result["test"]["primary_duplicates"]).is_equal_to(0)
+        assert_that(result["test"]["mapped"]).is_equal_to(1482)
+        assert_that(result["test"]["primary_mapped"]).is_equal_to(679)
 
 
     def test_parse_samtools_idxstats(self, tmp_path):
@@ -67,3 +72,7 @@ class TestSamtoolsParser:
         assert "test" in result
         assert result["test"]["P281_AAV_5256bp"]["length"] == 5256
         assert result["test"]["pHelper"]["reads"] == 18121
+
+    def test_mosdepth_per_base(self):
+        parse_mosdepth_per_base("tests/data/reporting/aav/coverage")
+        raise NotImplementedError
