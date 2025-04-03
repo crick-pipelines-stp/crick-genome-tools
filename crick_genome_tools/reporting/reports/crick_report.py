@@ -11,9 +11,10 @@ import pickle
 log = logging.getLogger(__name__)
 
 class CrickReport:
-    def __init__(self, report_title, data_path = None, data_obj = None):
+    def __init__(self, report_title, data_path = None, data_obj = None, tmp_dir = None):
         self.data_path = data_path
         self.report_title = report_title
+        self.tmp_dir = tmp_dir
 
         # Custom CSS to control sidebar width and button styling
         st.markdown(

@@ -5,6 +5,7 @@ Class for generating vector core AAV report.
 # pylint disable=missing-function-docstring,missing-class-docstring
 
 import logging
+import os
 
 import streamlit as st
 
@@ -19,9 +20,10 @@ class VectorCoreAavReport(CrickReport):
     Class for generating vector core AAV report.
     """
 
-    def __init__(self, run_id, data_path = None, data_obj = None):
-        super().__init__("Vectorcore AAV Report", data_path, data_obj)
+    def __init__(self, run_id, data_path = None, data_obj = None, tmp_dir = None, jbrowse_component = None):
+        super().__init__("Vectorcore AAV Report", data_path, data_obj, tmp_dir)
         self.run_id = run_id
+        self.jbrowse_component = jbrowse_component
 
     def generate_report(self, section_headers = []):
         section_headers = [
@@ -29,7 +31,8 @@ class VectorCoreAavReport(CrickReport):
             "Read QC",
             "Contaminant Removal",
             "Alignment",
-            "Coverage"
+            "Coverage",
+            "Genome Viewer",
         ]
         super().generate_report(section_headers)
         st.subheader(self.run_id)
@@ -52,6 +55,8 @@ class VectorCoreAavReport(CrickReport):
             self.alignment_section(dp)
         elif st.session_state.selected_section == "Coverage":
             self.coverage_section(dp)
+        elif st.session_state.selected_section == "Genome Viewer":
+            self.genome_viewer_section(dp)
 
     def render_table(self, param_dict):
         lines = ["| Parameter | Value |", "|---|---|"]
@@ -109,3 +114,20 @@ class VectorCoreAavReport(CrickReport):
         # Place chart for each contig
         for contig, df in coverage_data[selected_dataset].items():
             coverage_plot(df, contig)
+
+    def genome_viewer_section(self, dp):
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+
+        # Write data to static folder
+        ref_path = self.tmp_dir + "_" + selected_dataset + ".fasta"
+        with open(ref_path, "wb") as f:
+            for line in dp.result_dict[selected_dataset]["ref"]:
+                f.write(line.encode("utf-8"))
+        index_path = self.tmp_dir + "_" + selected_dataset + ".fai"
+        with open(index_path, "wb") as f:
+            for line in dp.result_dict[selected_dataset]["fai"]:
+                f.write(line.encode("utf-8"))
+
+        if self.jbrowse_component is not None:
+            self.jbrowse_component()
