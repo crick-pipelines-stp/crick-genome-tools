@@ -2,6 +2,11 @@
 Utility functions for manipulating sequences.
 """
 
+def rev_comp(seq):
+    """Reverse complement a DNA sequence."""
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
+    return "".join(complement[base] for base in reversed(seq))
+
 
 def hamming_distance(seq1, seq2):
     """

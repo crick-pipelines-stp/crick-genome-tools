@@ -2,11 +2,16 @@
 Class for generating vector core AAV report.
 """
 
+# pylint disable=missing-function-docstring,missing-class-docstring
+
 import logging
-from crick_genome_tools.reporting.reports.crick_report import CrickReport
-from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot
+import os
 
 import streamlit as st
+
+from crick_genome_tools.reporting.reports.crick_report import CrickReport
+from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot, coverage_plot
+
 
 log = logging.getLogger(__name__)
 
@@ -15,15 +20,22 @@ class VectorCoreAavReport(CrickReport):
     Class for generating vector core AAV report.
     """
 
-    def __init__(self, data_path = None, data_obj = None):
-        super().__init__("Vectorcore AAV Report", data_path, data_obj)
+    def __init__(self, run_id, data_path = None, data_obj = None, tmp_dir = None, jbrowse_component = None):
+        super().__init__("Vectorcore AAV Report", data_path, data_obj, tmp_dir)
+        self.run_id = run_id
+        self.jbrowse_component = jbrowse_component
 
     def generate_report(self, section_headers = []):
         section_headers = [
+            "Pipeline Summary",
             "Read QC",
             "Contaminant Removal",
+            "Alignment",
+            "Coverage",
+            "Genome Viewer",
         ]
         super().generate_report(section_headers)
+        st.subheader(self.run_id)
 
         # Activate current section
         self.activate_section()
@@ -31,15 +43,34 @@ class VectorCoreAavReport(CrickReport):
     def activate_section(self):
         # Display the selected section content
         st.title(st.session_state.selected_section)
-
-        if st.session_state.selected_section == "Read QC":
-            self.read_qc_section()
-        elif st.session_state.selected_section == "Contaminant Removal":
-            self.contaminant_removal_section()
-
-    def read_qc_section(self):
-        # Init
         dp = st.session_state.data_parser
+
+        if st.session_state.selected_section == "Pipeline Summary":
+            self.summary_section(dp)
+        elif st.session_state.selected_section == "Read QC":
+            self.read_qc_section(dp)
+        elif st.session_state.selected_section == "Contaminant Removal":
+            self.contaminant_removal_section(dp)
+        elif st.session_state.selected_section == "Alignment":
+            self.alignment_section(dp)
+        elif st.session_state.selected_section == "Coverage":
+            self.coverage_section(dp)
+        elif st.session_state.selected_section == "Genome Viewer":
+            self.genome_viewer_section(dp)
+
+    def render_table(self, param_dict):
+        lines = ["| Parameter | Value |", "|---|---|"]
+        for key, value in param_dict.items():
+            lines.append(f"| {key} | {value} |")
+        return "\n".join(lines)
+
+    def summary_section(self, dp):
+        for section, section_params in dp.summary_data.items():
+            with st.expander(section, expanded=True):
+                st.markdown(self.render_table(section_params), unsafe_allow_html=True)
+
+    def read_qc_section(self, dp):
+        # Init
         results_dict = dp.result_dict
         dataframe_dict = dp.dataframe_dict
         # st.write("This section shows read quality reporting.")
@@ -51,10 +82,7 @@ class VectorCoreAavReport(CrickReport):
         read_count_histogram(results_dict[selected_dataset]["toulligqc"])
         read_length_scatterplot(dataframe_dict[selected_dataset]["toulligqc"])
 
-    def contaminant_removal_section(self):
-        # Init
-        dp = st.session_state.data_parser
-
+    def contaminant_removal_section(self, dp):
         # Prepare data
         host_df = dp.merged_dataframe_dict["samtools_host"]
         contam_df = dp.merged_dataframe_dict["samtools_contam"]
@@ -71,3 +99,35 @@ class VectorCoreAavReport(CrickReport):
         mqc_samtools_contig_bar_plot(combined_df, "Summary", combined_columns)
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_host"], "Host Alignment")
         mqc_samtools_contig_bar_plot(contam_df, "Contaminent Alignment", contam_columns)
+
+    def alignment_section(self, dp):
+        # Place charts and tables
+        mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_align"], "AAV Alignment")
+
+    def coverage_section(self, dp):
+        # Get data
+        coverage_data = dp.dataframe_dict["coverage_per_base"]
+
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(coverage_data.keys()))
+
+        # Place chart for each contig
+        for contig, df in coverage_data[selected_dataset].items():
+            coverage_plot(df, contig)
+
+    def genome_viewer_section(self, dp):
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+
+        # Write data to static folder
+        ref_path = self.tmp_dir + "_" + selected_dataset + ".fasta"
+        with open(ref_path, "wb") as f:
+            for line in dp.result_dict[selected_dataset]["ref"]:
+                f.write(line.encode("utf-8"))
+        index_path = self.tmp_dir + "_" + selected_dataset + ".fai"
+        with open(index_path, "wb") as f:
+            for line in dp.result_dict[selected_dataset]["fai"]:
+                f.write(line.encode("utf-8"))
+
+        if self.jbrowse_component is not None:
+            self.jbrowse_component()

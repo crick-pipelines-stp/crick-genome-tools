@@ -5,12 +5,14 @@ Class for parsing report data.
 import logging
 import os
 import pickle
+import json
 
 import pandas as pd
 
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
+from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
 
 
 log = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ class ReportDataParser:
         self.result_dict = {}
         self.dataframe_dict = {}
         self.merged_dataframe_dict = {}
+        self.summary_data = None
 
         # List dir to get folders only
         self.folder_names = os.listdir(data_folder)
@@ -30,6 +33,11 @@ class ReportDataParser:
         """
         Get data from all sources.
         """
+        # Get summary data
+        summary_file = os.path.join(self.data_folder, "summary.json")
+        if os.path.exists(summary_file):
+            with open(summary_file, "r", encoding="UTF-8") as f:
+                self.summary_data = json.load(f)
 
         # Process each folder
         for folder_name in self.folder_names:
@@ -40,9 +48,17 @@ class ReportDataParser:
             if folder_name == "toulligqc":
                 self.get_toulligqc_data(folder_path)
             elif folder_name == "samtools_host":
-                self.get_samtools_host_data(folder_path, ".host", "host")
+                self.get_samtools_flagstat_data(folder_path, ".host", "host")
             elif folder_name == "samtools_contaminent":
                 self.get_samtools_contam_data(folder_path, ".contam", "contam")
+            elif folder_name == "samtools_alignment":
+                self.get_samtools_flagstat_data(folder_path, ".viral", "align")
+            elif folder_name == "coverage":
+                self.get_mosdepth_data(folder_path)
+            elif folder_name == "ref":
+                self.get_ref_data(folder_path)
+            elif folder_name == "consensus":
+                pass
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -84,6 +100,7 @@ class ReportDataParser:
             sample_id = fastq_file.split(".")[0]
             if sample_id not in self.result_dict:
                 self.result_dict[sample_id] = {}
+            if sample_id not in self.dataframe_dict:
                 self.dataframe_dict[sample_id] = {}
 
             # Extract data
@@ -97,7 +114,7 @@ class ReportDataParser:
             self.dataframe_dict[sample_id]["toulligqc"] = extractor.dataframe_dict
             log.info(f"Processed fastq file: {fastq_file}")
 
-    def get_samtools_host_data(self, folder_path, clean_ext, data_suffix):
+    def get_samtools_flagstat_data(self, folder_path, clean_ext, data_suffix):
         """
         Get data from samtools reports
         """
@@ -149,3 +166,34 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+
+    def get_mosdepth_data(self, folder_path):
+        """
+        Get data from mosdepth reports.
+        """
+        self.dataframe_dict["coverage_per_base"] = parse_mosdepth_per_base(folder_path)
+
+    def get_ref_data(self, folder_path):
+        """
+        Get data from reference files.
+        """
+        # Get reference files
+        ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
+        for ref_file in ref_files:
+            sample_id = ref_file.split(".")[0]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            # Read each line of the fasta file into a list
+            with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
+                self.result_dict[sample_id]["ref"] = f.readlines()
+            log.info(f"Processed reference file: {ref_file}")
+
+        # Get index files
+        ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta.fai")]
+        for ref_file in ref_files:
+            sample_id = ref_file.split(".")[0]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
+                self.result_dict[sample_id]["fai"] = f.readlines()
+            log.info(f"Processed reference index file: {ref_file}")

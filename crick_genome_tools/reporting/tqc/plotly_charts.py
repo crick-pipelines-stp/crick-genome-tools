@@ -1,5 +1,5 @@
 """
-Helper module for generating Plotly charts for the ToulligQC report.
+Helper module for generating Plotly charts.
 """
 
 import numpy as np
@@ -229,3 +229,23 @@ def mqc_samtools_contig_bar_plot(data_frame, graph_name, contigs):
     data_frame.index = data_frame["Sample"]
     data_frame = data_frame.drop(columns=["Sample"])
     st.dataframe(data_frame, use_container_width=True)
+
+
+def coverage_plot(data_frame, graph_name):
+    trace = go.Scatter(
+        x=data_frame["Position"],
+        y=data_frame["Depth"],
+        mode='lines',
+        hovertemplate='<b>Position</b>: %{x}<br><b>Depth</b>: %{y:,}<extra></extra>'
+    )
+
+    layout = go.Layout(
+        **title(graph_name),
+        **default_graph_layout,
+        hovermode="x",
+        **xaxis('Position', dict(fixedrange=True)),
+        **yaxis('Depth')
+    )
+
+    fig = go.Figure(data=trace, layout=layout)
+    st.plotly_chart(fig, use_container_width=True)
