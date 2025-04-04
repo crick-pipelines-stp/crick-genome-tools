@@ -35,7 +35,7 @@ class VectorCoreAavReport(CrickReport):
             "Genome Viewer",
         ]
         super().generate_report(section_headers)
-        st.subheader(self.run_id)
+        # st.subheader(self.run_id)
 
         # Activate current section
         self.activate_section()
