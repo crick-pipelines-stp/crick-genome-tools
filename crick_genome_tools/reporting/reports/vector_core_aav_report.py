@@ -145,36 +145,38 @@ class VectorCoreAavReport(CrickReport):
 
         # Build the jbrowse config
         jbrowse_config = {
-            "assemblies": [
-                {
-                    "name": f"{contigs[0]}",
-                    "sequence": {
-                        "type": "ReferenceSequenceTrack",
-                        "trackId": f"{contigs[0]}_refseq",
-                        "adapter": {
-                            "type": "IndexedFastaAdapter",
-                            "fastaLocation": {
-                                "uri": f"{fasta_uri}",
-                                "locationType": "UriLocation"
-                            },
-                            "faiLocation": {
-                                "uri":f"{fai_uri}",
-                                "locationType": "UriLocation"
-                            },
-                        }
+            "assembly": {
+                "name": f"{contigs[0]}",
+                "sequence": {
+                    "type": "ReferenceSequenceTrack",
+                    "trackId": f"{contigs[0]}_refseq",
+                    "adapter": {
+                        "type": "IndexedFastaAdapter",
+                        "fastaLocation": {
+                            "uri": f"{fasta_uri}",
+                            "locationType": "UriLocation"
+                        },
+                        "faiLocation": {
+                            "uri":f"{fai_uri}",
+                            "locationType": "UriLocation"
+                        },
                     }
                 }
-            ],
+            },
             "tracks": [],
             "defaultSession": {
                 "name": "Default session",
+                "margin": 0,
                 "view": {
-                "id": "linearView",
-                "type": "LinearGenomeView",
-                "tracks": []
-                }
-            },
-            "location": "P220_AAV_2100bp:1..100"
+                    "id": "linearGenomeView",
+                    "type": "LinearGenomeView",
+                    "init": {
+                        "assembly": 'hg38',
+                        "loc": '1..100',
+                        "tracks": []
+                    }
+                },
+            }
         }
         # print(json.dumps(jbrowse_config, indent=4))
 
