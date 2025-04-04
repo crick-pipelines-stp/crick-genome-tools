@@ -132,9 +132,9 @@ class VectorCoreAavReport(CrickReport):
                 f.write(line.encode("utf-8"))
 
         # Construct Uris
-        base_uri = self.app_url + "/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
+        base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
         fasta_uri = base_uri + ".fasta"
-        fai_uri = base_uri + ".fasta.fai"
+        # fai_uri = base_uri + ".fasta.fai"
 
         # Read the fasta file
         fasta_data = Fasta.read_fasta_file(ref_path)
