@@ -152,14 +152,7 @@ class VectorCoreAavReport(CrickReport):
                     "trackId": f"{contigs[0]}_refseq",
                     "adapter": {
                         "type": "IndexedFastaAdapter",
-                        "fastaLocation": {
-                            "uri": f"{fasta_uri}",
-                            "locationType": "UriLocation"
-                        },
-                        "faiLocation": {
-                            "uri":f"{fai_uri}",
-                            "locationType": "UriLocation"
-                        },
+                        "uri": f"{fasta_uri}"
                     }
                 }
             },
