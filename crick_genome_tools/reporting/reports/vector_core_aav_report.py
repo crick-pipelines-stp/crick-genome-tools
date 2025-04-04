@@ -165,8 +165,18 @@ class VectorCoreAavReport(CrickReport):
                     }
                 }
             ],
+            "tracks": [],
+            "defaultSession": {
+                "name": "Default session",
+                "view": {
+                "id": "linearView",
+                "type": "LinearGenomeView",
+                "tracks": []
+                }
+            },
+            "location": "P220_AAV_2100bp:1..100"
         }
-        #print(json.dumps(jbrowse_config, indent=4))
+        # print(json.dumps(jbrowse_config, indent=4))
 
         if self.jbrowse_component is not None:
             self.jbrowse_component("aav_viewer", config=jbrowse_config, height=800)
