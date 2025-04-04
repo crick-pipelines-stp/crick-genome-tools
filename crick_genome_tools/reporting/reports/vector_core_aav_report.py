@@ -5,12 +5,13 @@ Class for generating vector core AAV report.
 # pylint disable=missing-function-docstring,missing-class-docstring
 
 import logging
-import os
+import json
 
 import streamlit as st
 
 from crick_genome_tools.reporting.reports.crick_report import CrickReport
 from crick_genome_tools.reporting.tqc.plotly_charts import read_count_histogram, read_length_scatterplot, mqc_samtools_bar_plot, mqc_samtools_contig_bar_plot, coverage_plot
+from crick_genome_tools.io.fasta import Fasta
 
 
 log = logging.getLogger(__name__)
@@ -20,10 +21,11 @@ class VectorCoreAavReport(CrickReport):
     Class for generating vector core AAV report.
     """
 
-    def __init__(self, run_id, data_path = None, data_obj = None, tmp_dir = None, jbrowse_component = None):
+    def __init__(self, run_id, data_path = None, data_obj = None, tmp_dir = None, jbrowse_component = None, app_url = "localhost:8501"):
         super().__init__("Vectorcore AAV Report", data_path, data_obj, tmp_dir)
         self.run_id = run_id
         self.jbrowse_component = jbrowse_component
+        self.app_url = app_url
 
     def generate_report(self, section_headers = []):
         section_headers = [
@@ -129,5 +131,42 @@ class VectorCoreAavReport(CrickReport):
             for line in dp.result_dict[selected_dataset]["fai"]:
                 f.write(line.encode("utf-8"))
 
+        # Construct Uris
+        base_uri = self.app_url + "/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
+        fasta_uri = base_uri + ".fasta"
+        fai_uri = base_uri + ".fai"
+
+        # Read the fasta file
+        fasta_data = Fasta.read_fasta_file(ref_path)
+        contigs = list(fasta_data.keys())
+
+        # fasta_data = fasta_data[list(fasta_data.keys())[0]]
+        # contig_length = len(fasta_data)
+
+        # Build the jbrowse config
+        jbrowse_config = {
+            "assemblies": [
+                {
+                    "name": f"{contigs[0]}",
+                    "sequence": {
+                        "type": "ReferenceSequenceTrack",
+                        "trackId": f"{contigs[0]}_refseq",
+                        "adapter": {
+                            "type": "IndexedFastaAdapter",
+                            "fastaLocation": {
+                                "uri": f"{fasta_uri}",
+                                "locationType": "UriLocation"
+                            },
+                            "faiLocation": {
+                                "uri":f"{fai_uri}",
+                                "locationType": "UriLocation"
+                            },
+                        }
+                    }
+                }
+            ],
+        }
+        #print(json.dumps(jbrowse_config, indent=4))
+
         if self.jbrowse_component is not None:
-            self.jbrowse_component()
+            self.jbrowse_component("aav_viewer", config=jbrowse_config, height=800)
