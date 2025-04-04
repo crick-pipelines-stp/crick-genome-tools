@@ -149,7 +149,7 @@ class VectorCoreAavReport(CrickReport):
                 "name": f"{contigs[0]}",
                 "sequence": {
                     "type": "ReferenceSequenceTrack",
-                    "trackId": f"{contigs[0]}_refseq",
+                    "trackId": f"{contigs[0]}-ReferenceSequenceTrack",
                     "adapter": {
                         "type": "IndexedFastaAdapter",
                         "uri": f"{fasta_uri}"
@@ -166,12 +166,16 @@ class VectorCoreAavReport(CrickReport):
                     "init": {
                         "assembly": 'hg38',
                         "loc": '1..100',
-                        "tracks": []
+                        "tracks": [
+                            f"{contigs[0]}-ReferenceSequenceTrack",
+                        ]
                     }
                 },
             }
         }
-        # print(json.dumps(jbrowse_config, indent=4))
+        config_str = json.dumps(jbrowse_config, indent=4)
+        log.info(config_str)
+        print(config_str)
 
         if self.jbrowse_component is not None:
-            self.jbrowse_component("aav_viewer", config=jbrowse_config, height=800)
+            self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=800)
