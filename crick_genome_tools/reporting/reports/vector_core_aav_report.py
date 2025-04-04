@@ -126,7 +126,7 @@ class VectorCoreAavReport(CrickReport):
         with open(ref_path, "wb") as f:
             for line in dp.result_dict[selected_dataset]["ref"]:
                 f.write(line.encode("utf-8"))
-        index_path = self.tmp_dir + "_" + selected_dataset + ".fai"
+        index_path = self.tmp_dir + "_" + selected_dataset + ".fasta.fai"
         with open(index_path, "wb") as f:
             for line in dp.result_dict[selected_dataset]["fai"]:
                 f.write(line.encode("utf-8"))
@@ -134,7 +134,7 @@ class VectorCoreAavReport(CrickReport):
         # Construct Uris
         base_uri = self.app_url + "/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
         fasta_uri = base_uri + ".fasta"
-        fai_uri = base_uri + ".fai"
+        fai_uri = base_uri + ".fasta.fai"
 
         # Read the fasta file
         fasta_data = Fasta.read_fasta_file(ref_path)
