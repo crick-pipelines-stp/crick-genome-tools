@@ -9,12 +9,21 @@ import os
 import sys
 import uuid
 
+import streamlit as st
+
 from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCoreAavReport
 
 STATIC_TMP_DIR = "crick_genome_tools/reporting/reports/static/tmp"
 
 
 def run(data_path, report_type):
+    # Set page config
+    st.set_page_config(
+        page_title="Crick Report",
+        initial_sidebar_state="expanded",
+        layout="wide",
+    )
+
     if report_type == "aav":
         app_url = "http://localhost:8501"
         file_prefix = str(f"{STATIC_TMP_DIR}/{uuid.uuid4().hex}")

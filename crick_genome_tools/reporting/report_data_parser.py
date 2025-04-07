@@ -13,6 +13,7 @@ from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
+from crick_genome_tools.io.vcf import generate_merged_vcf_report
 
 
 log = logging.getLogger(__name__)
@@ -218,6 +219,28 @@ class ReportDataParser:
             with open(os.path.join(folder_path, var_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["variants"][tool_name] = f.readlines()
             log.info(f"Processed variant file: {var_file}")
+
+        if len(vcf_tools) > 0:
+            # Make list of var files for each sample_id
+            var_files_by_sample = {}
+            for var_file in var_files:
+                sample_id = var_file.split(".")[0]
+                tool_name = var_file.split(".")[1]
+                if tool_name in vcf_tools:
+                    if sample_id not in var_files_by_sample:
+                        var_files_by_sample[sample_id] = []
+                    var_files_by_sample[sample_id].append(os.path.join(folder_path, var_file))
+
+            # Process each sample_id
+            for sample_id in var_files_by_sample.keys():
+                if sample_id not in self.dataframe_dict:
+                    self.dataframe_dict[sample_id] = {}
+                # Order var files by tool name order in vcf_tools
+                print(var_files_by_sample[sample_id])
+                var_files_by_sample[sample_id].sort(key=lambda x: vcf_tools.index(x.split(".")[1]))
+                variants, header, processed_variants = generate_merged_vcf_report(var_files_by_sample[sample_id], vcf_tools)
+                self.dataframe_dict[sample_id]["variants"] = pd.DataFrame(processed_variants, columns=header)
+
 
     def get_compressed_variant_data(self, folder_path):
         # Get binary variant files
