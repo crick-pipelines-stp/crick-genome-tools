@@ -1,15 +1,24 @@
 from crick_genome_tools.io.fastq_file import FastqFile
 
 
-def extract_index_from_header(name: str) -> str:
+def extract_index_from_header_illumina(name: str) -> str:
     """
-    Extract the index from the FASTQ read header.
+    Extract the index sequence from a FASTQ read header.
+
+    The function assumes that the index is located at the end of the header string,
+    separated by spaces and colons. It extracts the portion of the header after the
+    third colon in the last space-separated segment.
 
     Args:
-        name (str): The read name from the FASTQ file.
+        name (str): The read header from the FASTQ file. This is typically a string
+                    containing metadata about the read, including the index.
 
     Returns:
-        str: The extracted index.
+        str: The extracted index sequence from the header.
+
+    Raises:
+        ValueError: If the header is empty, None, or malformed (e.g., contains too
+                    many colons in the index portion).
     """
     if not name:
         raise ValueError("Read header is empty.")
