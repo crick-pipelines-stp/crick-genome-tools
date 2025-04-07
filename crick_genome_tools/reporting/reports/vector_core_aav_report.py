@@ -141,7 +141,7 @@ class VectorCoreAavReport(CrickReport):
         contigs = list(fasta_data.keys())
 
         # fasta_data = fasta_data[list(fasta_data.keys())[0]]
-        # contig_length = len(fasta_data)
+        contig_length = len(fasta_data)
 
         # Build the jbrowse config
         jbrowse_config = {
@@ -164,8 +164,8 @@ class VectorCoreAavReport(CrickReport):
                     "id": "linearGenomeView",
                     "type": "LinearGenomeView",
                     "init": {
-                        "assembly": 'hg38',
-                        "loc": '1..100',
+                        "assembly": f"{contigs[0]}",
+                        "loc": f'1..{contig_length}',
                         "tracks": [
                             f"{contigs[0]}-ReferenceSequenceTrack",
                         ]
