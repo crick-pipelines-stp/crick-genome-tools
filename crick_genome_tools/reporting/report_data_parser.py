@@ -2,20 +2,21 @@
 Class for parsing report data.
 """
 
+import json
 import logging
 import os
 import pickle
-import json
 
 import pandas as pd
 
+from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
-from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
 
 
 log = logging.getLogger(__name__)
+
 
 class ReportDataParser:
     def __init__(self, data_folder):
@@ -25,7 +26,7 @@ class ReportDataParser:
         self.merged_dataframe_dict = {}
         self.summary_data = None
 
-        # List dir to get folders only
+        # List dir to get folders only
         self.folder_names = os.listdir(data_folder)
         self.folder_names = [folder_name for folder_name in self.folder_names if os.path.isdir(os.path.join(data_folder, folder_name))]
 
@@ -44,7 +45,7 @@ class ReportDataParser:
             folder_path = os.path.join(self.data_folder, folder_name)
             log.info(f"Processing folder: {folder_name}")
 
-            # Switch data source
+            # Switch data source
             if folder_name == "toulligqc":
                 self.get_toulligqc_data(folder_path)
             elif folder_name == "samtools_host":
@@ -58,7 +59,7 @@ class ReportDataParser:
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
-        # Sort all dictionaries by sample_id
+        # Sort all dictionaries by sample_id
         self.result_dict = dict(sorted(self.result_dict.items()))
         self.dataframe_dict = dict(sorted(self.dataframe_dict.items()))
 
@@ -74,7 +75,7 @@ class ReportDataParser:
         Get data from toulligqc.
         """
 
-        # Default config
+        # Default config
         config = ToulligqcConf()
         config["threshold"] = "10"
         config["batch_size"] = "1000"
@@ -83,22 +84,22 @@ class ReportDataParser:
         config["quiet"] = "False"
         config["barcode_selection"] = []
 
-        # Get fastq files
+        # Get fastq files
         fastq_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fastq.gz")]
         if len(fastq_files) == 0:
             log.error(f"No fastq files found in {folder_path}")
             return
-        # Process each fastq file
+        # Process each fastq file
         for fastq_file in fastq_files:
             config["fastq"] = os.path.join(folder_path, fastq_file)
 
-            # Check for sample_id entry
+            # Check for sample_id entry
             sample_id = fastq_file.split(".")[0]
             if sample_id not in self.result_dict:
                 self.result_dict[sample_id] = {}
                 self.dataframe_dict[sample_id] = {}
 
-            # Extract data
+            # Extract data
             extractor = FastqExtractor(config)
             extractor.init()
             result_dict = {}
@@ -113,20 +114,20 @@ class ReportDataParser:
         """
         Get data from samtools reports
         """
-        # Parse data
+        # Parse data
         data_dict = parse_samtools_flagstat(folder_path, clean_ext)
 
-        # Extract summary table for primary reads
+        # Extract summary table for primary reads
         rows = []
         for sample, metrics in data_dict.items():
-            mapped = metrics['primary_mapped']
-            total = metrics['primary']
+            mapped = metrics["primary_mapped"]
+            total = metrics["primary"]
             unmapped = total - mapped
             percent_mapped = round((mapped / total) * 100, 2)
-            rows.append({'Sample': sample, 'Total': total, 'Mapped': mapped, 'Unmapped': unmapped, 'Percent mapped (%)': percent_mapped})
+            rows.append({"Sample": sample, "Total": total, "Mapped": mapped, "Unmapped": unmapped, "Percent mapped (%)": percent_mapped})
 
         df = pd.DataFrame(rows)
-        df = df.sort_values(by=['Sample'])
+        df = df.sort_values(by=["Sample"])
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
@@ -135,10 +136,10 @@ class ReportDataParser:
         """
         Get data from samtools reports
         """
-        # Parse data
+        # Parse data
         data_dict = parse_samtools_idxstats(folder_path, clean_ext)
 
-        # Extract summary table for primary reads
+        # Extract summary table for primary reads
         rows = []
         for sample, metrics in data_dict.items():
             contigs = metrics.keys()
@@ -157,7 +158,7 @@ class ReportDataParser:
             rows.append(row_data)
 
         df = pd.DataFrame(rows)
-        df = df.sort_values(by=['Sample'])
+        df = df.sort_values(by=["Sample"])
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df

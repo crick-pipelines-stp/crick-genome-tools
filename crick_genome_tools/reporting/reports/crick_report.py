@@ -3,15 +3,18 @@ Base Class for generating crick streamlit reports.
 """
 
 import logging
-from crick_genome_tools.reporting.report_data_parser import ReportDataParser
+import pickle
 
 import streamlit as st
-import pickle
+
+from crick_genome_tools.reporting.report_data_parser import ReportDataParser
+
 
 log = logging.getLogger(__name__)
 
+
 class CrickReport:
-    def __init__(self, report_title, data_path = None, data_obj = None):
+    def __init__(self, report_title, data_path=None, data_obj=None):
         self.data_path = data_path
         self.report_title = report_title
 
@@ -34,12 +37,12 @@ class CrickReport:
         # Load data once and store it in session state
         if "data_parser" not in st.session_state:
             if data_path is not None:
-                # Check if data_path is a pickle file
+                # Check if data_path is a pickle file
                 if data_path.endswith(".pkl"):
                     with open(data_path, "rb") as f:
                         st.session_state.data_parser = pickle.load(f)
                 else:
-                    # Load fresh data
+                    # Load fresh data
                     st.session_state.data_parser = ReportDataParser(data_path)
                     st.session_state.data_parser.get_data()
             else:
@@ -49,7 +52,7 @@ class CrickReport:
         """
         Generate the report.
         """
-        # Output title
+        # Output title
         st.write("# " + self.report_title)
 
         # Ensure session state stores the selected section
@@ -62,7 +65,6 @@ class CrickReport:
         for section in section_headers:
             if st.sidebar.button(section, key=section, help=f"Go to {section}", use_container_width=True):
                 st.session_state.selected_section = section
-
 
     def activate_section(self):
         """

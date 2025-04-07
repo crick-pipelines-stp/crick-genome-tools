@@ -14,7 +14,7 @@ from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 class TestToilligqc(unittest.TestCase):
 
     def test_toulligqc_extract_fastq_results_dict(self):
-        # Setup
+        # Setup
         config = ToulligqcConf()
         config["fastq"] = "tests/data/reporting/aav/toulligqc/P220.sub.1000.fastq.gz"
         config["images_directory"] = "data/reporting/aav/images"
@@ -25,7 +25,7 @@ class TestToilligqc(unittest.TestCase):
         config["quiet"] = "False"
         config["barcode_selection"] = []
 
-        # Test
+        # Test
         extractor = FastqExtractor(config)
         extractor.init()
         result_dict = {}

@@ -8,6 +8,7 @@ import time
 
 import numpy as np
 import pandas as pd
+
 from crick_genome_tools.reporting.tqc.common import is_numpy_1_24
 from crick_genome_tools.reporting.tqc.common_statistics import avg_qual, compute_LXX, compute_NXX, occupancy_channel
 from crick_genome_tools.reporting.tqc.extractor_common import (

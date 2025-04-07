@@ -21,4 +21,3 @@
 #         result = get_variable_itr_regions(itr_seq1)
 #         print(result)
 #         raise NotImplementedError
-

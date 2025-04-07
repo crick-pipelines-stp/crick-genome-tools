@@ -8,13 +8,13 @@ import os
 
 from assertpy import assert_that
 
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
+
 
 class TestSamtoolsParser:
     def test_parse_samtools_flagstat(self, tmp_path):
         sample_clean = "sample_"
-
 
         # Create a temporary flagstat file
         flagstat_content = """123018 + 0 in total (QC-passed reads + QC-failed reads)
@@ -51,7 +51,6 @@ class TestSamtoolsParser:
         assert_that(result["test"]["primary_duplicates"]).is_equal_to(0)
         assert_that(result["test"]["mapped"]).is_equal_to(1482)
         assert_that(result["test"]["primary_mapped"]).is_equal_to(679)
-
 
     def test_parse_samtools_idxstats(self, tmp_path):
         sample_clean = "sample_"
