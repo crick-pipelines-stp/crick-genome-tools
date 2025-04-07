@@ -204,4 +204,4 @@ class VectorCoreAavReport(CrickReport):
         print(config_str)
 
         if self.jbrowse_component is not None:
-            self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=800)
+            self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=1200)
