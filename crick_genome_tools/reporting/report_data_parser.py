@@ -29,7 +29,7 @@ class ReportDataParser:
         self.folder_names = os.listdir(data_folder)
         self.folder_names = [folder_name for folder_name in self.folder_names if os.path.isdir(os.path.join(data_folder, folder_name))]
 
-    def get_data(self):
+    def get_data(self, vcf_tools = []):
         """
         Get data from all sources.
         """
@@ -59,6 +59,10 @@ class ReportDataParser:
                 self.get_ref_data(folder_path)
             elif folder_name == "consensus":
                 pass
+            elif folder_name == "variants":
+                self.get_variant_data(folder_path, vcf_tools)
+            elif folder_name == "variants_compressed":
+                self.get_compressed_variant_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -197,3 +201,47 @@ class ReportDataParser:
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["fai"] = f.readlines()
             log.info(f"Processed reference index file: {ref_file}")
+
+    def get_variant_data(self, folder_path, vcf_tools):
+        """
+        Get data from variant files.
+        """
+        # Get text variant files
+        var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf")]
+        for var_file in var_files:
+            sample_id = var_file.split(".")[0]
+            tool_name = var_file.split(".")[1]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            if "variants" not in self.result_dict[sample_id]:
+                self.result_dict[sample_id]["variants"] = {}
+            with open(os.path.join(folder_path, var_file), "r", encoding="UTF-8") as f:
+                self.result_dict[sample_id]["variants"][tool_name] = f.readlines()
+            log.info(f"Processed variant file: {var_file}")
+
+    def get_compressed_variant_data(self, folder_path):
+        # Get binary variant files
+        var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf.gz")]
+        for var_file in var_files:
+            sample_id = var_file.split(".")[0]
+            tool_name = var_file.split(".")[1]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            if "variants_gz" not in self.result_dict[sample_id]:
+                self.result_dict[sample_id]["variants_gz"] = {}
+            with open(os.path.join(folder_path, var_file), "rb") as f:
+                self.result_dict[sample_id]["variants_gz"][tool_name] = f.read()
+            log.info(f"Processed variant gzip file: {var_file}")
+
+        # Get Tabix files
+        var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf.gz.tbi")]
+        for var_file in var_files:
+            sample_id = var_file.split(".")[0]
+            tool_name = var_file.split(".")[1]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            if "variants_tbi" not in self.result_dict[sample_id]:
+                self.result_dict[sample_id]["variants_tbi"] = {}
+            with open(os.path.join(folder_path, var_file), "rb") as f:
+                self.result_dict[sample_id]["variants_tbi"][tool_name] = f.read()
+            log.info(f"Processed variant tabix file: {var_file}")

@@ -130,6 +130,14 @@ class VectorCoreAavReport(CrickReport):
         with open(index_path, "wb") as f:
             for line in dp.result_dict[selected_dataset]["fai"]:
                 f.write(line.encode("utf-8"))
+        for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
+            tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz"
+            with open(tool_path, "wb") as f:
+                f.write(dp.result_dict[selected_dataset]["variants_gz"][tool_name])
+        for tool_name in dp.result_dict[selected_dataset]["variants_tbi"].keys():
+            tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz.tbi"
+            with open(tool_path, "wb") as f:
+                f.write(dp.result_dict[selected_dataset]["variants_tbi"][tool_name])
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
@@ -156,7 +164,6 @@ class VectorCoreAavReport(CrickReport):
                     }
                 }
             },
-            "tracks": [],
             "defaultSession": {
                 "name": "Default session",
                 "margin": 0,
@@ -171,8 +178,27 @@ class VectorCoreAavReport(CrickReport):
                         ]
                     }
                 },
-            }
+            },
+            "tracks": [],
         }
+
+        # Add variant tracks
+        for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
+            jbrowse_config["tracks"].append({
+                "type": "VariantTrack",
+                "trackId": f"{tool_name}_vcf_track",
+                "name": f"{tool_name} Variants",
+                "assemblyNames": [f"{contigs[0]}"],
+                "adapter": {
+                    "type": "VcfTabixAdapter",
+                    "uri": f"{base_uri}_{tool_name}.vcf.gz",
+                }
+            })
+
+            # Also append to default session view
+            jbrowse_config["defaultSession"]["view"]["init"]["tracks"].append(f"{tool_name}_vcf_track")
+
+        # Dump into string
         config_str = json.dumps(jbrowse_config, indent=4)
         log.info(config_str)
         print(config_str)

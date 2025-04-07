@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##source=Clair3
+##clair3_version=1.0.10
+##cmdline=/opt/bin/run_clair3.sh --bam_fn=P671.viral.sorted.bam --ref_fn=P671.upper.fasta --threads=10 --model_path=/opt/models/r941_prom_sup_g5014 --platform=ont --sample_name=P671 --var_pct_full=1.0 --ref_pct_full=1.0 --no_phasing_for_fa --include_all_ctgs --haploid_precise --chunk_size=800 --disable_c_impl --output=.
+##reference=/Users/cheshic/dev/repos/pipelines-tech/crick-viral-genomics/work/fb/d78e7dc461ac3ebd98f3174a07b846/P671.upper.fasta
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=LowQual,Description="Low quality variant">
+##FILTER=<ID=RefCall,Description="Reference call">
+##INFO=<ID=P,Number=0,Type=Flag,Description="Result from pileup calling">
+##INFO=<ID=F,Number=0,Type=Flag,Description="Result from full-alignment calling">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads 1. with MQ below 5 or an user-specified threshold, or 2. selected by 'samtools view -F 2316', are filtered)">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Observed allele frequency in reads, for each ALT allele, in the same order as listed, or the REF allele for a RefCall">
+##contig=<ID=P671_AAV_4119bp,length=4119>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	P671
+P671_AAV_4119bp	38	.	C	CGCCCGGGCAAA	18.98	PASS	F	GT:GQ:DP:AD:AF	1:18:8025:2309,5085:0.6336
