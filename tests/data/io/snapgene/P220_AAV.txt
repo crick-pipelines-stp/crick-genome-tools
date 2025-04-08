@@ -1,0 +1,40 @@
+a                          	1..35     	35 	=>	misc_feature
+Rep bind site              	12..27    	16 	==	misc_feature
+rep binding site           	12..27    	16 	==	misc_feature
+c                          	36..44    	9  	<=	misc_feature
+c'                         	36..44    	9  	=>	misc_feature
+c                          	48..56    	9  	=>	misc_feature
+c'                         	48..56    	9  	<=	misc_feature
+a                          	57..91    	35 	<=	misc_feature
+Rep bind site              	65..80    	16 	==	misc_feature
+rep binding site           	65..80    	16 	==	misc_feature
+trs                        	94..98    	5  	==	misc_feature
+D                          	97..117   	21 	<=	misc_feature
+CMV enhancer               	142..389  	248	=>	misc_feature
+CMV enhancer               	265..389  	125	=>	misc_feature
+CBA promoter               	389..670  	282	=>	misc_feature
+CBA promoter               	390..669  	280	=>	misc_feature
+chicken beta-actin promoter	392..669  	278	=>	promoter    
+source                     	393..979  	587	==	source      
+source                     	393..977  	585	==	source      
+CBA intron                 	670..979  	310	=>	misc_feature
+CBA intron                 	671..979  	309	=>	misc_feature
+RBA intron                 	980..1025 	46 	=>	misc_feature
+Kozak sequence             	1092..1101	10 	==	regulatory  
+EGFP                       	1098..1817	720	=>	CDS         
+EGFP                       	1098..1814	717	=>	CDS         
+EGFP 1-144                 	1098..1532	435	=>	CDS         
+scITR                      	1987..2099	113	==	misc_feature
+a                          	1989..2023	35 	=>	misc_feature
+Rep bind site              	2000..2015	16 	==	misc_feature
+rep binding site           	2000..2015	16 	==	misc_feature
+c                          	2024..2032	9  	<=	misc_feature
+c'                         	2024..2032	9  	=>	misc_feature
+c                          	2036..2044	9  	=>	misc_feature
+c'                         	2036..2044	9  	<=	misc_feature
+b                          	2046..2054	9  	<=	misc_feature
+b'                         	2046..2054	9  	=>	misc_feature
+b                          	2058..2066	9  	=>	misc_feature
+b'                         	2058..2066	9  	<=	misc_feature
+Rep bind site              	2075..2090	16 	==	misc_feature
+rep binding site           	2075..2090	16 	==	misc_feature
