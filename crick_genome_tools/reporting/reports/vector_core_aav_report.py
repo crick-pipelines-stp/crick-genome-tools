@@ -143,6 +143,10 @@ class VectorCoreAavReport(CrickReport):
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz.tbi"
             with open(tool_path, "wb") as f:
                 f.write(dp.result_dict[selected_dataset]["variants_tbi"][tool_name])
+        ann_path = self.tmp_dir + "_" + selected_dataset + ".gff"
+        with open(ann_path, "wb") as f:
+            for line in dp.result_dict[selected_dataset]["annotation"]:
+                f.write(line.encode("utf-8"))
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
@@ -184,8 +188,20 @@ class VectorCoreAavReport(CrickReport):
                     }
                 },
             },
-            "tracks": [],
+            "tracks": [
+                {
+                    "type": 'FeatureTrack',
+                    "trackId": 'features',
+                    "name": 'Snapgene Features',
+                    "assemblyNames": [f"{contigs[0]}"],
+                   "adapter": {
+                        "type": 'Gff3Adapter',
+                        "uri": f"{base_uri}.gff",
+                    },
+                }
+            ],
         }
+
 
         # Add variant tracks
         for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():

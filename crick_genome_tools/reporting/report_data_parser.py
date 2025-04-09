@@ -64,6 +64,8 @@ class ReportDataParser:
                 self.get_variant_data(folder_path, vcf_tools)
             elif folder_name == "variants_compressed":
                 self.get_compressed_variant_data(folder_path)
+            elif folder_name == "annotation":
+                self.get_annotation_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -268,3 +270,15 @@ class ReportDataParser:
             with open(os.path.join(folder_path, var_file), "rb") as f:
                 self.result_dict[sample_id]["variants_tbi"][tool_name] = f.read()
             log.info(f"Processed variant tabix file: {var_file}")
+
+    def get_annotation_data(self, folder_path):
+        # Get annotation files
+        ann_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".gff")]
+        for ann_file in ann_files:
+            sample_id = ann_file.split(".")[0]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            # Read each line of the fasta file into a list
+            with open(os.path.join(folder_path, ann_file), "r", encoding="UTF-8") as f:
+                self.result_dict[sample_id]["annotation"] = f.readlines()
+            log.info(f"Processed annotation file: {ann_file}")
