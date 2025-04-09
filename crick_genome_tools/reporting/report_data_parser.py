@@ -65,7 +65,8 @@ class ReportDataParser:
                 log.info("Processing reference data")
                 self.get_ref_data(folder_path)
             elif folder_name == "consensus":
-                pass
+                log.info("Processing consensus data")
+                self.get_consensus_data(folder_path)
             elif folder_name == "variants":
                 log.info("Processing variant data")
                 self.get_variant_data(folder_path, vcf_tools)
@@ -75,6 +76,12 @@ class ReportDataParser:
             elif folder_name == "annotation":
                 log.info("Processing annotation data")
                 self.get_annotation_data(folder_path)
+            elif folder_name == "samplesheet":
+                log.info("Processing samplesheet data")
+                self.get_samplesheet_data(folder_path)
+            elif folder_name == "count_table":
+                log.info("Processing count table data")
+                self.get_count_table_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -292,3 +299,30 @@ class ReportDataParser:
             with open(os.path.join(folder_path, ann_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["annotation"] = f.readlines()
             log.info(f"Processed annotation file: {sample_id} - {ann_file}")
+
+    def get_samplesheet_data(self, folder_path):
+        # Get path of first csv file in folder
+        csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
+        self.merged_dataframe_dict["samplesheet"] = pd.read_csv(os.path.join(folder_path, csv_files[0]), encoding="UTF-8")
+        log.info(f"Processed samplesheet file: {csv_files[0]}")
+
+    def get_count_table_data(self, folder_path):
+        csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
+        for csv_file in csv_files:
+            sample_id = csv_file.split(".")[0]
+            if sample_id not in self.dataframe_dict:
+                self.dataframe_dict[sample_id] = {}
+            self.dataframe_dict[sample_id]["count_table"] = pd.read_csv(os.path.join(folder_path, csv_file), encoding="UTF-8", sep="\t")
+            log.info(f"Processed count table file: {csv_file}")
+
+    def get_consensus_data(self, folder_path):
+        # Get consensus files
+        cons_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
+        for cons_file in cons_files:
+            sample_id = cons_file.split(".")[0]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            # Read each line of the fasta file into a list
+            with open(os.path.join(folder_path, cons_file), "r", encoding="UTF-8") as f:
+                self.result_dict[sample_id]["consensus"] = f.readlines()
+            log.info(f"Processed consensus file: {sample_id} - {cons_file}")

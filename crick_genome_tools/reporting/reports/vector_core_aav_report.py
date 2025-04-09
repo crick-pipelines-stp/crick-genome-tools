@@ -32,10 +32,12 @@ class VectorCoreAavReport(CrickReport):
     def generate_report(self, section_headers = []):
         section_headers = [
             "Pipeline Summary",
+            "Samplesheet",
             "Read QC",
             "Contaminant Removal",
             "Alignment",
             "Coverage",
+            "Consensus",
             "Genome Viewer",
             "Variant Viewer",
             ]
@@ -52,6 +54,8 @@ class VectorCoreAavReport(CrickReport):
 
         if st.session_state.selected_section == "Pipeline Summary":
             self.summary_section(dp)
+        elif st.session_state.selected_section == "Samplesheet":
+            self.samplesheet_section(dp)
         elif st.session_state.selected_section == "Read QC":
             self.read_qc_section(dp)
         elif st.session_state.selected_section == "Contaminant Removal":
@@ -60,6 +64,8 @@ class VectorCoreAavReport(CrickReport):
             self.alignment_section(dp)
         elif st.session_state.selected_section == "Coverage":
             self.coverage_section(dp)
+        elif st.session_state.selected_section == "Consensus":
+            self.consensus_section(dp)
         elif st.session_state.selected_section == "Genome Viewer":
             self.genome_viewer_section(dp)
         elif st.session_state.selected_section == "Variant Viewer":
@@ -75,6 +81,12 @@ class VectorCoreAavReport(CrickReport):
         for section, section_params in dp.summary_data.items():
             with st.expander(section, expanded=True):
                 st.markdown(self.render_table(section_params), unsafe_allow_html=True)
+
+    def samplesheet_section(self, dp):
+        # Get data and show in dataframe
+        samplesheet_df = dp.merged_dataframe_dict["samplesheet"]
+        # samplesheet_df = samplesheet_df.reset_index(drop=True)
+        st.dataframe(samplesheet_df)
 
     def read_qc_section(self, dp):
         # Init
@@ -121,6 +133,26 @@ class VectorCoreAavReport(CrickReport):
         # Place chart for each contig
         for contig, df in coverage_data[selected_dataset].items():
             coverage_plot(df, contig)
+
+    def consensus_section(self, dp):
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+
+        # Get data
+        fasta_seq = ''.join(dp.result_dict[selected_dataset]["consensus"])
+        count_table = dp.dataframe_dict[selected_dataset]["count_table"]
+
+        # Show the count table
+        st.dataframe(count_table)
+
+        # Show the fasta sequence
+        st.download_button(
+            label="Download Consensus FASTA",
+            data=fasta_seq,
+            file_name=f"{selected_dataset}.consensus.fasta",
+            mime="text/plain",
+        )
+        st.code(f"{fasta_seq}")
 
     def genome_viewer_section(self, dp):
         # Create dropdown for selecting dataset
