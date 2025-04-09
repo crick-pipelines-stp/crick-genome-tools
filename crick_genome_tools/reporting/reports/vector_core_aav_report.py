@@ -184,6 +184,7 @@ class VectorCoreAavReport(CrickReport):
                         "loc": f'1..{contig_length}',
                         "tracks": [
                             f"{contigs[0]}-ReferenceSequenceTrack",
+                            "features",
                         ]
                     }
                 },
