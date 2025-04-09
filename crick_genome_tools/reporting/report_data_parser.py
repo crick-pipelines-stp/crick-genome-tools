@@ -47,24 +47,33 @@ class ReportDataParser:
 
             # Switch data source
             if folder_name == "toulligqc":
+                log.info("Processing toulligqc data")
                 self.get_toulligqc_data(folder_path)
             elif folder_name == "samtools_host":
+                log.info("Processing samtools host data")
                 self.get_samtools_flagstat_data(folder_path, ".host", "host")
             elif folder_name == "samtools_contaminent":
+                log.info("Processing samtools contaminent data")
                 self.get_samtools_contam_data(folder_path, ".contam", "contam")
             elif folder_name == "samtools_alignment":
+                log.info("Processing samtools alignment data")
                 self.get_samtools_flagstat_data(folder_path, ".viral", "align")
             elif folder_name == "coverage":
+                log.info("Processing coverage data")
                 self.get_mosdepth_data(folder_path)
             elif folder_name == "ref":
+                log.info("Processing reference data")
                 self.get_ref_data(folder_path)
             elif folder_name == "consensus":
                 pass
             elif folder_name == "variants":
+                log.info("Processing variant data")
                 self.get_variant_data(folder_path, vcf_tools)
             elif folder_name == "variants_compressed":
+                log.info("Processing compressed variant data")
                 self.get_compressed_variant_data(folder_path)
             elif folder_name == "annotation":
+                log.info("Processing annotation data")
                 self.get_annotation_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
@@ -72,6 +81,8 @@ class ReportDataParser:
         # Sort all dictionaries by sample_id
         self.result_dict = dict(sorted(self.result_dict.items()))
         self.dataframe_dict = dict(sorted(self.dataframe_dict.items()))
+
+        log.info("Report parsing complete")
 
     def save_data(self, output_file):
         """
@@ -193,7 +204,7 @@ class ReportDataParser:
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["ref"] = f.readlines()
-            log.info(f"Processed reference file: {ref_file}")
+            log.info(f"Processed reference file: {sample_id} - {ref_file}")
 
         # Get index files
         ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta.fai")]
@@ -203,7 +214,7 @@ class ReportDataParser:
                 self.result_dict[sample_id] = {}
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["fai"] = f.readlines()
-            log.info(f"Processed reference index file: {ref_file}")
+            log.info(f"Processed reference index file: {sample_id} - {ref_file}")
 
     def get_variant_data(self, folder_path, vcf_tools):
         """
@@ -220,7 +231,7 @@ class ReportDataParser:
                 self.result_dict[sample_id]["variants"] = {}
             with open(os.path.join(folder_path, var_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["variants"][tool_name] = f.readlines()
-            log.info(f"Processed variant file: {var_file}")
+            log.info(f"Processed variant file: {sample_id} - {var_file}")
 
         if len(vcf_tools) > 0:
             # Make list of var files for each sample_id
@@ -237,11 +248,10 @@ class ReportDataParser:
             for sample_id in var_files_by_sample.keys():
                 if sample_id not in self.dataframe_dict:
                     self.dataframe_dict[sample_id] = {}
-                # Order var files by tool name order in vcf_tools
-                print(var_files_by_sample[sample_id])
                 var_files_by_sample[sample_id].sort(key=lambda x: vcf_tools.index(x.split(".")[1]))
                 variants, header, processed_variants = generate_merged_vcf_report(var_files_by_sample[sample_id], vcf_tools)
                 self.dataframe_dict[sample_id]["variants"] = pd.DataFrame(processed_variants, columns=header)
+                log.info(f"Generated merged vcf report: {sample_id} - {var_files_by_sample[sample_id]}")
 
 
     def get_compressed_variant_data(self, folder_path):
@@ -256,7 +266,7 @@ class ReportDataParser:
                 self.result_dict[sample_id]["variants_gz"] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
                 self.result_dict[sample_id]["variants_gz"][tool_name] = f.read()
-            log.info(f"Processed variant gzip file: {var_file}")
+            log.info(f"Processed variant gzip file: {sample_id} - {var_file}")
 
         # Get Tabix files
         var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf.gz.tbi")]
@@ -269,7 +279,7 @@ class ReportDataParser:
                 self.result_dict[sample_id]["variants_tbi"] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
                 self.result_dict[sample_id]["variants_tbi"][tool_name] = f.read()
-            log.info(f"Processed variant tabix file: {var_file}")
+            log.info(f"Processed variant tabix file: {sample_id} - {var_file}")
 
     def get_annotation_data(self, folder_path):
         # Get annotation files
@@ -281,4 +291,4 @@ class ReportDataParser:
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ann_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["annotation"] = f.readlines()
-            log.info(f"Processed annotation file: {ann_file}")
+            log.info(f"Processed annotation file: {sample_id} - {ann_file}")

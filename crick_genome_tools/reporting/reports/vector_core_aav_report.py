@@ -202,7 +202,6 @@ class VectorCoreAavReport(CrickReport):
             ],
         }
 
-
         # Add variant tracks
         for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
             jbrowse_config["tracks"].append({
