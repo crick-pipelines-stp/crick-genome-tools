@@ -1,5 +1,10 @@
 from crick_genome_tools.io.fastq_file import FastqFile
 
+import itertools
+import numpy as np
+
+# from carmack.barcode.barcode_extractor import BarcodeExtractor
+
 
 def extract_index_from_header_illumina(name: str) -> str:
     """
@@ -39,25 +44,210 @@ def extract_index_from_header_illumina(name: str) -> str:
     return index_part
 
 
-def read_fastq(self, fastq_file):
+def group_samples_by_index_length(sample_index_dict: dict) -> dict:
     """
-    Read a FASTQ file and return a list of sequences.
+    Groups samples by the length of their barcode indices, counting only alphabetic characters.
+
+    This function takes a dictionary of samples and their associated barcodes or nested metadata.
+    If a sample's value is a string, it's treated directly as a barcode. If it's a dictionary,
+    the function searches for a "barcode" or "index" key to extract the barcode. The barcodes are
+    then grouped into a new dictionary based on the number of alphabetic characters they contain.
 
     Args:
-        file_path (str): Path to the FASTQ file.
+        sample_index_dict (dict): A dictionary where each key is a sample name (str) and each value
+            is either a barcode string or a dictionary containing at least a "barcode" or "index" key.
 
     Returns:
-        list: List of sequences.
+        dict: A dictionary where each key is an integer representing the count of alphabetic characters
+            in the barcode, and the corresponding value is a dictionary of sample-barcode pairs that
+            share that alphabetic character count.
+
+    Raises:
+        TypeError: If the input is not a dictionary, or if any barcode is not a string.
+        KeyError: If a sample has a dict value but lacks both "barcode" and "index" keys.
+    """
+    if not isinstance(sample_index_dict, dict):
+        raise TypeError("Input must be a dictionary.")
+
+    grouped = {}
+    for sample, value in sample_index_dict.items():
+        if isinstance(value, str):
+            # if sample has a string value, treat it as a barcode
+            barcode = value
+
+        elif isinstance(value, dict):
+            # if sample has a dict value, look for "barcode" or "index" keys
+            if "barcode" in value:
+                barcode = value["barcode"]
+            elif "index" in value:
+                barcode = value["index"]
+            else:
+                barcode = ""
+        else:
+            raise TypeError(f"Sample '{sample}' has an unsupported value type: {type(value).__name__}")
+
+        if not isinstance(barcode, str):
+            raise TypeError(f"Barcode for sample '{sample}' must be a string.")
+
+        # Calculate the length of the barcode, while ignoring non-alphabetic characters
+        barcode_len = sum(c.isalpha() for c in barcode)
+        grouped.setdefault(barcode_len, {})[sample] = barcode
+
+    return grouped
+
+
+##################################################################################
+DNA_ALPHABET = "AGCT"
+ALPHABET_MINUS = {char: {c for c in DNA_ALPHABET if c != char} for char in DNA_ALPHABET}  # This is a set of alternative bases given a base
+ALPHABET_MINUS["N"] = set(DNA_ALPHABET)
+
+
+def gen_nearby_seqs(seq, barcode_set, maxdist):
+    """Generate all sequences with at most maxdist changes from seq that are in a provided seq, along with the
+    quality values of the bases at the changed positions. Automatically will target N's in a sequence as letters
+    which must be changed. If there are more N's than allowed changes - we return nothing
+    """
+
+    new_seq = set()
+
+    # Find all index positions which are not N in seq as a list
+    non_n_indices = [i for i in range(len(seq)) if seq[i] != "N"]
+
+    # Find all positions which are N in seq as a tuple
+    n_indices = tuple([i for i in range(len(seq)) if seq[i] == "N"])
+
+    # The number of unknown N's dicates the minmimum hamming distance that combinations must be from the original sequence
+    mindist = len(n_indices)
+
+    # If this is too far away then we just return nothing
+    if mindist > maxdist:
+        return [], 0
+
+    # If the input sequence is in the barcode set, include the seq and qs in the output
+    if seq in barcode_set:
+        yield seq
+
+    # Combinations are generated in batches by changing n number of indices in the sequence, then n+1 and so on
+    # The min number of positions to change is dictated by the number of N's in the sequence
+    # The max number of positions to change is dictated by the max hamming distance
+    for dist in range(mindist, maxdist + 1):
+
+        # Generate possible combinations of non-required indices to change for this hamming distance level
+        # This list will be empty if the number of N's is equal to the hamming distance
+        for modified_indices in itertools.combinations(non_n_indices, dist - mindist):
+
+            # Combine the indices we have to change because of N's and the other potential cominations into a final
+            # List of indices to change
+            indices = set(modified_indices + n_indices)
+
+            # Convert the set to a list of indices for subsetting the qs scores (ignore the empty list at the beggining)
+            indices_list = np.array(list(indices))
+            if len(indices_list) == 0:
+                continue
+
+            # Generate possible base substitutions from the indice positions using the minus alphabet
+            for substitutions in itertools.product(*[ALPHABET_MINUS[base] if i in indices else base for i, base in enumerate(seq)]):
+                new_seq = "".join(substitutions)
+
+                # If the new sequence is in the whitelist, sum the QS scores for the changed sequences and return
+                yield new_seq
+
+
+##################################################################
+
+
+def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_distance: str) -> dict:
+    """
+    Generates nearby barcodes within a specified Hamming distance for each sample in grouped barcode data.
+
+    This function processes a dictionary where keys represent barcode lengths and values are dictionaries
+    mapping sample names to barcode sequences. It uses the `gen_nearby_seqs` function to identify all
+    barcode sequences that differ from the original by at most a given Hamming distance and are present
+    within the same barcode length group.
+
+    Args:
+        grouped_barcodes (dict): A dictionary where keys are barcode lengths (int) and values are dictionaries
+            mapping sample names (str) to barcode sequences (str).
+        max_hamming_distance (int): The maximum number of allowed base substitutions for generating nearby sequences.
+
+    Returns:
+        dict: A dictionary where keys are barcode lengths (int) and values are dictionaries mapping each original
+            sample name to a list of tuples. Each tuple contains a nearby barcode (str) and the corresponding
+            quality score sum (float) for the change.
+
+    Raises:
+        ValueError: If max_hamming_distance is not a non-negative integer.
+        AttributeError: If the input dictionary is malformed or contains invalid barcode values.
+    """
+    if not isinstance(grouped_barcodes, dict):
+        raise TypeError("Input must be a dictionary.")
+
+    if not isinstance(max_hamming_distance, int) or max_hamming_distance < 0:
+        raise ValueError("max_hamming_distance must be a non-negative integer.")
+
+    result = {}
+
+    for length, samples in grouped_barcodes.items():
+        if not isinstance(samples, dict):
+            raise TypeError(f"{grouped_barcodes} dict is incorrectly formatted.")
+
+        barcode_set = set(samples.values())
+        near_matches = {}
+
+        for sample, barcode in samples.items():
+            matches = set()
+            for near_seq in gen_nearby_seqs(barcode, barcode_set, max_hamming_distance):
+                matches.add((near_seq))
+
+            print(matches)
+
+            near_matches[sample] = matches
+
+        result[length] = near_matches
+
+    return result
+
+
+# def read_fastq(self, fastq_file):
+#     """
+#     Read a FASTQ file and return a list of sequences.
+
+#     Args:
+#         file_path (str): Path to the FASTQ file.
+
+#     Returns:
+#         list: List of sequences.
+#     """
+#     fastq = FastqFile(fastq_file)
+
+#     for name, seq, qual in fastq.open_read_iterator(as_string=True):
+#         self.extract_index_from_header(name)
+
+
+def gen_index_and_hamming_dict(fastq_file, group1, group2):
+    """
+    Generate index and Hamming distance for a FASTQ file.
+
+    Args:
+        fastq_file (str): Path to the FASTQ file.
+        group1 (dict): Sample names mapped to lists of barcodes.
+        group2 (list): List of dicts, each with 'barcode' and 'data' keys.
+
+    Returns:
+        None
     """
     fastq = FastqFile(fastq_file)
 
     for name, seq, qual in fastq.open_read_iterator(as_string=True):
-        self.extract_index_from_header(name)
+        index = extract_index_from_header_illumina(name)
+        print(f"Index: {index}, Sequence: {seq}, Quality: {qual}")
+
 
 #############################################################################
 
 import os
 from collections import defaultdict
+
 
 def build_barcode_maps(group1):
     """
