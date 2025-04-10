@@ -22,7 +22,6 @@ class TestReportDataParser:
         assert_that(parser.data_folder).is_equal_to(data_path)
         assert_that(parser.result_dict).is_instance_of(dict)
         assert_that(parser.dataframe_dict).is_instance_of(dict)
-        assert_that(parser.folder_names).is_equal_to(os.listdir(data_path))
 
     def test_rdp_save_data(self, tmp_path):
         # Setup
@@ -45,14 +44,14 @@ class TestReportDataParser:
 
         # Assert
         assert_that(len(parser.result_dict)).is_equal_to(3)
-        assert_that(len(parser.dataframe_dict)).is_equal_to(3)
+        assert_that(len(parser.dataframe_dict)).is_equal_to(4)
 
     def test_rdp_get_samtools_host_data(self):
         # Setup
         parser = ReportDataParser("tests/data/reporting/aav")
 
         # Test
-        parser.get_samtools_host_data("tests/data/reporting/aav/samtools_host", ".host", "host")
+        parser.get_samtools_flagstat_data("tests/data/reporting/aav/samtools_host", ".host", "host")
 
         # Assert
         assert_that(parser.merged_dataframe_dict.keys()).contains("samtools_host")

@@ -1,0 +1,20 @@
+P502                                              	1..139    	139 	=>	gene         
+Functional equivalent of wild-type AAV2 ITR_AAV...	1..130    	130 	=>	repeat_region
+P628_fwd                                          	120..162  	43  	=>	primer_bind  
+L7-6 promoter                                     	145..988  	844 	=>	promoter     
+exon1 UTR (wo ATG)                                	944..988  	45  	==	misc_feature 
+Kozak sequence                                    	995..1004 	10  	==	regulatory   
+mScarlet                                          	1001..1696	696 	=>	CDS          
+GSG linker                                        	1697..1705	9   	=>	CDS          
+P2A                                               	1706..1762	57  	=>	CDS          
+iCre                                              	1763..2815	1053	=>	CDS          
+SV40 NLS                                          	1769..1789	21  	=>	CDS          
+P628_rev                                          	2801..2843	43  	<=	primer_bind  
+source                                            	2824..2823	4119	==	source       
+source                                            	2824..2823	4119	==	source       
+P502                                              	2824..4119	1296	=>	gene         
+WPRENoX                                           	2843..3431	589 	=>	misc_feature 
+Factor Xa site                                    	3314..3325	12  	<=	CDS          
+hGH poly(A) signal                                	3463..3939	477 	==	polyA_signal 
+AAV2 ITR                                          	3979..4119	141 	==	repeat_region
+AAV2 ITR                                          	3979..4108	130 	==	repeat_region

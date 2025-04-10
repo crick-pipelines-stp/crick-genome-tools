@@ -10,7 +10,7 @@ from crick_genome_tools.reporting.multiqc.multiqc_parser import parse_samtools_s
 
 
 class TestMultiqc:
-    def test_multiqc_parse_samtools_stats(self):
+    def test_reporting_multiqc_parse_samtools_stats(self):
         # Setup and test
         df = parse_samtools_stats("tests/data/reporting/aav/samtools_host", [".host"])
 

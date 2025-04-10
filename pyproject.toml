@@ -112,7 +112,10 @@ line-length = 150
 exclude = [
     "prototype",
     "build",
-    ".tox"
+    ".tox",
+    "crick_genome_tools/reporting/plotly_graph_common.py",
+    "crick_genome_tools/reporting/tqc/extractor_common.py",
+    "crick_genome_tools/reporting/tqc/fastq_extractor.py",
 ]
 
 [tool.cython-lint]

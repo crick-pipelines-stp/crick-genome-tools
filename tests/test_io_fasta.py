@@ -1,82 +1,67 @@
 """
-Tests for fasta file reading
+This file contains unit tests for the Fasta class in the crick_genome_tools.io.fasta module.
 """
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
+
 import os
-import unittest
 
 import pytest
+from assertpy import assert_that
 
 from crick_genome_tools.io.fasta import Fasta
-from tests.utils import with_temporary_folder
 
 
 TEST_FASTA_SOURCE_FOLDER = "tests/data/io/fasta"
 
 
-class TestIoFasta(unittest.TestCase):
-    def test_fasta_read_file_not_found(self):
-        # Test and Assert
-        with self.assertRaises(FileNotFoundError):
+class TestFasta:
+    def test_io_fasta_read_file_not_found(self):
+        with pytest.raises(FileNotFoundError):
             Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "not_found.fasta"))
 
-    def test_fasta_read_small_fasta(self):
-        # Test
+    def test_io_fasta_read_small_fasta(self):
         fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "H1N1pdm_HA.fasta"))
+        assert_that(fasta_seqs).contains("H1N1pdm_HA")
+        assert_that(fasta_seqs["H1N1pdm_HA"]).is_length(1701)
 
-        # Assert
-        self.assertTrue("H1N1pdm_HA" in fasta_seqs)
-        self.assertTrue(len(fasta_seqs["H1N1pdm_HA"]) == 1701)
-
-    def test_fasta_read_fasta_upper(self):
-        # Test
+    def test_io_fasta_read_fasta_is_uppercase(self):
         fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "H1N1pdm_HA.fasta"))
+        assert_that(fasta_seqs["H1N1pdm_HA"]).is_equal_to(fasta_seqs["H1N1pdm_HA"].upper())
 
-        # Assert
-        self.assertEqual(fasta_seqs["H1N1pdm_HA"], fasta_seqs["H1N1pdm_HA"].upper())
-
-    def test_fasta_read_notag_error(self):
-        # Test and Assert
-        with self.assertRaises(ValueError):
+    def test_io_fasta_read_fasta_with_missing_tag_raises(self):
+        with pytest.raises(ValueError):
             Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "invalid", "no_tag.fasta"))
 
-    def test_fasta_read_dir_doesnotexist(self):
-        # Test and Assert
-        with self.assertRaises(FileNotFoundError):
+    def test_io_fasta_read_directory_does_not_exist(self):
+        with pytest.raises(FileNotFoundError):
             Fasta.read_fasta_directory(os.path.join(TEST_FASTA_SOURCE_FOLDER, "test"))
 
-    def test_fasta_read_dir(self):
-        # Test
+    def test_io_fasta_read_directory_success(self):
         fasta_seqs = Fasta.read_fasta_directory(os.path.join(TEST_FASTA_SOURCE_FOLDER, "valid_dir"))
+        assert_that(fasta_seqs).is_length(4)
 
-        # Assert
-        self.assertTrue(len(fasta_seqs) == 4)
-
-    def test_fasta_multi_tag(self):
-        # Test
+    def test_io_fasta_read_multi_tag(self):
         fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "multi_tag.fasta"))
+        assert_that(fasta_seqs).is_length(2)
 
-        # Assert
-        self.assertTrue(len(fasta_seqs) == 2)
-
-    @with_temporary_folder
-    def test_fasta_write(self, tmpdirname):
-        # Test
+    def test_io_fasta_write_fasta_to_disk(self, tmp_path):
         fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, "H1N1pdm_HA.fasta"))
-        Fasta.write_fasta_file(fasta_seqs, os.path.join(tmpdirname, "H1N1pdm_HA.fasta"))
+        output_file = tmp_path / "H1N1pdm_HA.fasta"
+        Fasta.write_fasta_file(fasta_seqs, str(output_file))
 
-        # Assert
-        self.assertTrue(os.path.exists(os.path.join(tmpdirname, "H1N1pdm_HA.fasta")))
+        assert_that(output_file.exists()).is_true()
+        assert_that(output_file.read_text("utf-8")).contains("H1N1pdm_HA")
 
-
-class TestFastaFixture:
-    @pytest.mark.parametrize("ref_file, key, seq", [("short_lower", "lower", "ACCT"), ("short_upper", "upper", "ACCT")])
-    def test_fasta_read_with_expected(self, ref_file, key, seq):  # pylint: disable=W0613
-        # Test
-        fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, ref_file + ".fasta"))
-
-        # Assert
-        assert key in fasta_seqs
-        assert fasta_seqs[key] == seq
+    @pytest.mark.parametrize(
+        "ref_file, key, seq",
+        [
+            ("short_lower", "lower", "ACCT"),
+            ("short_upper", "upper", "ACCT"),
+        ],
+    )
+    def test_io_fasta_read_parametrized_sequences(self, ref_file, key, seq):
+        fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, f"{ref_file}.fasta"))
+        assert_that(fasta_seqs).contains(key)
+        assert_that(fasta_seqs[key]).is_equal_to(seq)

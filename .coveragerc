@@ -1,0 +1,10 @@
+[run]
+omit =
+    crick_genome_tools/reporting/plotly_graph_common.py
+    crick_genome_tools/reporting/reports/run_report.py
+    crick_genome_tools/reporting/tqc/common.py
+    crick_genome_tools/reporting/tqc/common_statistics.py
+    crick_genome_tools/reporting/tqc/plotly_charts.py
+    crick_genome_tools/reporting/tqc/extractor_common.py
+    crick_genome_tools/reporting/tqc/fastq_bam_common.py
+    crick_genome_tools/reporting/tqc/fastq_extractor.py

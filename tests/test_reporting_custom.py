@@ -13,7 +13,7 @@ from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_f
 
 
 class TestSamtoolsParser:
-    def test_parse_samtools_flagstat(self, tmp_path):
+    def test_reporting_custom_parse_samtools_flagstat(self, tmp_path):
         sample_clean = "sample_"
 
         # Create a temporary flagstat file
@@ -33,7 +33,7 @@ class TestSamtoolsParser:
 0 + 0 singletons (N/A : N/A)
 0 + 0 with mate mapped to a different chr
 0 + 0 with mate mapped to a different chr (mapQ>=5)"""
-        flagstat_file = os.path.join(tmp_path, "sample_test.flagstat")
+        flagstat_file = os.path.join(tmp_path, "test.flagstat")
         with open(flagstat_file, "w", encoding="UTF-8") as f:
             f.write(flagstat_content)
 
@@ -42,7 +42,6 @@ class TestSamtoolsParser:
 
         # Check the results
         assert_that(result).is_not_none()
-        assert_that("test").is_in(result)
         assert_that(result["test"]["total_aligned"]).is_equal_to(123018)
         assert_that(result["test"]["primary"]).is_equal_to(122215)
         assert_that(result["test"]["secondary"]).is_equal_to(180)
@@ -52,7 +51,7 @@ class TestSamtoolsParser:
         assert_that(result["test"]["mapped"]).is_equal_to(1482)
         assert_that(result["test"]["primary_mapped"]).is_equal_to(679)
 
-    def test_parse_samtools_idxstats(self, tmp_path):
+    def test_reporting_custom_parse_samtools_idxstats(self, tmp_path):
         sample_clean = "sample_"
 
         # Create a temporary flagstat file
@@ -72,6 +71,12 @@ class TestSamtoolsParser:
         assert result["test"]["P281_AAV_5256bp"]["length"] == 5256
         assert result["test"]["pHelper"]["reads"] == 18121
 
-    def test_mosdepth_per_base(self):
-        parse_mosdepth_per_base("tests/data/reporting/aav/coverage")
-        raise NotImplementedError
+    def test_reporting_custom_mosdepth_per_base(self):
+        # Test
+        result = parse_mosdepth_per_base("tests/data/reporting/aav/coverage")
+
+        # Assert
+        assert_that(result).is_not_none()
+        assert_that(result["P220"]["P220_AAV_2100bp"].shape[0]).is_equal_to(2054)
+        assert_that(result["P281"]["P281_AAV_5256bp"].shape[0]).is_equal_to(4872)
+        assert_that(result["P671"]["P671_AAV_4119bp"].shape[0]).is_equal_to(3786)
