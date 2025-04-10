@@ -8,6 +8,7 @@ from assertpy import assert_that
 
 from crick_genome_tools.io.fastq_file import FastqFile
 
+
 class TestFastqFile:
     def test_io_fastq_file_read_uncompressed(self):
         # Setup

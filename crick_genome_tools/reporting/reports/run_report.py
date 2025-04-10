@@ -13,11 +13,12 @@ import streamlit as st
 
 from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCoreAavReport
 
+
 STATIC_TMP_DIR = "crick_genome_tools/reporting/reports/static/tmp"
 
 
 def run(data_path, report_type):
-    # Set page config
+    # Set page config
     st.set_page_config(
         page_title="Crick Report",
         initial_sidebar_state="expanded",
@@ -33,6 +34,7 @@ def run(data_path, report_type):
         print(f"ERROR: Unknown report type: {report_type}")
         sys.exit(1)
 
+
 if __name__ == "__main__":
     # Check args
     parser = argparse.ArgumentParser()
@@ -40,10 +42,10 @@ if __name__ == "__main__":
     parser.add_argument("--report_type", required=True)
     args, _ = parser.parse_known_args()
 
-    # Check data path exists
+    # Check data path exists
     if not os.path.exists(args.data_path):
         print(f"ERROR: Data path does not exist: {args.data_path}")
         sys.exit(1)
 
-    # Run
+    # Run
     run(args.data_path, args.report_type)

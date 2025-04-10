@@ -6,10 +6,12 @@ This file contains unit tests for the Fasta class in the crick_genome_tools.io.f
 
 
 import os
+
 import pytest
 from assertpy import assert_that
 
 from crick_genome_tools.io.fasta import Fasta
+
 
 TEST_FASTA_SOURCE_FOLDER = "tests/data/io/fasta"
 
@@ -57,7 +59,7 @@ class TestFasta:
         [
             ("short_lower", "lower", "ACCT"),
             ("short_upper", "upper", "ACCT"),
-        ]
+        ],
     )
     def test_io_fasta_read_parametrized_sequences(self, ref_file, key, seq):
         fasta_seqs = Fasta.read_fasta_file(os.path.join(TEST_FASTA_SOURCE_FOLDER, f"{ref_file}.fasta"))

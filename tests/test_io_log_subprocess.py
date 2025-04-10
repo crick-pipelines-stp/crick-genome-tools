@@ -28,9 +28,7 @@ class TestLogSubprocess:
 
     @patch("subprocess.check_call")
     def test_io_logsub_check_call_failure(self, mock_check_call):
-        mock_check_call.side_effect = subprocess.CalledProcessError(
-            1, ["echo", "hello"], stderr=b"error message"
-        )
+        mock_check_call.side_effect = subprocess.CalledProcessError(1, ["echo", "hello"], stderr=b"error message")
 
         with pytest.raises(subprocess.CalledProcessError) as exc:
             self.log_subprocess.check_call(["echo", "hello"])
@@ -49,9 +47,7 @@ class TestLogSubprocess:
 
     @patch("subprocess.check_output")
     def test_io_logsub_check_output_failure(self, mock_check_output):
-        mock_check_output.side_effect = subprocess.CalledProcessError(
-            1, ["echo", "hello"], stderr=b"error message"
-        )
+        mock_check_output.side_effect = subprocess.CalledProcessError(1, ["echo", "hello"], stderr=b"error message")
 
         with pytest.raises(subprocess.CalledProcessError) as exc:
             self.log_subprocess.check_output(["echo", "hello"])
@@ -79,9 +75,7 @@ class TestLogSubprocess:
         mock_popen.return_value = mock_proc
 
         proc = self.log_subprocess.p_open(["echo", "hello"])
-        proc.check_return_code = MagicMock(side_effect=subprocess.CalledProcessError(
-            1, ["echo", "hello"], stderr=b"error message"
-        ))
+        proc.check_return_code = MagicMock(side_effect=subprocess.CalledProcessError(1, ["echo", "hello"], stderr=b"error message"))
 
         with pytest.raises(subprocess.CalledProcessError) as exc:
             proc.check_return_code()

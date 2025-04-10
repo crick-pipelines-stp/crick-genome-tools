@@ -6,7 +6,6 @@ Tests for seq utils.
 
 
 import pytest
-
 from assertpy import assert_that
 
 from crick_genome_tools.seq.utils import cumulative_hamming_distance, hamming_distance, rev_comp
@@ -93,4 +92,4 @@ class TestHammingDistance:
         assert_that(rev_comp).raises(KeyError).when_called_with("aTgc")
 
     def test_seq_util_rev_comp_invalid_characters(self):
-         assert_that(rev_comp("ATGCNNN")).is_equal_to("NNNGCAT")
+        assert_that(rev_comp("ATGCNNN")).is_equal_to("NNNGCAT")

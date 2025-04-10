@@ -8,8 +8,9 @@ import os
 
 from assertpy import assert_that
 
-from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
 from crick_genome_tools.reporting.custom.mosdepth_parser import parse_mosdepth_per_base
+from crick_genome_tools.reporting.custom.samtools_parser import parse_samtools_flagstat, parse_samtools_idxstats
+
 
 class TestSamtoolsParser:
     def test_reporting_custom_parse_samtools_flagstat(self, tmp_path):
@@ -50,7 +51,6 @@ class TestSamtoolsParser:
         assert_that(result["test"]["mapped"]).is_equal_to(1482)
         assert_that(result["test"]["primary_mapped"]).is_equal_to(679)
 
-
     def test_reporting_custom_parse_samtools_idxstats(self, tmp_path):
         sample_clean = "sample_"
 
@@ -72,10 +72,10 @@ class TestSamtoolsParser:
         assert result["test"]["pHelper"]["reads"] == 18121
 
     def test_reporting_custom_mosdepth_per_base(self):
-        # Test
+        # Test
         result = parse_mosdepth_per_base("tests/data/reporting/aav/coverage")
 
-        # Assert
+        # Assert
         assert_that(result).is_not_none()
         assert_that(result["P220"]["P220_AAV_2100bp"].shape[0]).is_equal_to(2054)
         assert_that(result["P281"]["P281_AAV_5256bp"].shape[0]).is_equal_to(4872)

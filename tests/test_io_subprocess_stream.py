@@ -8,15 +8,14 @@ from assertpy import assert_that
 
 from crick_genome_tools.io.subprocess_stream import SubprocessStream
 
+
 CONTENT = "test_content"
 READ_NAME = "@NB501505:171:H3KMGAFX3:1:21208:17616:17963 1:N:0:AGATCTCGGT"
 
 
 class TestSubprocessStream:
     def test_io_subproc_gzip_read(self):
-        with SubprocessStream(
-            ["gzip", "-c", "-d", "tests/data/io/fastq/sc_10k.fastq.gz"], mode="r"
-        ) as stream:
+        with SubprocessStream(["gzip", "-c", "-d", "tests/data/io/fastq/sc_10k.fastq.gz"], mode="r") as stream:
             for idx, line in enumerate(stream):
                 if idx == 0:
                     line_str = line.decode("utf-8").strip()

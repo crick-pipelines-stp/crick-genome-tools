@@ -5,20 +5,25 @@ Tests for fasta blast utils.
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 import os
-from assertpy import assert_that
+
 import pytest
+from assertpy import assert_that
 
 from crick_genome_tools.blast.utils import build_fasta_from_top_hits
+
 
 FASTA_SOURCE_FOLDER = "tests/data/io/fasta"
 BLAST_FOLDER_VALID = "tests/data/blast/valid"
 BLAST_FOLDER_INVALID = "tests/data/blast/invalid"
 
+
 class TestBuildFastaFromTopHits:
     def test_blast_build_fasta_from_top_hits_empty_blast_file(self):
         # Test and Assert
         with pytest.raises(ValueError):
-            assert_that(build_fasta_from_top_hits(os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_INVALID, "empty.txt")))
+            assert_that(
+                build_fasta_from_top_hits(os.path.join(FASTA_SOURCE_FOLDER, "extended_valid.fasta"), os.path.join(BLAST_FOLDER_INVALID, "empty.txt"))
+            )
 
     def test_blast_build_fasta_from_top_hits_blast_not_found(self):
         # Test and Assert

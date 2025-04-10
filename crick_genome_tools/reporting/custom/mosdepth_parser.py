@@ -2,8 +2,8 @@
 Contains access methods custom parsing of report data.
 """
 
-import os
 import logging
+import os
 
 import pandas as pd
 
@@ -74,6 +74,7 @@ log = logging.getLogger(__name__)
 #     )
 #     return df_cum
 
+
 def parse_mosdepth_per_base(data_folder):
     """
     Parse mosdepth per base data
@@ -86,7 +87,7 @@ def parse_mosdepth_per_base(data_folder):
     """
     data = {}
 
-    # Iterate over all files in the folder
+    # Iterate over all files in the folder
     for file in os.listdir(data_folder):
         if not file.endswith(".per-base.bed.gz"):
             continue
@@ -96,7 +97,7 @@ def parse_mosdepth_per_base(data_folder):
         if sample_id not in data:
             data[sample_id] = {}
 
-        # Read gzipped bed file
+        # Read gzipped bed file
         bed_file = GzipFile(os.path.join(data_folder, file))
         for line in bed_file.open_read_iterator(as_string=True):
             fields = line.strip().split("\t")
@@ -107,10 +108,10 @@ def parse_mosdepth_per_base(data_folder):
                 data[sample_id][contig] = []
             data[sample_id][contig].append((pos, depth))
 
-        # Convert to dataframe
+        # Convert to dataframe
         data[sample_id][contig] = pd.DataFrame(data[sample_id][contig], columns=["Position", "Depth"])
 
-    # Sort dict by sample id
+    # Sort dict by sample id
     data = dict(sorted(data.items()))
 
     return data

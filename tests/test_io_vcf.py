@@ -5,8 +5,8 @@ Tests vcf utils
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-from assertpy import assert_that
 import pytest
+from assertpy import assert_that
 
 from crick_genome_tools.io.vcf import determine_variant_type, generate_merged_vcf_report
 
@@ -54,9 +54,7 @@ class TestVcf:
             "tests/data/io/vcf/FAY66992_BC15.sniffles.vcf",
             "tests/data/io/vcf/FAY66992_BC15.snpeff.vcf",
         ]
-        variants, _, _ = generate_merged_vcf_report(
-            vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"]
-        )
+        variants, _, _ = generate_merged_vcf_report(vcf_files, ["clair3", "medaka", "lofreq", "sniffles", "snpeff"])
         assert_that(variants).is_length(148)
 
     def test_io_vcf_generate_merged_vcf_report_illumina(self):
@@ -65,9 +63,7 @@ class TestVcf:
             "tests/data/io/vcf/20-A_Tajikistan_12-928_2023.freebayes.vcf",
             "tests/data/io/vcf/20-A_Tajikistan_12-928_2023.snpeff.vcf",
         ]
-        variants, _, _ = generate_merged_vcf_report(
-            vcf_files, ["lofreq", "freebayes", "snpeff"]
-        )
+        variants, _, _ = generate_merged_vcf_report(vcf_files, ["lofreq", "freebayes", "snpeff"])
         assert_that(variants).is_length(260)
 
     # def test_generate_merged_vcf_report_dev(self):

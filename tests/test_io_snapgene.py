@@ -8,6 +8,7 @@ from assertpy import assert_that
 
 from crick_genome_tools.io.snapgene import convert_to_gff
 
+
 class TestSnapGene:
     def test_io_snapgene_convert_to_gff_no_source(self, tmp_path):
         # Setup
@@ -19,7 +20,7 @@ class TestSnapGene:
         convert_to_gff(input_file, output_file, contig_name)
 
         # Assert
-        with open(output_file, 'r', encoding="UTF-8") as f:
+        with open(output_file, "r", encoding="UTF-8") as f:
             lines = f.readlines()
             target_line = lines[0].split("\t")
             assert_that(target_line[0]).is_equal_to("contig_1")
@@ -43,7 +44,7 @@ class TestSnapGene:
         convert_to_gff(input_file, output_file, contig_name, source)
 
         # Assert
-        with open(output_file, 'r', encoding="UTF-8") as f:
+        with open(output_file, "r", encoding="UTF-8") as f:
             lines = f.readlines()
             target_line = lines[0].split("\t")
             assert_that(target_line[1]).is_equal_to("TestSource")

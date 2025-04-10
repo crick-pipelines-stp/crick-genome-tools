@@ -35,12 +35,14 @@ class ToulligqcConf:
     """
 
     def __init__(self):
-        self._config_dictionary = {'app.name': "ToulligQC",
-                                   'app.url': "https://github.com/GenomicParisCentre/toulligQC",
-                                   'quiet': 'False',
-                                   'tmpdir': tempfile.gettempdir(),
-                                   'barcoding': 'False',
-                                   'report_only': 'False'}
+        self._config_dictionary = {
+            "app.name": "ToulligQC",
+            "app.url": "https://github.com/GenomicParisCentre/toulligQC",
+            "quiet": "False",
+            "tmpdir": tempfile.gettempdir(),
+            "barcoding": "False",
+            "report_only": "False",
+        }
 
     def __getitem__(self, item):
         return self._config_dictionary[item]
