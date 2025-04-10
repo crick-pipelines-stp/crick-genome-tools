@@ -13,7 +13,7 @@ from assertpy import assert_that
 from crick_genome_tools.io.command_chain import CommandChain
 
 
-def test_command_chain_run_return_stream(monkeypatch):
+def test_io_command_chain_run_return_stream(monkeypatch):
     mock_log = MagicMock()
     mock_proc = MagicMock()
     mock_proc.stdout = MagicMock()
@@ -32,7 +32,7 @@ def test_command_chain_run_return_stream(monkeypatch):
     mock_proc.check_return_code.assert_called()
 
 
-def test_command_chain_run_output_file(tmp_path):
+def test_io_command_chain_run_output_file(tmp_path):
     output_file = tmp_path / "output.txt"
     commands = [["echo", "hello"], ["grep", "hello"]]
     chain = CommandChain(commands, output_file=str(output_file))
@@ -43,7 +43,7 @@ def test_command_chain_run_output_file(tmp_path):
     assert_that(output_file.read_text(encoding="utf-8")).is_equal_to("hello\n")
 
 
-def test_command_chain_run_no_output(monkeypatch):
+def test_io_command_chain_run_no_output(monkeypatch):
     mock_log = MagicMock()
     mock_proc = MagicMock()
     mock_proc.stdout = MagicMock()
@@ -62,7 +62,7 @@ def test_command_chain_run_no_output(monkeypatch):
     mock_proc.check_return_code.assert_called()
 
 
-def test_command_chain_run_single_command(monkeypatch):
+def test_io_command_chain_run_single_command(monkeypatch):
     mock_log = MagicMock()
     mock_proc = MagicMock()
     mock_proc.stdout = MagicMock()
@@ -82,7 +82,7 @@ def test_command_chain_run_single_command(monkeypatch):
     mock_proc.check_return_code.assert_called()
 
 
-def test_command_chain_run_with_error(monkeypatch):
+def test_io_command_chain_run_with_error(monkeypatch):
     mock_log = MagicMock()
     mock_proc = MagicMock()
     mock_proc.stdout = MagicMock()
@@ -101,7 +101,7 @@ def test_command_chain_run_with_error(monkeypatch):
     mock_proc.check_return_code.assert_called()
 
 
-def test_command_to_file_creates_output_file(tmp_path):
+def test_io_command_to_file_creates_output_file(tmp_path):
     output_file = tmp_path / "output.txt"
     command = ["echo", "hello"]
 
@@ -111,7 +111,7 @@ def test_command_to_file_creates_output_file(tmp_path):
     assert_that(output_file.read_text("utf-8").strip()).is_equal_to("hello")
 
 
-def test_command_to_file_handles_subprocess_error(monkeypatch, tmp_path):
+def test_io_command_to_file_handles_subprocess_error(monkeypatch, tmp_path):
     command = ["false"]
     output_file = tmp_path / "output.txt"
 
