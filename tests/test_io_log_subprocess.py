@@ -16,7 +16,7 @@ from crick_genome_tools.io.log_subprocess import LogSubprocess
 class TestLogSubprocess:
     @pytest.fixture(autouse=True)
     def setup_log_subprocess(self):
-        self.log_subprocess = LogSubprocess()
+        self.log_subprocess = LogSubprocess()  # pylint: disable=attribute-defined-outside-init
 
     @patch("subprocess.check_call")
     def test_io_logsub_check_call_success(self, mock_check_call):
