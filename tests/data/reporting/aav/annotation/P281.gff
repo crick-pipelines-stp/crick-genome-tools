@@ -1,0 +1,16 @@
+P281	manual	repeat_region	1	130	.	+	.	Note=Functional equivalent of wild-type AAV2 ITR_AAV...
+P281	manual	promoter	191	402	.	+	.	Note=EF-1-alpha core promoter
+P281	manual	regulatory	410	419	.	+	.	Note=Kozak sequence
+P281	manual	CDS	419	448	.	+	.	Note=Myc
+P281	manual	CDS	452	472	.	+	.	Note=SV40 NLS
+P281	manual	CDS	482	4582	.	+	.	Note=Cas9
+P281	manual	CDS	482	4582	.	+	.	Note=Cas9
+P281	manual	CDS	4586	4606	.	+	.	Note=SV40 NLS
+P281	manual	polyA_signal	4625	4673	.	+	.	Note=poly(A) signal
+P281	manual	primer_bind	4655	4700	.	+	.	Note=L264 U6_fwd
+P281	manual	misc_RNA	4765	4840	.	-	.	Note=gRNA scaffold
+P281	manual	promoter	4867	5107	.	-	.	Note=U6 promoter
+P281	manual	primer_bind	5090	5133	.	-	.	Note=L264 U6_rev
+P281	manual	source	5114	5113	.	+	.	Note=source
+P281	manual	source	5114	5113	.	+	.	Note=source
+P281	manual	repeat_region	5116	5256	.	+	.	Note=AAV2 ITR

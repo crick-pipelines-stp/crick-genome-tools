@@ -5,13 +5,13 @@ Tests for iterative alignment
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-import os
-import unittest
+# import os
+# import unittest
 
-import pytest
+# import pytest
 
-from crick_genome_tools.io.fasta import Fasta
-from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
+# from crick_genome_tools.io.fasta import Fasta
+# from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
 
 
 # class TestIterativeAlignment(unittest.TestCase):
