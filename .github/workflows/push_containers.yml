@@ -59,7 +59,7 @@ jobs:
 
       - name: Push Docker images
         run: |
-          echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           docker push ${{ matrix.image }}:${{ steps.set-docker-tag.outputs.tag }}
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             docker push ${{ matrix.image }}:${{ env.VERSION }}
