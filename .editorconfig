@@ -21,10 +21,16 @@ indent_style = unset
 [**/Makefile]
 indent_style = unset
 
-[*.{xml,txt,gff}]
+[*.{xml,txt}]
 indent_style = unset
 insert_final_newline = unset
 trim_trailing_whitespace = unset
+
+[*.{gff}]
+indent_style = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+end_of_line = unset
 
 [*.{xml,pkl,fasta,fastq,fa,bed,vcf,tsv,csv}]å
 charset = unset
