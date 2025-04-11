@@ -1,8 +1,10 @@
+import itertools
+import re
+
+import numpy as np
+
 from crick_genome_tools.io.fastq_file import FastqFile
 
-import itertools
-import numpy as np
-import re
 
 # from carmack.barcode.barcode_extractor import BarcodeExtractor
 
@@ -166,19 +168,19 @@ def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_dista
     barcode sequences that differ from the original by at most a given Hamming distance and are present
     within the same barcode length group.
 
+    Dual-index barcodes (e.g., "ACGT+AGGT") are detected automatically and returned as
+    concatenated strings (e.g., "ACGTAGGT") with all valid nearby combinations.
+
     Args:
-        grouped_barcodes (dict): A dictionary where keys are barcode lengths (int) and values are dictionaries
-            mapping sample names (str) to barcode sequences (str).
-        max_hamming_distance (int): The maximum number of allowed base substitutions for generating nearby sequences.
+        grouped_barcodes (dict): Dictionary with barcode length as keys and inner dicts of
+                                 sample names to barcodes (single or dual-index).
+        max_hamming_distance (int): Maximum allowed Hamming distance.
 
     Returns:
-        dict: A dictionary where keys are barcode lengths (int) and values are dictionaries mapping each original
-            sample name to a list of tuples. Each tuple contains a nearby barcode (str) and the corresponding
-            quality score sum (float) for the change.
+        dict: {length: {sample: set of nearby full-barcode strings}}
 
     Raises:
-        ValueError: If max_hamming_distance is not a non-negative integer.
-        AttributeError: If the input dictionary is malformed or contains invalid barcode values.
+        TypeError, ValueError: If inputs are malformed.
     """
     if not isinstance(grouped_barcodes, dict):
         raise TypeError("Input must be a dictionary.")
@@ -192,27 +194,36 @@ def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_dista
         if not isinstance(samples, dict):
             raise TypeError(f"{grouped_barcodes} dict is incorrectly formatted.")
 
-        barcode_set = set(samples.values())
-        for character in samples.values():
-            parts = [p for p in re.split(r"[^A-Za-z]+", character) if p]
+        # Build a set of all barcode components
+        barcode_set = set()
+        for barcode in samples.values():
+            parts = [p for p in re.split(r"[^A-Za-z]+", barcode) if p]
             barcode_set.update(parts)
+
         near_matches = {}
 
         for sample, barcode in samples.items():
             parts = [p for p in re.split(r"[^A-Za-z]+", barcode) if p]
-            matches_per_part = []
+
+            # Generate nearby variants for each part
+            matches_sets = []
             for part in parts:
                 matches = set()
                 for near_seq in gen_nearby_seqs(part, barcode_set, max_hamming_distance):
-                    matches.add((near_seq))
+                    matches.add(near_seq)
+                matches_sets.append(matches)
 
-            # print(matches)
-                matches_per_part.append(matches)
+            # Combine parts back into full barcodes (as one string)
+            if len(matches_sets) > 1:
+                # Dual-index: combine cross-product of variants
+                combined = {"".join(combo) for combo in itertools.product(*matches_sets)}
+            else:
+                # Single-index
+                combined = matches_sets[0]
 
-            near_matches[sample] = matches
+            near_matches[sample] = combined
 
         result[length] = near_matches
-        print(result)
 
     return result
 

@@ -6,7 +6,7 @@ Tests covering the barcode_demux module
 
 from assertpy import assert_that
 
-from crick_genome_tools.seq.barcode_demux import extract_index_from_header_illumina, group_samples_by_index_length, generate_nearby_barcodes_by_length
+from crick_genome_tools.seq.barcode_demux import extract_index_from_header_illumina, generate_nearby_barcodes_by_length, group_samples_by_index_length
 
 
 class TestBarcodeDemux:
@@ -86,9 +86,27 @@ class TestBarcodeDemux:
         # Test with a valid barcode and distance
         grouped_barcode_dict = {
             4: {"sample_1": "ACGT"},
-            8: {"sample_2": "ACGT,AGGT"},
+            8: {"sample_2": "ACG,AGG"},
         }
         distance = 1
-        expected_result = {4: {"sample_1": {"ACCT", "ATGT", "ACGC", "ACGT", "ACAT", "CCGT", "GCGT", "ACGA", "ACGG", "AGGT", "TCGT", "AAGT", "ACTT"}}}
+        expected_result = {
+            4: {"sample_1": {"ACCT", "ATGT", "ACGC", "ACGT", "ACAT", "CCGT", "GCGT", "ACGA", "ACGG", "AGGT", "TCGT", "AAGT", "ACTT"}},
+            8: {
+                "sample_2": {
+                    "ACG,AGG",
+                    "ACG,AGT",
+                    "ACG,AGC",
+                    "ACG,ACC",
+                    "ACG,ATA",
+                    "ACG,ATG",
+                    "ACG,ATC",
+                    "ACG,ATT",
+                    "ACG,ACA",
+                    "ACG,AAG",
+                    "ACG,AAT",
+                    "ACG,AAC",
+                }
+            },
+        }
 
         assert_that(generate_nearby_barcodes_by_length(grouped_barcode_dict, distance)).is_equal_to(expected_result)
