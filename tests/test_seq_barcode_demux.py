@@ -86,7 +86,7 @@ class TestBarcodeDemux:
         # Test with a valid barcode and distance
         grouped_barcode_dict = {
             4: {"sample_1": "ACGT"},
-            # 8: {"sample_2": "ACGT,AGGT", "sample_3": "ACGTAGCT"},
+            8: {"sample_2": "ACGT,AGGT"},
         }
         distance = 1
         expected_result = {4: {"sample_1": {"ACCT", "ATGT", "ACGC", "ACGT", "ACAT", "CCGT", "GCGT", "ACGA", "ACGG", "AGGT", "TCGT", "AAGT", "ACTT"}}}

@@ -2,6 +2,7 @@ from crick_genome_tools.io.fastq_file import FastqFile
 
 import itertools
 import numpy as np
+import re
 
 # from carmack.barcode.barcode_extractor import BarcodeExtractor
 
@@ -192,18 +193,26 @@ def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_dista
             raise TypeError(f"{grouped_barcodes} dict is incorrectly formatted.")
 
         barcode_set = set(samples.values())
+        for character in samples.values():
+            parts = [p for p in re.split(r"[^A-Za-z]+", character) if p]
+            barcode_set.update(parts)
         near_matches = {}
 
         for sample, barcode in samples.items():
-            matches = set()
-            for near_seq in gen_nearby_seqs(barcode, barcode_set, max_hamming_distance):
-                matches.add((near_seq))
+            parts = [p for p in re.split(r"[^A-Za-z]+", barcode) if p]
+            matches_per_part = []
+            for part in parts:
+                matches = set()
+                for near_seq in gen_nearby_seqs(part, barcode_set, max_hamming_distance):
+                    matches.add((near_seq))
 
-            print(matches)
+            # print(matches)
+                matches_per_part.append(matches)
 
             near_matches[sample] = matches
 
         result[length] = near_matches
+        print(result)
 
     return result
 
