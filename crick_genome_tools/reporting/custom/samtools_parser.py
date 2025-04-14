@@ -2,11 +2,12 @@
 Contains access methods custom parsing of report data.
 """
 
-import os
 import logging
+import os
 
 
 log = logging.getLogger(__name__)
+
 
 def parse_samtools_flagstat(data_folder, sample_clean):
     """
@@ -29,7 +30,7 @@ def parse_samtools_flagstat(data_folder, sample_clean):
     0 + 0 with mate mapped to a different chr
     0 + 0 with mate mapped to a different chr (mapQ>=5)
     """
-    # Init
+    # Init
     data = {}
 
     # Find files in folder with .flagstat extension
@@ -38,14 +39,14 @@ def parse_samtools_flagstat(data_folder, sample_clean):
         if file.endswith(".flagstat"):
             file_list.append(file)
 
-    # Cycle through files
+    # Cycle through files
     for file_name in file_list:
-        # Clean file name
+        # Clean file name
         sample_name = file_name.replace(sample_clean, "").replace(".flagstat", "")
         data[sample_name] = {}
         log.debug(f"Processing {file_name} for {sample_name}.")
 
-        # Parse data
+        # Parse data
         with open(os.path.join(data_folder, file_name), "r", encoding="UTF-8") as file:
             for line in file:
                 if "total (QC-passed reads + QC-failed reads)" in line:
@@ -67,6 +68,7 @@ def parse_samtools_flagstat(data_folder, sample_clean):
                     data[sample_name]["mapped"] = int(line.split()[0])
     return data
 
+
 def parse_samtools_idxstats(data_folder, sample_clean):
     """
     Parse samtools idxstats data.
@@ -76,7 +78,7 @@ def parse_samtools_idxstats(data_folder, sample_clean):
     aav2_1	7409	20969	0
     *	0	0	1257
     """
-    # Init
+    # Init
     data = {}
 
     # Find files in folder with .flagstat extension
@@ -85,20 +87,16 @@ def parse_samtools_idxstats(data_folder, sample_clean):
         if file.endswith(".idxstats"):
             file_list.append(file)
 
-    # Cycle through files
+    # Cycle through files
     for file_name in file_list:
-        # Clean file name
+        # Clean file name
         sample_name = file_name.replace(sample_clean, "").replace(".idxstats", "")
         data[sample_name] = {}
         log.debug(f"Processing {file_name} for {sample_name}.")
 
-        # Parse data
+        # Parse data
         with open(os.path.join(data_folder, file_name), "r", encoding="UTF-8") as file:
             for line in file:
                 line_data = line.split()
-                data[sample_name][line_data[0]] = {
-                    "length": int(line_data[1]),
-                    "reads": int(line_data[2]),
-                    "mapped": int(line_data[3])
-                }
+                data[sample_name][line_data[0]] = {"length": int(line_data[1]), "reads": int(line_data[2]), "mapped": int(line_data[3])}
     return data

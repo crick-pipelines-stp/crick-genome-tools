@@ -27,6 +27,7 @@ import time
 from datetime import datetime
 
 import pandas as pd
+
 from crick_genome_tools.reporting.tqc.common import format_duration
 
 

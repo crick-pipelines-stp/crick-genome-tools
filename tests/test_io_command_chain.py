@@ -1,125 +1,125 @@
 """
-Command chain tests
+Test cases for the CommandChain class in crick_genome_tools.io.command_chain.
 """
 
-# pylint: disable=missing-function-docstring,missing-class-docstring,invalid-name
+# pylint: disable=missing-function-docstring,missing-class-docstring
 
-import os
 import subprocess
-import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
+from assertpy import assert_that
 
 from crick_genome_tools.io.command_chain import CommandChain
-from tests.utils import with_temporary_folder
 
 
-class TestCommandChain(unittest.TestCase):
+def test_io_command_chain_run_return_stream(monkeypatch):
+    mock_log = MagicMock()
+    mock_proc = MagicMock()
+    mock_proc.stdout = MagicMock()
+    mock_proc.check_return_code = MagicMock()
 
-    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
-    def test_command_chain_run_return_stream(self, MockLogSubprocess):
-        mock_log_subprocess = MockLogSubprocess.return_value
-        commands = [["echo", "hello"], ["grep", "hello"]]
-        command_chain = CommandChain(commands, return_stream=True)
+    mock_log.p_open.side_effect = [mock_proc, mock_proc]
+    mock_log.stream_process.return_value = iter(["hello\n"])
+    monkeypatch.setattr("crick_genome_tools.io.command_chain.LogSubprocess", lambda *_: mock_log)
 
-        mock_proc = MagicMock()
-        mock_proc.stdout = MagicMock()
-        mock_proc.check_return_code = MagicMock()
-        mock_log_subprocess.p_open.side_effect = [mock_proc, mock_proc]
-        mock_log_subprocess.stream_process.return_value = iter(["hello\n"])
+    commands = [["echo", "hello"], ["grep", "hello"]]
+    chain = CommandChain(commands, return_stream=True)
+    result = list(chain.run())
 
-        result = command_chain.run()
+    assert_that(result).is_equal_to(["hello\n"])
+    assert_that(mock_log.p_open.call_count).is_equal_to(2)
+    mock_proc.check_return_code.assert_called()
 
-        self.assertEqual(list(result), ["hello\n"])
-        self.assertEqual(mock_log_subprocess.p_open.call_count, 2)
-        mock_proc.check_return_code.assert_called()
 
-    @with_temporary_folder
-    def test_command_chain_run_output_file(self, tmpdir):
-        commands = [["echo", "hello"], ["grep", "hello"]]
-        output_file = os.path.join(tmpdir, "output.txt")
-        command_chain = CommandChain(commands, output_file=output_file)
+def test_io_command_chain_run_output_file(tmp_path):
+    output_file = tmp_path / "output.txt"
+    commands = [["echo", "hello"], ["grep", "hello"]]
+    chain = CommandChain(commands, output_file=str(output_file))
 
-        command_chain.run()
+    chain.run()
 
-        with open(output_file, "r", encoding="UTF-8") as f:
-            output = f.read()
+    assert_that(output_file.exists()).is_true()
+    assert_that(output_file.read_text(encoding="utf-8")).is_equal_to("hello\n")
 
-        self.assertEqual(output, "hello\n")
 
-    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
-    def test_command_chain_run_no_output(self, MockLogSubprocess):
-        mock_log_subprocess = MockLogSubprocess.return_value
-        commands = [["echo", "hello"], ["grep", "hello"]]
-        command_chain = CommandChain(commands)
+def test_io_command_chain_run_no_output(monkeypatch):
+    mock_log = MagicMock()
+    mock_proc = MagicMock()
+    mock_proc.stdout = MagicMock()
+    mock_proc.check_return_code = MagicMock()
 
-        mock_proc = MagicMock()
-        mock_proc.stdout = MagicMock()
-        mock_proc.check_return_code = MagicMock()
-        mock_log_subprocess.p_open.side_effect = [mock_proc, mock_proc]
+    mock_log.p_open.side_effect = [mock_proc, mock_proc]
+    monkeypatch.setattr("crick_genome_tools.io.command_chain.LogSubprocess", lambda *_: mock_log)
 
-        result = command_chain.run()
+    commands = [["echo", "hello"], ["grep", "hello"]]
+    chain = CommandChain(commands)
 
-        self.assertIsNone(result)
-        self.assertEqual(mock_log_subprocess.p_open.call_count, 2)
-        mock_proc.check_return_code.assert_called()
+    result = chain.run()
 
-    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
-    def test_command_chain_run_single_command(self, MockLogSubprocess):
-        mock_log_subprocess = MockLogSubprocess.return_value
-        commands = [["echo", "hello"]]
-        command_chain = CommandChain(commands, return_stream=True)
+    assert_that(result).is_none()
+    assert_that(mock_log.p_open.call_count).is_equal_to(2)
+    mock_proc.check_return_code.assert_called()
 
-        mock_proc = MagicMock()
-        mock_proc.stdout = MagicMock()
-        mock_proc.check_return_code = MagicMock()
-        mock_log_subprocess.p_open.side_effect = [mock_proc]
-        mock_log_subprocess.stream_process.return_value = iter(["hello\n"])
 
-        result = command_chain.run()
+def test_io_command_chain_run_single_command(monkeypatch):
+    mock_log = MagicMock()
+    mock_proc = MagicMock()
+    mock_proc.stdout = MagicMock()
+    mock_proc.check_return_code = MagicMock()
 
-        self.assertEqual(list(result), ["hello\n"])
-        self.assertEqual(mock_log_subprocess.p_open.call_count, 1)
-        mock_proc.check_return_code.assert_called()
+    mock_log.p_open.side_effect = [mock_proc]
+    mock_log.stream_process.return_value = iter(["hello\n"])
+    monkeypatch.setattr("crick_genome_tools.io.command_chain.LogSubprocess", lambda *_: mock_log)
 
-    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
-    def test_command_chain_run_with_error(self, MockLogSubprocess):
-        mock_log_subprocess = MockLogSubprocess.return_value
-        commands = [["false"]]
-        command_chain = CommandChain(commands)
+    commands = [["echo", "hello"]]
+    chain = CommandChain(commands, return_stream=True)
 
-        mock_proc = MagicMock()
-        mock_proc.stdout = MagicMock()
-        mock_proc.check_return_code = MagicMock(side_effect=subprocess.CalledProcessError(1, "false"))
-        mock_log_subprocess.p_open.side_effect = [mock_proc]
+    result = list(chain.run())
 
-        with self.assertRaises(subprocess.CalledProcessError):
-            command_chain.run()
+    assert_that(result).is_equal_to(["hello\n"])
+    assert_that(mock_log.p_open.call_count).is_equal_to(1)
+    mock_proc.check_return_code.assert_called()
 
-        self.assertEqual(mock_log_subprocess.p_open.call_count, 1)
-        mock_proc.check_return_code.assert_called()
 
-    @with_temporary_folder
-    def test_command_chain_command_to_file_creates_output_file(self, tmp_path):
-        command = ["echo", "hello"]
-        output_file = os.path.join(tmp_path, "output.txt")
+def test_io_command_chain_run_with_error(monkeypatch):
+    mock_log = MagicMock()
+    mock_proc = MagicMock()
+    mock_proc.stdout = MagicMock()
+    mock_proc.check_return_code.side_effect = subprocess.CalledProcessError(1, "false")
 
+    mock_log.p_open.side_effect = [mock_proc]
+    monkeypatch.setattr("crick_genome_tools.io.command_chain.LogSubprocess", lambda *_: mock_log)
+
+    commands = [["false"]]
+    chain = CommandChain(commands)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        chain.run()
+
+    assert_that(mock_log.p_open.call_count).is_equal_to(1)
+    mock_proc.check_return_code.assert_called()
+
+
+def test_io_command_to_file_creates_output_file(tmp_path):
+    output_file = tmp_path / "output.txt"
+    command = ["echo", "hello"]
+
+    CommandChain.command_to_file(command, str(output_file))
+
+    assert_that(output_file.exists()).is_true()
+    assert_that(output_file.read_text("utf-8").strip()).is_equal_to("hello")
+
+
+def test_io_command_to_file_handles_subprocess_error(monkeypatch, tmp_path):
+    command = ["false"]
+    output_file = tmp_path / "output.txt"
+
+    mock_log = MagicMock()
+    mock_proc = MagicMock()
+    mock_proc.check_return_code.side_effect = subprocess.CalledProcessError(1, command)
+    mock_log.p_open.return_value = mock_proc
+    monkeypatch.setattr("crick_genome_tools.io.command_chain.LogSubprocess", lambda *_: mock_log)
+
+    with pytest.raises(subprocess.CalledProcessError):
         CommandChain.command_to_file(command, str(output_file))
-
-        assert os.path.exists(output_file)
-        with open(output_file, "r", encoding="UTF-8") as f:
-            assert f.read().strip() == "hello"
-
-    @patch("crick_genome_tools.io.command_chain.LogSubprocess")
-    @with_temporary_folder
-    def test_command_chain_command_to_file_handles_subprocess_error(self, MockLogSubprocess, tmp_path):
-        command = ["false"]  # This command will fail
-        output_file = os.path.join(tmp_path, "output.txt")
-
-        mock_proc = MockLogSubprocess.Mock()
-        MockLogSubprocess.return_value.p_open.return_value = mock_proc
-        mock_proc.check_return_code.side_effect = subprocess.CalledProcessError(1, command)
-
-        with pytest.raises(subprocess.CalledProcessError):
-            CommandChain.command_to_file(command, str(output_file))

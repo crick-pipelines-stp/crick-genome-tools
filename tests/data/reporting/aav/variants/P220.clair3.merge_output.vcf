@@ -1,0 +1,21 @@
+##fileformat=VCFv4.2
+##source=Clair3
+##clair3_version=1.0.10
+##cmdline=/opt/bin/run_clair3.sh --bam_fn=P220.viral.sorted.bam --ref_fn=P220.upper.fasta --threads=10 --model_path=/opt/models/r941_prom_sup_g5014 --platform=ont --sample_name=P220 --var_pct_full=1.0 --ref_pct_full=1.0 --no_phasing_for_fa --include_all_ctgs --haploid_precise --chunk_size=800 --disable_c_impl --output=.
+##reference=/Users/cheshic/dev/repos/pipelines-tech/crick-viral-genomics/work/fc/2018a1f1fbc39acdcc25e03717fe60/P220.upper.fasta
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=LowQual,Description="Low quality variant">
+##FILTER=<ID=RefCall,Description="Reference call">
+##INFO=<ID=P,Number=0,Type=Flag,Description="Result from pileup calling">
+##INFO=<ID=F,Number=0,Type=Flag,Description="Result from full-alignment calling">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads 1. with MQ below 5 or an user-specified threshold, or 2. selected by 'samtools view -F 2316', are filtered)">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Observed allele frequency in reads, for each ALT allele, in the same order as listed, or the REF allele for a RefCall">
+##contig=<ID=P220_AAV_2100bp,length=2100>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	P220
+P220_AAV_2100bp	54	.	C	CCGACGCCCGGGCTTTGCCCGGG	7.80	PASS	F	GT:GQ:DP:AD:AF	1:7:8051:3935,3471:0.4311
+P220_AAV_2100bp	216	.	C	G	18.42	PASS	F	GT:GQ:DP:AD:AF	1:18:7356:56,6976:0.9483
+P220_AAV_2100bp	681	.	GA	G	21.06	PASS	P	GT:GQ:DP:AD:AF	1:21:7054:53,6846:0.9705

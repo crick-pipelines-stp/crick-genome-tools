@@ -23,8 +23,10 @@ indent_style = unset
 
 [*.{xml,txt}]
 indent_style = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
 
-[*.{xml,pkl,fasta,fastq,fa,bed,vcf,tsv,csv}]å
+[*.{xml,pkl,fasta,fastq,fa,bed,vcf,tsv,csv,gff}]
 charset = unset
 end_of_line = unset
 insert_final_newline = unset

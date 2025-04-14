@@ -5,16 +5,16 @@ Tests for toulligqc.
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-import unittest
+from assertpy import assert_that
 
 from crick_genome_tools.reporting.tqc.configuration import ToulligqcConf
 from crick_genome_tools.reporting.tqc.fastq_extractor import FastqExtractor
 
 
-class TestToilligqc(unittest.TestCase):
+class TestToilligqc:
 
     def test_toulligqc_extract_fastq_results_dict(self):
-        # Setup
+        # Setup
         config = ToulligqcConf()
         config["fastq"] = "tests/data/reporting/aav/toulligqc/P220.sub.1000.fastq.gz"
         config["images_directory"] = "data/reporting/aav/images"
@@ -25,12 +25,13 @@ class TestToilligqc(unittest.TestCase):
         config["quiet"] = "False"
         config["barcode_selection"] = []
 
-        # Test
+        # Test
         extractor = FastqExtractor(config)
         extractor.init()
         result_dict = {}
         extractor.extract(result_dict)
 
         # Assert
-        self.assertIsInstance(result_dict, dict)
-        self.assertGreater(len(result_dict), 0)
+        assert_that(result_dict).is_not_empty()
+        assert_that(result_dict).is_instance_of(dict)
+        assert_that(len(result_dict)).is_greater_than(0)

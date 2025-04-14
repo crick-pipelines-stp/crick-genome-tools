@@ -5,9 +5,9 @@ Common functions and constants for Plotly graph generation.
 #  pylint: disable=invalid-name
 
 
+import pkgutil
 from collections import defaultdict
 
-import pkgutil
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -15,49 +15,48 @@ import plotly.offline as py
 import streamlit as st
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter1d
+
+
 # from sklearn.utils import resample
 
 figure_image_width = 1000
 figure_image_height = 562
-percent_format_str = '{:.2f}%'
+percent_format_str = "{:.2f}%"
 line_width = 2
 
-crick_colors = {'all': '#fca311',  # Yellow
-                    'all_1d2': '#fca311',  # Yellow
-                    'pass': '#51a96d',  # Green
-                    'fail': '#d90429',  # Red
-                    'barcode_pass': '#79bf90',  # Green
-                    'barcode_fail': '#fb1941',  # Red
-                    'sequence_length_over_time': '#205b47',
-                    'phred_score_over_time': '#7aaceb',
-                    'speed_over_time': '#AE3F7B',
-                    'nseq_over_time': '#edb773',
-                    'pie_chart_palette': ["#f3a683", "#f7d794", "#778beb", "#e77f67", "#cf6a87", "#786fa6", "#f8a5c2",
-                                          "#63cdda", "#ea8685", "#596275"],
-                    'green_zone_color': 'rgba(0,100,0,.1)'
-                    }
+crick_colors = {
+    "all": "#fca311",  # Yellow
+    "all_1d2": "#fca311",  # Yellow
+    "pass": "#51a96d",  # Green
+    "fail": "#d90429",  # Red
+    "barcode_pass": "#79bf90",  # Green
+    "barcode_fail": "#fb1941",  # Red
+    "sequence_length_over_time": "#205b47",
+    "phred_score_over_time": "#7aaceb",
+    "speed_over_time": "#AE3F7B",
+    "nseq_over_time": "#edb773",
+    "pie_chart_palette": ["#f3a683", "#f7d794", "#778beb", "#e77f67", "#cf6a87", "#786fa6", "#f8a5c2", "#63cdda", "#ea8685", "#596275"],
+    "green_zone_color": "rgba(0,100,0,.1)",
+}
 
-plotly_background_color = '#e5ecf6'
+plotly_background_color = "#e5ecf6"
 legend_font_size = 16
 axis_title_font_size = 14
 axis_font_size = 12
 on_chart_font_size = 15
 title_size = 24
-graph_font = 'Helvetica, Arial, sans-serif'
+graph_font = "Helvetica, Arial, sans-serif"
 image_dpi = 100
-default_graph_layout = dict(
-    font=dict(family=graph_font),
-    height=figure_image_height,
-    width=figure_image_width
-)
+default_graph_layout = dict(font=dict(family=graph_font), height=figure_image_height, width=figure_image_width)
 interpolation_point_count_dict = {
-    'tqc_read_length_distribution': (None, 10000, 3),
-    'tqc_yield_plot': (None, 10000, 3),
-    'tqc_phred_score_density': (None, 1000, 3),
-    'tqc_over_time_graph': (None, 1000, 3),
-    'tqc_scatterplot': (10000, 4000, 3),
-    'tqc_phred_violin': (10000, 4000, 3),
+    "tqc_read_length_distribution": (None, 10000, 3),
+    "tqc_yield_plot": (None, 10000, 3),
+    "tqc_phred_score_density": (None, 1000, 3),
+    "tqc_over_time_graph": (None, 1000, 3),
+    "tqc_scatterplot": (10000, 4000, 3),
+    "tqc_phred_violin": (10000, 4000, 3),
 }
+
 
 def title(graph_title):
     """
@@ -69,13 +68,7 @@ def title(graph_title):
     Returns:
         dict: A dictionary containing the title configuration with text, position, and font settings.
     """
-    return dict(title=dict(
-        text=graph_title,
-        y=0.95,
-        x=0,
-        xanchor='left',
-        yanchor='top',
-        font=dict(size=title_size, color="black")))
+    return dict(title=dict(text=graph_title, y=0.95, x=0, xanchor="left", yanchor="top", font=dict(size=title_size, color="black")))
 
 
 def transparent_component(c, b, a):
@@ -94,7 +87,7 @@ def transparent_component(c, b, a):
     r = hex(int(v))[2:]
 
     if len(r) == 1:
-        return '0' + r
+        return "0" + r
     return r
 
 
@@ -120,10 +113,7 @@ def transparent_colors(colors, background_color, a):
         r = int(c[1:3], 16)
         g = int(c[3:5], 16)
         b = int(c[5:7], 16)
-        new_c = '#' + \
-                transparent_component(r, br, a) + \
-                transparent_component(g, bg, a) + \
-                transparent_component(b, bb, a)
+        new_c = "#" + transparent_component(r, br, a) + transparent_component(g, bg, a) + transparent_component(b, bb, a)
         result.append(new_c)
 
     return result
@@ -141,9 +131,10 @@ def xaxis(axis_title, args=None):
     dict: A dictionary containing the x-axis configuration.
     """
     axis_dict = dict(
-        title='<b>' + axis_title + '</b>',
+        title="<b>" + axis_title + "</b>",
         # titlefont_size=axis_title_font_size,
-        tickfont_size=axis_font_size)
+        tickfont_size=axis_font_size,
+    )
 
     if args is not None:
         axis_dict.update(dict(**args))
@@ -163,10 +154,11 @@ def yaxis(axis_title, args=None):
     dict: A dictionary with y-axis configuration for a Plotly graph.
     """
     axis_dict = dict(
-        title='<b>' + axis_title + '</b>',
+        title="<b>" + axis_title + "</b>",
         # titlefont_size=axis_title_font_size,
         tickfont_size=axis_font_size,
-        fixedrange=True)
+        fixedrange=True,
+    )
 
     if args is not None:
         axis_dict.update(dict(**args))
@@ -174,15 +166,16 @@ def yaxis(axis_title, args=None):
     return dict(yaxis=axis_dict)
 
 
-def legend(legend_title='Legend', args=None):
+def legend(legend_title="Legend", args=None):
     legend_dict = dict(
         x=1.02,
-        y=.95,
+        y=0.95,
         title_text="<b>" + legend_title + "</b>",
         title=dict(font=dict(size=legend_font_size)),
-        bgcolor='white',
-        bordercolor='white',
-        font=dict(size=legend_font_size))
+        bgcolor="white",
+        bordercolor="white",
+        font=dict(size=legend_font_size),
+    )
 
     if args is not None:
         legend_dict.update(dict(**args))
@@ -195,18 +188,18 @@ def dataFrame_to_html(df):
 
 
 def format_int(i):
-    return '{:,d}'.format(i)
+    return "{:,d}".format(i)
 
 
 def format_float(f):
     try:
         s = str(f)
-        i = int(s.split('.')[0])
-        f = float('0.' + s.split('.')[1])
+        i = int(s.split(".")[0])
+        f = float("0." + s.split(".")[1])
     except:
         return 0
 
-    return '{:,d}'.format(i) + '{:.2f}'.format(f)[1:]
+    return "{:,d}".format(i) + "{:.2f}".format(f)[1:]
 
 
 def format_percent(f):
@@ -220,9 +213,9 @@ def make_describe_dataframe(value):
     """
 
     desc = value.describe()
-    desc.loc['count'] = desc.loc['count'].astype(int).apply(lambda x: int(format_int(x).replace(',', '')))
-    desc.iloc[1:] = desc.iloc[1:].map(lambda x: float(format_float(x).replace(',', '')))
-    desc.rename({'50%': 'median'}, axis='index', inplace=True)
+    desc.loc["count"] = desc.loc["count"].astype(int).apply(lambda x: int(format_int(x).replace(",", "")))
+    desc.iloc[1:] = desc.iloc[1:].map(lambda x: float(format_float(x).replace(",", "")))
+    desc.rename({"50%": "median"}, axis="index", inplace=True)
 
     return desc
 
@@ -283,31 +276,24 @@ def smooth_data(npoints: int, sigma: int, data, min_arg=None, max_arg=None, weig
     return x, y, cum_y
 
 
-def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_color, pass_color, fail_color,
-                              xaxis_title):
-    npoints, sigma = interpolation_points(all_reads, 'tqc_read_length_distribution')
+def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_color, pass_color, fail_color, xaxis_title):
+    npoints, sigma = interpolation_points(all_reads, "tqc_read_length_distribution")
     min_all_reads = min(all_reads)
     max_all_reads = max(all_reads)
 
-    count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=all_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
-    count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=pass_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
-    count_x3, count_y3, cum_count_y3 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=fail_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma, data=all_reads, min_arg=min_all_reads, max_arg=max_all_reads)
+    count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma, data=pass_reads, min_arg=min_all_reads, max_arg=max_all_reads)
+    count_x3, count_y3, cum_count_y3 = smooth_data(npoints=npoints, sigma=sigma, data=fail_reads, min_arg=min_all_reads, max_arg=max_all_reads)
 
-    sum_x1, sum_y1, cum_sum_y1 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=all_reads, weights=all_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
-    sum_x2, sum_y2, cum_sum_y2 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=pass_reads,weights=pass_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
-    sum_x3, sum_y3, cum_sum_y3 = smooth_data(npoints=npoints, sigma=sigma,
-                                                    data=fail_reads, weights=fail_reads,
-                                                    min_arg=min_all_reads, max_arg=max_all_reads)
+    sum_x1, sum_y1, cum_sum_y1 = smooth_data(
+        npoints=npoints, sigma=sigma, data=all_reads, weights=all_reads, min_arg=min_all_reads, max_arg=max_all_reads
+    )
+    sum_x2, sum_y2, cum_sum_y2 = smooth_data(
+        npoints=npoints, sigma=sigma, data=pass_reads, weights=pass_reads, min_arg=min_all_reads, max_arg=max_all_reads
+    )
+    sum_x3, sum_y3, cum_sum_y3 = smooth_data(
+        npoints=npoints, sigma=sigma, data=fail_reads, weights=fail_reads, min_arg=min_all_reads, max_arg=max_all_reads
+    )
 
     # Find 50 percentile for zoomed range on x axis
     max_x_range = np.percentile(all_reads, 99)
@@ -320,99 +306,67 @@ def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_
     fig = go.Figure()
 
     # Read graphs
-    fig.add_trace(go.Scatter(x=count_x1,
-                             y=count_y1 / coef,
-                             name='All reads',
-                             fill='tozeroy',
-                             marker_color=all_color,
-                             visible=True
-                             ))
-    fig.add_trace(go.Scatter(x=count_x2,
-                             y=count_y2 / coef,
-                             name='Pass reads',
-                             fill='tozeroy',
-                             marker_color=pass_color,
-                             visible=True
-                             ))
-    fig.add_trace(go.Scatter(x=count_x3,
-                             y=count_y3 / coef,
-                             name='Fail reads',
-                             fill='tozeroy',
-                             marker_color=fail_color,
-                             visible=True
-                             ))
+    fig.add_trace(go.Scatter(x=count_x1, y=count_y1 / coef, name="All reads", fill="tozeroy", marker_color=all_color, visible=True))
+    fig.add_trace(go.Scatter(x=count_x2, y=count_y2 / coef, name="Pass reads", fill="tozeroy", marker_color=pass_color, visible=True))
+    fig.add_trace(go.Scatter(x=count_x3, y=count_y3 / coef, name="Fail reads", fill="tozeroy", marker_color=fail_color, visible=True))
 
     # Threshold
     for p in [25, 50, 75]:
         x0 = np.percentile(all_reads, p)
         if p == 50:
-            t = 'median<br>all reads'
+            t = "median<br>all reads"
         else:
             t = str(p) + "%<br>all reads"
-        fig.add_trace(go.Scatter(
-            mode="lines+text",
-            name='All reads',
-            x=[x0, x0],
-            y=[0, max_y],
-            line=dict(color="gray", width=1, dash="dot"),
-            text=["", t],
-            textposition="top center",
-            hoverinfo="skip",
-            showlegend=False,
-            visible=True
-        ))
+        fig.add_trace(
+            go.Scatter(
+                mode="lines+text",
+                name="All reads",
+                x=[x0, x0],
+                y=[0, max_y],
+                line=dict(color="gray", width=1, dash="dot"),
+                text=["", t],
+                textposition="top center",
+                hoverinfo="skip",
+                showlegend=False,
+                visible=True,
+            )
+        )
 
     # Base plots
     # Read graphs
-    fig.add_trace(go.Scatter(x=sum_x1,
-                             y=sum_y1 / coef,
-                             name='All reads',
-                             fill='tozeroy',
-                             marker_color=all_color,
-                             visible=False
-                             ))
-    fig.add_trace(go.Scatter(x=sum_x2,
-                             y=sum_y2 / coef,
-                             name='Pass reads',
-                             fill='tozeroy',
-                             marker_color=pass_color,
-                             visible=False
-                             ))
-    fig.add_trace(go.Scatter(x=sum_x3,
-                             y=sum_y3 / coef,
-                             name='Fail reads',
-                             fill='tozeroy',
-                             marker_color=fail_color,
-                             visible=False
-                             ))
+    fig.add_trace(go.Scatter(x=sum_x1, y=sum_y1 / coef, name="All reads", fill="tozeroy", marker_color=all_color, visible=False))
+    fig.add_trace(go.Scatter(x=sum_x2, y=sum_y2 / coef, name="Pass reads", fill="tozeroy", marker_color=pass_color, visible=False))
+    fig.add_trace(go.Scatter(x=sum_x3, y=sum_y3 / coef, name="Fail reads", fill="tozeroy", marker_color=fail_color, visible=False))
 
     # Threshold
     for p in [25, 50, 75]:
         x0 = np.percentile(all_reads, p)
         if p == 50:
-            t = 'median<br>all reads'
+            t = "median<br>all reads"
         else:
             t = str(p) + "%<br>all reads"
-        fig.add_trace(go.Scatter(
-            mode="lines+text",
-            name='All reads',
-            x=[x0, x0],
-            y=[0, max_y],
-            line=dict(color="gray", width=1, dash="dot"),
-            text=["", t],
-            textposition="top center",
-            hoverinfo="skip",
-            showlegend=False,
-            visible=False
-        ))
+        fig.add_trace(
+            go.Scatter(
+                mode="lines+text",
+                name="All reads",
+                x=[x0, x0],
+                y=[0, max_y],
+                line=dict(color="gray", width=1, dash="dot"),
+                text=["", t],
+                textposition="top center",
+                hoverinfo="skip",
+                showlegend=False,
+                visible=False,
+            )
+        )
 
     fig.update_layout(
         **title(graph_name),
         **default_graph_layout,
         **legend(args=dict(y=0.75)),
-        hovermode='x',
+        hovermode="x",
         **xaxis(xaxis_title, dict(range=[min_all_reads, max_x_range], type="linear")),
-        **yaxis('Read count', dict(range=[0, max_y * 1.10])),
+        **yaxis("Read count", dict(range=[0, max_y * 1.10])),
     )
 
     # Add buttons
@@ -421,48 +375,59 @@ def read_length_distribution(graph_name, all_reads, pass_reads, fail_reads, all_
             dict(
                 type="buttons",
                 direction="down",
-                buttons=list([
-                    dict(
-                        args=[{'visible': [True, True, True, True, True, True, False, False, False]},
-                              {"xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
-                               "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]}}],
-                        label="Reads linear",
-                        method="update"
-                    ),
-                    dict(
-                        args=[{'visible': [True, True, True, True, True, True, False, False, False]},
-                              {"xaxis": {"type": "log"},
-                               "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]}}],
-                        label="Reads log",
-                        method="update"
-                    ),
-                    dict(
-                        args=[{'visible': [False, False, False, False, False, False, True, True, True]},
-                              {"xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
-                               "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]}}],
-                        label="Bases linear",
-                        method="update"
-                    ),
-                    dict(
-                        args=[{'visible': [False, False, False, False, False, False, True, True, True]},
-                              {"xaxis": {"type": "log"},
-                               "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]}}],
-                        label="Bases log",
-                        method="update"
-                    ),
-                ]),
+                buttons=list(
+                    [
+                        dict(
+                            args=[
+                                {"visible": [True, True, True, True, True, True, False, False, False]},
+                                {
+                                    "xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
+                                    "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]},
+                                },
+                            ],
+                            label="Reads linear",
+                            method="update",
+                        ),
+                        dict(
+                            args=[
+                                {"visible": [True, True, True, True, True, True, False, False, False]},
+                                {"xaxis": {"type": "log"}, "yaxis": {"title": "<b>Read count</b>", "range": [0, max_y * 1.10]}},
+                            ],
+                            label="Reads log",
+                            method="update",
+                        ),
+                        dict(
+                            args=[
+                                {"visible": [False, False, False, False, False, False, True, True, True]},
+                                {
+                                    "xaxis": {"type": "linear", "range": [min_all_reads, max_x_range]},
+                                    "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]},
+                                },
+                            ],
+                            label="Bases linear",
+                            method="update",
+                        ),
+                        dict(
+                            args=[
+                                {"visible": [False, False, False, False, False, False, True, True, True]},
+                                {"xaxis": {"type": "log"}, "yaxis": {"title": "<b>Base count</b>", "range": [0, max_sum_y * 1.10]}},
+                            ],
+                            label="Bases log",
+                            method="update",
+                        ),
+                    ]
+                ),
                 pad={"r": 20, "t": 20, "l": 20, "b": 20},
                 showactive=True,
                 x=1.0,
                 xanchor="left",
                 y=1.25,
-                yanchor="top"
+                yanchor="top",
             ),
         ]
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    table_df = pd.concat([pd.Series(all_reads), pass_reads, fail_reads], axis=1,
-                         keys=['All reads', 'Pass reads', 'Fail reads'])
+    table_df = pd.concat([pd.Series(all_reads), pass_reads, fail_reads], axis=1, keys=["All reads", "Pass reads", "Fail reads"])
     table_df = make_describe_dataframe(table_df)
     st.dataframe(table_df, use_container_width=True)
