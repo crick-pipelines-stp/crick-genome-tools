@@ -63,19 +63,7 @@ class ViralGenomicsReport(CrickReport):
             headers.append("Variant Viewer")
         return headers
 
-
     def generate_report(self, section_headers=[]):
-        # section_headers = [
-        #     "Pipeline Summary",
-        #     "Samplesheet",
-        #     "Read QC",
-        #     "Contaminant Removal",
-        #     "Alignment",
-        #     "Coverage",
-        #     "Consensus",
-        #     "Genome Viewer",
-        #     "Variant Viewer",
-        # ]
         section_headers = self._scan_sections()
         super().generate_report(section_headers)
         # st.subheader(self.run_id)
