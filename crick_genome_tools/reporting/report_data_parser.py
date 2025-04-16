@@ -7,6 +7,7 @@ import logging
 import os
 import pickle
 
+import numpy as np
 import pandas as pd
 
 from crick_genome_tools.io.vcf import generate_merged_vcf_report
@@ -83,6 +84,9 @@ class ReportDataParser:
             elif folder_name == "count_table":
                 log.info("Processing count table data")
                 self.get_count_table_data(folder_path)
+            elif folder_name == "truncation":
+                log.info("Processing truncation data")
+                self.get_truncation_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -326,3 +330,22 @@ class ReportDataParser:
             with open(os.path.join(folder_path, cons_file), "r", encoding="UTF-8") as f:
                 self.result_dict[sample_id]["consensus"] = f.readlines()
             log.info(f"Processed consensus file: {sample_id} - {cons_file}")
+
+    def get_truncation_data(self, folder_path):
+        bam_info_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".tsv")]
+        for bam_info_file in bam_info_files:
+            sample_id = bam_info_file.split(".")[0]
+            if sample_id not in self.result_dict:
+                self.result_dict[sample_id] = {}
+            # Read the bam info and save the start/end positions
+            bam_info_df = pd.read_csv(
+                os.path.join(folder_path, bam_info_file),
+                sep='\t',
+                usecols=['Pos', 'EndPos'],
+                dtype={
+                    'Pos': np.uint32,
+                    'EndPos': np.uint32
+                })
+            bam_info_df = bam_info_df.rename(columns={'Pos': 'Read Start', 'EndPos': 'Read End'})
+            self.result_dict[sample_id]["truncation"] = bam_info_df
+            log.info(f"Processed truncation file: {sample_id} - {bam_info_file}")

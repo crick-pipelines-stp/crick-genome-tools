@@ -19,6 +19,8 @@ from crick_genome_tools.reporting.plotly_graph_common import (
     transparent_colors,
     xaxis,
     yaxis,
+    smooth_data,
+    legend
 )
 
 
@@ -266,4 +268,36 @@ def coverage_plot(data_frame, graph_name):
     layout = go.Layout(**title(graph_name), **default_graph_layout, hovermode="x", **xaxis("Position", dict(fixedrange=True)), **yaxis("Depth"))
 
     fig = go.Figure(data=trace, layout=layout)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def truncation_scatterplot(data_frame):
+    # Init
+    graph_name = "Truncation histogram"
+    npoints = 10000
+    sigma = 3
+    start_pos = data_frame["Read Start"]
+    end_pos = data_frame["Read End"]
+    min_all_pos = 0
+    max_all_pos = max(start_pos.max(), end_pos.max())
+
+    count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma, data=start_pos, min_arg=min_all_pos, max_arg=max_all_pos)
+    count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma, data=end_pos, min_arg=min_all_pos, max_arg=max_all_pos)
+    max_y = max(max(count_y1), max(count_y2))
+
+    fig = go.Figure()
+
+    # Read graphs
+    fig.add_trace(go.Scatter(x=count_x1, y=count_y1, name="Read Start", fill="tozeroy", marker_color=crick_colors["pass"], visible=True))
+    fig.add_trace(go.Scatter(x=count_x2, y=count_y2, name="Read End", fill="tozeroy", marker_color=crick_colors["fail"], visible=True))
+
+    fig.update_layout(
+        **title(graph_name),
+        **default_graph_layout,
+        **legend(args=dict(y=0.75)),
+        hovermode="x",
+        **xaxis("Reference Position", dict(range=[min_all_pos, max_all_pos], type="linear")),
+        **yaxis("Read count", dict(range=[0, max_y * 1.10])),
+    )
+
     st.plotly_chart(fig, use_container_width=True)

@@ -19,6 +19,7 @@ from crick_genome_tools.reporting.tqc.plotly_charts import (
     mqc_samtools_contig_bar_plot,
     read_count_histogram,
     read_length_scatterplot,
+    truncation_scatterplot,
 )
 
 
@@ -44,6 +45,7 @@ class VectorCoreAavReport(CrickReport):
             "Contaminant Removal",
             "Alignment",
             "Coverage",
+            "Truncation",
             "Consensus",
             "Genome Viewer",
             "Variant Viewer",
@@ -71,6 +73,8 @@ class VectorCoreAavReport(CrickReport):
             self.alignment_section(dp)
         elif st.session_state.selected_section == "Coverage":
             self.coverage_section(dp)
+        elif st.session_state.selected_section == "Truncation":
+            self.truncation_section(dp)
         elif st.session_state.selected_section == "Consensus":
             self.consensus_section(dp)
         elif st.session_state.selected_section == "Genome Viewer":
@@ -140,6 +144,12 @@ class VectorCoreAavReport(CrickReport):
         # Place chart for each contig
         for contig, df in coverage_data[selected_dataset].items():
             coverage_plot(df, contig)
+
+    def truncation_section(self, dp):
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+
+        truncation_scatterplot(dp.result_dict[selected_dataset]["truncation"])
 
     def consensus_section(self, dp):
         # Create dropdown for selecting dataset
