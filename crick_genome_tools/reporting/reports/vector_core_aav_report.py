@@ -20,6 +20,7 @@ from crick_genome_tools.reporting.tqc.plotly_charts import (
     read_count_histogram,
     read_length_scatterplot,
     truncation_scatterplot,
+    truncation_barplot
 )
 
 
@@ -150,6 +151,7 @@ class VectorCoreAavReport(CrickReport):
         selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
 
         truncation_scatterplot(dp.result_dict[selected_dataset]["truncation"])
+        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type"])
 
     def consensus_section(self, dp):
         # Create dropdown for selecting dataset
