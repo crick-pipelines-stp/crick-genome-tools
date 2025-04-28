@@ -186,3 +186,26 @@ class TestBarcodeDemux:
         }
 
         assert_that(generate_nearby_barcodes_by_length(grouped_barcode_dict, distance)).is_equal_to(expected_result)
+
+    def test_find_sample_for_read_index_none(self):
+        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with(None, {"dict": "test"})
+
+        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with("str_input", None)
+
+    def test_find_sample_for_read_index_invalid(self):
+        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with(["not_a_string_input"], {"dict": "test"})
+
+        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with("str_input", ["not_a_dict"])
+
+    def test_find_sample_for_read_index_valid(self):
+        # Setup
+        read_index = "ACGT"
+        barcode_dict = {
+            4: {
+                "sample_1": {"ACGT", "AGGT"},
+                "sample_2": {"CGTA", "TGCA"},
+            }
+        }
+
+        # Test and assert
+        assert_that(find_sample_for_read_index(read_index, barcode_dict)).is_equal_to("sample_1")
