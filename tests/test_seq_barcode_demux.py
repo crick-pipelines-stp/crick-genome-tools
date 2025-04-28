@@ -209,3 +209,45 @@ class TestBarcodeDemux:
 
         # Test and assert
         assert_that(find_sample_for_read_index(read_index, barcode_dict)).is_equal_to("sample_1")
+
+    @pytest.mark.parametrize(
+        "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
+        [
+            (
+                "tests/data/seq/L002_R1.fastq",
+                {
+                    "sample_1": "ACTT,NTAT",
+                    "sample_2": "ACGT,AGGT",
+                },
+                1,
+                ["sample_1", "sample_2", "undetermined"],
+                {
+                    "sample_1": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
+                    "sample_2": "",
+                    "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA",
+                },
+            ),
+        ],
+    )
+    def test_demultiplex_fastq_by_barcode_valid(
+        self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content
+    ):
+        # Setup
+        output_dir = tmp_path
+
+        # Test
+        demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+
+        # Assert
+
+        for sample in expected_samples:
+            sample_file_path = os.path.join(output_dir, f"{sample}.txt")
+
+            # Check that the expected files were created
+            assert_that(sample_file_path).exists()
+
+            # Check that the content of each file is as expected
+            with open(sample_file_path, "r", encoding="utf-8") as f:
+                file_content = f.read().strip()
+
+            assert_that(file_content).is_equal_to(expected_file_content[sample])
