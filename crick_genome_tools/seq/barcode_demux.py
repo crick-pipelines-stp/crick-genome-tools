@@ -6,7 +6,7 @@ import numpy as np
 from crick_genome_tools.io.fastq_file import FastqFile
 
 
-DNA_ALPHABET = "AGCT"
+DNA_ALPHABET = "AGCTN"
 ALPHABET_MINUS = {char: {c for c in DNA_ALPHABET if c != char} for char in DNA_ALPHABET}  # This is a set of alternative bases given a base
 ALPHABET_MINUS["N"] = set(DNA_ALPHABET)
 
@@ -106,14 +106,18 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
     quality values of the bases at the changed positions. Automatically will target N's in a sequence as letters
     which must be changed. If there are more N's than allowed changes - we return nothing
     """
+    # Process and generate new sequences only in upper capital letters, but return them in the original case
+    seq_upper = seq.upper()
+
     new_seq = set()
 
     # Find all index positions which are not N in seq as a list
-    non_n_indices = [i for i in range(len(seq)) if seq[i] != "N"]
+    non_n_indices = [i for i in range(len(seq_upper)) if seq_upper[i] != "N"]
+    print(non_n_indices)
 
     # Find all positions which are N in seq as a tuple
-    n_indices = tuple([i for i in range(len(seq)) if seq[i] == "N"])
-
+    n_indices = tuple([i for i in range(len(seq_upper)) if seq_upper[i] == "N"])
+    print(f'n_indices {n_indices}')
     # The number of unknown N's dicates the minmimum hamming distance that combinations must be from the original sequence
     mindist = len(n_indices)
 
@@ -267,11 +271,10 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
     # Read the FASTQ file and extract indexes, save all indexes in a list
     fastq = FastqFile(fastq_file)
-    for name, seq, qual in fastq.open_read_iterator(as_string=True):
+    for name, seq, _ in fastq.open_read_iterator(as_string=True):
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", "", index)
-        print(f"Index: {index}, Sequence: {seq}, Quality: {qual}")
 
         # Check if the index is in the matches to any of the samples
         match_sample = find_sample_for_read_index(index, all_barcodes_including_hamming_distance)
