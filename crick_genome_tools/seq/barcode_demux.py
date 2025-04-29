@@ -102,9 +102,26 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
 
 
 def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
-    """Generate all sequences with at most maxdist changes from seq that are in a provided seq, along with the
-    quality values of the bases at the changed positions. Automatically will target N's in a sequence as letters
-    which must be changed. If there are more N's than allowed changes - we return nothing
+    """
+    Generate all sequences with at most a specified number of substitutions that exist in a barcode set.
+
+    This function generates DNA sequence variants from the input sequence `seq` that are within
+    a specified Hamming distance (`maxdist`) by substituting characters at different positions.
+    If the original sequence contains 'N' characters, those positions are prioritized for mutation
+    and must be changed. If the number of 'N's exceeds `maxdist`, no sequences are returned.
+    Only variants that are present in the provided `barcode_set` are yielded.
+
+    Args:
+        seq (str): The input DNA sequence.
+        barcode_set (set): A set of valid barcode sequences to filter generated variants.
+        maxdist (int): Maximum number of allowed substitutions (Hamming distance). Defaults to 0.
+
+    Yields:
+        str: A sequence variant within `maxdist` changes that exists in `barcode_set`,
+            preserving the case of the input sequence.
+
+    Raises:
+        ValueError: If `maxdist` is negative.
     """
     is_lower = seq.islower()
     seq_upper = seq.upper()
@@ -126,8 +143,9 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
                 seq_list = list(seq_upper)
                 for idx, new_base in zip(positions_to_modify, replacements):
                     seq_list[idx] = new_base
-                new_seq = ''.join(seq_list)
+                new_seq = "".join(seq_list)
                 yield new_seq.lower() if is_lower else new_seq
+
 
 def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_distance: str) -> dict:
     """
@@ -237,7 +255,6 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     # Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
     all_barcodes_including_hamming_distance = generate_nearby_barcodes_by_length(grouped_samples_by_length, max_hamming_distance)
-    print(all_barcodes_including_hamming_distance)
 
     file_handles = defaultdict(lambda: open(os.path.join(output_dir, "undetermined.txt"), "a", encoding="utf-8"))
     for sample in samples_barcode_from_dict:
