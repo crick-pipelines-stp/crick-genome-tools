@@ -106,54 +106,27 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
     quality values of the bases at the changed positions. Automatically will target N's in a sequence as letters
     which must be changed. If there are more N's than allowed changes - we return nothing
     """
-    # Process and generate new sequences only in upper capital letters, but return them in the original case
+    is_lower = seq.islower()
     seq_upper = seq.upper()
 
-    new_seq = set()
-
-    # Find all index positions which are not N in seq as a list
-    non_n_indices = [i for i in range(len(seq_upper)) if seq_upper[i] != "N"]
-    print(non_n_indices)
-
-    # Find all positions which are N in seq as a tuple
-    n_indices = tuple([i for i in range(len(seq_upper)) if seq_upper[i] == "N"])
-    print(f'n_indices {n_indices}')
-    # The number of unknown N's dicates the minmimum hamming distance that combinations must be from the original sequence
-    mindist = len(n_indices)
-
-    # If this is too far away then we just return nothing
-    if mindist > maxdist:
-        return []
-
-    # If the input sequence is in the barcode set, include the seq and qs in the output
     if seq in barcode_set:
         yield seq
+    elif maxdist == 0:
+        yield seq
+        return
+    else:
+        pass
 
-    # Combinations are generated in batches by changing n number of indices in the sequence, then n+1 and so on
-    # The min number of positions to change is dictated by the number of N's in the sequence
-    # The max number of positions to change is dictated by the max hamming distance
-    for dist in range(mindist, maxdist + 1):
+    indices = range(len(seq))
 
-        # Generate possible combinations of non-required indices to change for this hamming distance level
-        # This list will be empty if the number of N's is equal to the hamming distance
-        for modified_indices in itertools.combinations(non_n_indices, dist - mindist):
-
-            # Combine the indices we have to change because of N's and the other potential cominations into a final
-            # List of indices to change
-            indices = set(modified_indices + n_indices)
-
-            # Convert the set to a list of indices for subsetting the qs scores (ignore the empty list at the beggining)
-            indices_list = np.array(list(indices))
-            if len(indices_list) == 0:
-                continue
-
-            # Generate possible base substitutions from the indice positions using the minus alphabet
-            for substitutions in itertools.product(*[ALPHABET_MINUS[base.upper()] if i in indices else base for i, base in enumerate(seq)]):
-                new_seq = "".join(sub.upper() if original_base.isupper() else sub.lower() for sub, original_base in zip(substitutions, seq))
-
-                # If the new sequence is in the whitelist, sum the QS scores for the changed sequences and return
-                yield new_seq
-
+    for positions_to_modify in itertools.combinations(indices, maxdist):
+        substitution_choices = [ALPHABET_MINUS[seq_upper[i]] for i in positions_to_modify]
+        for replacements in itertools.product(*substitution_choices):
+            seq_list = list(seq_upper)
+            for idx, new_base in zip(positions_to_modify, replacements):
+                seq_list[idx] = new_base
+            new_seq = "".join(seq_list)
+            yield new_seq.lower() if is_lower else new_seq
 
 def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_distance: str) -> dict:
     """
