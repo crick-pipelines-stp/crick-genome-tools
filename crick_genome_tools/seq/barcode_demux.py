@@ -119,14 +119,15 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
 
     indices = range(len(seq))
 
-    for positions_to_modify in itertools.combinations(indices, maxdist):
-        substitution_choices = [ALPHABET_MINUS[seq_upper[i]] for i in positions_to_modify]
-        for replacements in itertools.product(*substitution_choices):
-            seq_list = list(seq_upper)
-            for idx, new_base in zip(positions_to_modify, replacements):
-                seq_list[idx] = new_base
-            new_seq = "".join(seq_list)
-            yield new_seq.lower() if is_lower else new_seq
+    for dist in range(1, maxdist + 1):
+        for positions_to_modify in itertools.combinations(indices, dist):
+            substitution_choices = [ALPHABET_MINUS[seq_upper[i]] for i in positions_to_modify]
+            for replacements in itertools.product(*substitution_choices):
+                seq_list = list(seq_upper)
+                for idx, new_base in zip(positions_to_modify, replacements):
+                    seq_list[idx] = new_base
+                new_seq = ''.join(seq_list)
+                yield new_seq.lower() if is_lower else new_seq
 
 def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_distance: str) -> dict:
     """
