@@ -301,7 +301,8 @@ def truncation_scatterplot(data_frame):
         **legend(args=dict(y=0.75)),
         hovermode="x",
         **xaxis("Reference Position", dict(range=[min_all_pos, max_all_pos], type="linear")),
-        **yaxis("Read count", dict(range=[0, y_upper])),
+        # **yaxis("Read count", dict(range=[0, y_upper])),
+        **yaxis("Read count"),
     )
 
     st.plotly_chart(fig, use_container_width=True)
