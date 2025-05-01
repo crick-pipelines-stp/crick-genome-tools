@@ -307,9 +307,8 @@ def truncation_scatterplot(data_frame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def truncation_barplot(data_frame):
+def truncation_barplot(data_frame, graph_name):
     # Init
-    graph_name = "Truncation Type"
     counts = data_frame["aln_type"].value_counts().sort_values(ascending=False)
     data_frame = counts.reset_index()
     data_frame.columns = ["Truncation Type", "Count"]

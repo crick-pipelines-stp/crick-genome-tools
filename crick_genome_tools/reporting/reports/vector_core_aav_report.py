@@ -151,7 +151,8 @@ class VectorCoreAavReport(CrickReport):
         selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
 
         truncation_scatterplot(dp.result_dict[selected_dataset]["truncation"])
-        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type"])
+        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type_simple"], "Truncation Type Simple")
+        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type"], "Truncation Type")
 
     def consensus_section(self, dp):
         # Create dropdown for selecting dataset

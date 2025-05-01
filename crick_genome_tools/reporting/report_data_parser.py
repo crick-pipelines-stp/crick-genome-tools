@@ -369,6 +369,7 @@ class ReportDataParser:
 
             itr_length = 130
             itr_fl_threshold = 20
+            payload_threshold = 100
             itr1_starts = 0
             itr1_ends = itr_length
             itr2_ends = bam_info_df['EndPos'].max()
@@ -378,11 +379,14 @@ class ReportDataParser:
             ends = bam_info_df['EndPos']
             itr1_full = itr1_starts + itr_fl_threshold
             itr2_full = itr2_ends - itr_fl_threshold
+            payload5_full = itr1_ends + payload_threshold
+            payload3_full = itr2_starts - payload_threshold
 
             full_5prime = (starts >= itr1_starts) & (starts < itr1_full)
             full_3prime = (ends > itr2_full) & (ends <= itr2_ends)
             partial_5prime = (starts >= itr1_full) & (starts <= itr1_ends)
             partial_3prime = (ends >= itr2_starts) & (ends <= itr2_full)
+            full_payload = (starts <= payload5_full) & (ends >= payload3_full)
             starts_in_midsection = (starts > itr1_ends) & (starts <= itr2_starts)
             ends_in_midsection = (ends > itr1_ends) & (ends < itr2_starts)
 
@@ -391,7 +395,7 @@ class ReportDataParser:
                 partial_5prime & full_3prime,
                 partial_5prime & partial_3prime,
                 full_5prime & partial_3prime,
-                (starts > itr1_ends) & (ends <= itr2_starts),
+                full_payload,
                 full_5prime & ends_in_midsection,
                 starts_in_midsection & full_3prime,
                 partial_5prime & ends_in_midsection,
@@ -410,11 +414,30 @@ class ReportDataParser:
                 AlnType.par5_full3,
                 AlnType.par5_par3,
                 AlnType.full5_par3,
-                AlnType.par_no_itr,
+                AlnType.full_payload,
                 AlnType.full5_par_mid,
                 AlnType.par_mid_full3,
                 AlnType.par5_par_mid,
                 AlnType.par_mid_par3,
+                AlnType.itr5_only,
+                AlnType.itr3_only,
+                AlnType.ext_itr,
+                AlnType.vec_bb_5,
+                AlnType.vec_bb_3,
+                AlnType.bb,
+                AlnType.bb
+            ]
+
+            choices_simple = [
+                AlnType.complete,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
                 AlnType.itr5_only,
                 AlnType.itr3_only,
                 AlnType.ext_itr,
@@ -430,6 +453,14 @@ class ReportDataParser:
                 default=AlnType.unknown
             )
             self.result_dict[sample_id]["truncation_type"] = bam_info_df
+
+            bam_info_df_simple = bam_info_df.copy()
+            bam_info_df_simple["aln_type"] = np.select(
+                conditions,
+                choices_simple,
+                default=AlnType.unknown
+            )
+            self.result_dict[sample_id]["truncation_type_simple"] = bam_info_df_simple
 
 class AlnType(str, Enum):
     """Enum for Assigning categories to alignments.
@@ -447,16 +478,15 @@ class AlnType(str, Enum):
     full5_par3 = 'Full 5` ITR and partial 3` ITR'
     par5_full3 = 'Partial 5` ITR and full 3` ITR'
     par5_par3 = 'Partial 5` ITR and partial 3` ITR'
+    full_payload = 'Full payload'
 
     # These alignments are truncated at the mid-section region but contain some
     # ITR region on one of the ends
-    full5_par_mid = 'Full 5` ITR and partial payload section'
+    truncated_payload = 'Truncated payload'
+    full5_par_mid = 'Full 5` ITR and partial payload'
     par_mid_full3 = 'Partial payload section and full 3` ITR'
-    par5_par_mid = 'Partial 5` ITR and partial payload section'
-    par_mid_par3 = 'Partial payload section and partial 3` ITR'
-
-    # Only midsection
-    par_no_itr = 'Partial - no ITRs'
+    par5_par_mid = 'Partial 5` ITR and partial payload'
+    par_mid_par3 = 'Partial payload and partial 3` ITR'
 
     # Alignment starts and ends within ITR
     itr5_only = '5` ITR'
@@ -467,7 +497,7 @@ class AlnType(str, Enum):
     vec_bb_3 = 'Vector backbone - 3` ends'
     bb = 'Backbone'
 
-    ext_itr = 'Extendsed ITR-ITR region'
+    ext_itr = 'Extended ITR-ITR region'
     unknown = 'Unknown'
 
     def __str__(self):
