@@ -6,7 +6,7 @@ Class for generating vector core AAV report.
 
 import json
 import logging
-import time
+import os
 
 import pandas as pd
 import streamlit as st
@@ -181,25 +181,30 @@ class VectorCoreAavReport(CrickReport):
 
         # Write data to static folder
         ref_path = self.tmp_dir + "_" + selected_dataset + ".fasta"
-        with open(ref_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["ref"]:
-                f.write(line.encode("utf-8"))
+        if not os.path.exists(ref_path):
+            with open(ref_path, "wb") as f:
+                for line in dp.result_dict[selected_dataset]["ref"]:
+                    f.write(line.encode("utf-8"))
         index_path = self.tmp_dir + "_" + selected_dataset + ".fasta.fai"
-        with open(index_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["fai"]:
-                f.write(line.encode("utf-8"))
+        if not os.path.exists(index_path):
+            with open(index_path, "wb") as f:
+                for line in dp.result_dict[selected_dataset]["fai"]:
+                    f.write(line.encode("utf-8"))
         for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz"
-            with open(tool_path, "wb") as f:
-                f.write(dp.result_dict[selected_dataset]["variants_gz"][tool_name])
+            if not os.path.exists(tool_path):
+                with open(tool_path, "wb") as f:
+                    f.write(dp.result_dict[selected_dataset]["variants_gz"][tool_name])
         for tool_name in dp.result_dict[selected_dataset]["variants_tbi"].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz.tbi"
-            with open(tool_path, "wb") as f:
-                f.write(dp.result_dict[selected_dataset]["variants_tbi"][tool_name])
+            if not os.path.exists(tool_path):
+                with open(tool_path, "wb") as f:
+                    f.write(dp.result_dict[selected_dataset]["variants_tbi"][tool_name])
         ann_path = self.tmp_dir + "_" + selected_dataset + ".gff"
-        with open(ann_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["annotation"]:
-                f.write(line.encode("utf-8"))
+        if not os.path.exists(ann_path):
+            with open(ann_path, "wb") as f:
+                for line in dp.result_dict[selected_dataset]["annotation"]:
+                    f.write(line.encode("utf-8"))
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
@@ -277,7 +282,6 @@ class VectorCoreAavReport(CrickReport):
         print(config_str)
 
         if self.jbrowse_component is not None:
-            time.sleep(5)
             self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=1200)
 
     def variant_viewer_section(self, dp):
