@@ -52,7 +52,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
 
     # Error if files and tool len mismatch
     if len(vcf_data) != len(tool_names):
-        raise ValueError("Number of VCF files and tool names must match")
+        raise ValueError(f"Number of VCF files and tool names must match {tool_names} != {vcf_data}")
 
     # Loop vcf files and collect information
     variants = {}

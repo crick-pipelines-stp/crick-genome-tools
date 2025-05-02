@@ -12,6 +12,7 @@ import uuid
 import streamlit as st
 
 from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCoreAavReport
+#from crick_genome_tools.reporting.reports.viral_genomics_report import ViralGenomicsReport
 
 
 STATIC_TMP_DIR = "crick_genome_tools/reporting/reports/static/tmp"

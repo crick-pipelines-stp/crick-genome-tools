@@ -1,12 +1,11 @@
 """
-Class for generating vector core AAV report.
+Class for generating a generic viral genomics report.
 """
 
 # pylint disable=missing-function-docstring,missing-class-docstring
 
 import json
 import logging
-import time
 
 import pandas as pd
 import streamlit as st
@@ -20,38 +19,52 @@ from crick_genome_tools.reporting.tqc.plotly_charts import (
     mqc_samtools_contig_bar_plot,
     read_count_histogram,
     read_length_scatterplot,
-    truncation_scatterplot,
-    truncation_barplot
 )
 
 
 log = logging.getLogger(__name__)
 
 
-class VectorCoreAavReport(CrickReport):
+class ViralGenomicsReport(CrickReport):
     """
-    Class for generating vector core AAV report.
+    Class for generating a generic viral genomics report.
     """
 
     def __init__(self, run_id, data_path=None, data_obj=None, tmp_dir=None, jbrowse_component=None, app_url="localhost:8501"):
-        super().__init__("Vectorcore AAV Report", data_path, data_obj, tmp_dir)
+        super().__init__("Viral Genomics Report", data_path, data_obj, tmp_dir)
         self.run_id = run_id
         self.jbrowse_component = jbrowse_component
         self.app_url = app_url
 
+    def _scan_sections(self):
+        """
+        Scan the sections of the report and return a list of section headers.
+        """
+
+        dp = st.session_state.data_parser
+        headers = []
+        if dp.summary_data is not None:
+            headers.append("Pipeline Summary")
+        if dp.merged_dataframe_dict["samplesheet"] is not None:
+            headers.append("Samplesheet")
+        if "toulligqc" in dp.result_dict[list(dp.result_dict.keys())[0]]:
+            headers.append("Nanopore Read QC")
+        if "samtools_host" in dp.merged_dataframe_dict and "samtools_contam" in dp.merged_dataframe_dict:
+            headers.append("Contaminant Removal")
+        if "samtools_align" in dp.merged_dataframe_dict:
+            headers.append("Alignment")
+        if "coverage_per_base" in dp.dataframe_dict:
+            headers.append("Coverage")
+        if "consensus" in dp.result_dict[list(dp.result_dict.keys())[0]]:
+            headers.append("Consensus")
+        if "ref" in dp.result_dict[list(dp.result_dict.keys())[0]]:
+            headers.append("Genome Viewer")
+        if "variants" in dp.dataframe_dict[list(dp.dataframe_dict.keys())[0]]:
+            headers.append("Variant Viewer")
+        return headers
+
     def generate_report(self, section_headers=[]):
-        section_headers = [
-            "Pipeline Summary",
-            "Samplesheet",
-            "Read QC",
-            "Contaminant Removal",
-            "Alignment",
-            "Coverage",
-            "Truncation",
-            "Consensus",
-            "Genome Viewer",
-            "Variant Viewer",
-        ]
+        section_headers = self._scan_sections()
         super().generate_report(section_headers)
         # st.subheader(self.run_id)
 
@@ -67,16 +80,14 @@ class VectorCoreAavReport(CrickReport):
             self.summary_section(dp)
         elif st.session_state.selected_section == "Samplesheet":
             self.samplesheet_section(dp)
-        elif st.session_state.selected_section == "Read QC":
-            self.read_qc_section(dp)
+        elif st.session_state.selected_section == "Nanopore Read QC":
+            self.nanopore_read_qc_section(dp)
         elif st.session_state.selected_section == "Contaminant Removal":
             self.contaminant_removal_section(dp)
         elif st.session_state.selected_section == "Alignment":
             self.alignment_section(dp)
         elif st.session_state.selected_section == "Coverage":
             self.coverage_section(dp)
-        elif st.session_state.selected_section == "Truncation":
-            self.truncation_section(dp)
         elif st.session_state.selected_section == "Consensus":
             self.consensus_section(dp)
         elif st.session_state.selected_section == "Genome Viewer":
@@ -101,7 +112,7 @@ class VectorCoreAavReport(CrickReport):
         # samplesheet_df = samplesheet_df.reset_index(drop=True)
         st.dataframe(samplesheet_df)
 
-    def read_qc_section(self, dp):
+    def nanopore_read_qc_section(self, dp):
         # Init
         results_dict = dp.result_dict
         dataframe_dict = dp.dataframe_dict
@@ -134,7 +145,7 @@ class VectorCoreAavReport(CrickReport):
 
     def alignment_section(self, dp):
         # Place charts and tables
-        mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_align"], "AAV Alignment")
+        mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_align"], "Target Alignment")
 
     def coverage_section(self, dp):
         # Get data
@@ -146,14 +157,6 @@ class VectorCoreAavReport(CrickReport):
         # Place chart for each contig
         for contig, df in coverage_data[selected_dataset].items():
             coverage_plot(df, contig)
-
-    def truncation_section(self, dp):
-        # Create dropdown for selecting dataset
-        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
-
-        truncation_scatterplot(dp.result_dict[selected_dataset]["truncation"])
-        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type_simple"], "Truncation Type Simple")
-        truncation_barplot(dp.result_dict[selected_dataset]["truncation_type"], "Truncation Type")
 
     def consensus_section(self, dp):
         # Create dropdown for selecting dataset
@@ -277,7 +280,6 @@ class VectorCoreAavReport(CrickReport):
         print(config_str)
 
         if self.jbrowse_component is not None:
-            time.sleep(5)
             self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=1200)
 
     def variant_viewer_section(self, dp):
