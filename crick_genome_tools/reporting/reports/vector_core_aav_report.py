@@ -6,6 +6,7 @@ Class for generating vector core AAV report.
 
 import json
 import logging
+import time
 
 import pandas as pd
 import streamlit as st
@@ -276,6 +277,7 @@ class VectorCoreAavReport(CrickReport):
         print(config_str)
 
         if self.jbrowse_component is not None:
+            time.sleep(5)
             self.jbrowse_component(key=f"jbrowse_{selected_dataset}", config=jbrowse_config, height=1200)
 
     def variant_viewer_section(self, dp):
