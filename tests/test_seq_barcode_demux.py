@@ -243,20 +243,20 @@ class TestBarcodeDemux:
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
         [
-            # (
-            #     "tests/data/seq/L002_R1.fastq",
-            #     {
-            #         "sample_1": "GCTT,NTAT",
-            #         "sample_2": "ACGT,AGGT",
-            #     },
-            #     1,
-            #     ["sample_1", "sample_2", "undetermined"],
-            #     {
-            #         "sample_1": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
-            #         "sample_2": "",
-            #         "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
-            #     },
-            # ),
+            (
+                "tests/data/seq/L002_R1.fastq",
+                {
+                    "sample_1": "GCTT,NTAT",
+                    "sample_2": "ACGT,AGGT",
+                },
+                1,
+                ["sample_1", "sample_2", "undetermined"],
+                {
+                    "sample_1": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
+                    "sample_2": "",
+                    "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
+                },
+            ),
             (
                 "tests/data/seq/L002_R2.fastq",
                 {
