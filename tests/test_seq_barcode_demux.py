@@ -13,7 +13,10 @@ from crick_genome_tools.seq.barcode_demux import (
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
     find_sample_for_read_index,
+    hamming_distance,
+    find_closest_match,
     group_samples_by_index_length,
+    demultiplex_fastq_by_barcode,
 )
 
 
@@ -101,6 +104,73 @@ class TestBarcodeDemux:
         assert_that(find_sample_for_read_index(read_index, barcode_dict)).is_equal_to("sample_1")
 
     @pytest.mark.parametrize(
+        "sequence1, sequence2",
+        [
+            ("AATCG", None),
+            (None, "AATCG"),
+        ],
+    )
+    def test_hamming_distance_isnone(self, sequence1, sequence2):
+        assert_that(hamming_distance).raises(ValueError).when_called_with(sequence1, sequence2)
+
+    @pytest.mark.parametrize(
+        "sequence1, sequence2, expected_result",
+        [
+            ("ACGT", "ACGT", 0),
+            ("ACGT", "AGGT", 1),
+            ("ACGT", "ACGTT", 0),
+            ("ACGT", "ACG", 0),
+            ("ACGT", "invalid", 4),
+            ("invalid", "ACGT", 4),
+            ("ACCT", "ATAC", 3),
+        ],
+    )
+    def test_hamming_distance_isvalid(self, sequence1, sequence2, expected_result):
+        # Test and assert
+        result = hamming_distance(sequence1, sequence2)
+        assert_that(result).is_equal_to(expected_result)
+
+    @pytest.mark.parametrize(
+        "sample_barcode_dict, sequence, max_hamming_distance, expected_result",
+        [
+            (
+                {
+                    "sample_1": "ACGTAGGT",
+                    "sample_2": "ACGTAAAA",
+                    "sample_3": "AAGTAGGG",
+                },
+                "AAGTAGGG",
+                1,
+                "sample_3",
+            ),
+            (
+                {
+                    "sample_1": "ACGTAGGT",
+                    "sample_2": "ACGTAAAA",
+                    "sample_3": "AAGTAGGG",
+                },
+                "AAGTAGGT",
+                1,
+                "sample_1",
+            ),
+            ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, None),
+            (
+                {
+                    "sample_1": "TTTTTTTT",
+                    "sample_2": "ACGTAGCT",
+                },
+                "ACCGAGCA",
+                4,
+                "sample_2",
+            ),
+        ],
+    )
+    def test_find_closest_match_isvalid(self, sample_barcode_dict, sequence, max_hamming_distance, expected_result):
+        # Test and assert
+        result = find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
+        assert_that(result).is_equal_to(expected_result)
+
+    @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
         [
             (
@@ -117,20 +187,20 @@ class TestBarcodeDemux:
                     "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
                 },
             ),
-            # (
-                # "tests/data/seq/L002_R2.fastq",
-                # {
-                #     "sample_A": "ACTTGACTAG+NTATCAACGG",
-                #     "sample_B": "GCGCTTCTAC,NTCCTTGGCT",
-                # },
-                # 1,
-                # ["sample_A", "sample_B", "undetermined"],
-                # {
-                #     "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
-                #     "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
-                #     "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
-                # },
-            # ),
+            (
+                "tests/data/seq/L002_R2.fastq",
+                {
+                    "sample_A": "ACTTGACTAG+NTATCAACGG",
+                    "sample_B": "GCGCTTCTAC,NTCCTTGGCT",
+                },
+                1,
+                ["sample_A", "sample_B", "undetermined"],
+                {
+                    "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
+                    "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
+                    "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
+                },
+            ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_valid(
@@ -156,4 +226,4 @@ class TestBarcodeDemux:
                 file_content = f.read().strip()
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
-            raise ValueError
+            # raise ValueError

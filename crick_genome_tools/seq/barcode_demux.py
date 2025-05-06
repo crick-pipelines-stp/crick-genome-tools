@@ -97,6 +97,7 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
 
     return grouped
 
+
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
     """
     Finds the sample name corresponding to a given barcode string.
@@ -127,6 +128,39 @@ def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
                 return sample_name
     # If no match is found, return "undetermined"
     return "undetermined"
+
+
+def hamming_distance(seq1, seq2):
+    """Computes the Hamming distance between two sequences."""
+    if seq1 is None or seq2 is None:
+        raise ValueError("Input sequences cannot be None.")
+
+    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+
+
+def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int):
+    """
+    Finds the sample and barcode with the smallest Hamming distance to the given sequence.
+
+    Args:
+        barcode_dict (dict): Dictionary mapping sample names to barcode strings.
+        seq (str): The sequence to compare against the barcodes.
+        max_hamming (int): Maximum allowed Hamming distance.
+
+    Returns:
+        str or None: Returns sample_name with the smallest
+            Hamming distance, or None if no barcode is within max_hamming.
+    """
+    best_match = None
+    min_distance = float("inf")
+
+    for sample, barcode in barcode_dict.items():
+        dist = hamming_distance(seq, barcode)
+        if dist < min_distance and dist <= max_hamming:
+            min_distance = dist
+            best_match = sample
+
+    return best_match
 
 
 def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> None:
