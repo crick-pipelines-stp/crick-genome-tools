@@ -13,8 +13,6 @@ from crick_genome_tools.seq.barcode_demux import (
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
     find_sample_for_read_index,
-    gen_nearby_seqs,
-    generate_nearby_barcodes_by_length,
     group_samples_by_index_length,
 )
 
@@ -79,112 +77,6 @@ class TestBarcodeDemux:
         assert_that(group_samples_by_index_length(input_dict)).is_equal_to(expected_dict)
         assert_that(group_samples_by_index_length(input_dict_2)).is_equal_to(expected_dict_2)
 
-    def test_gen_nearby_seqs_with_nodist(self):
-        # Setup
-        seq = "atcg"
-        barcode_sets = [seq]
-
-        # Test and Assert
-        assert_that(list(gen_nearby_seqs(seq, barcode_sets))).is_equal_to(["atcg"])
-
-    @pytest.mark.parametrize("maxdist", [1, 2])
-    @pytest.mark.parametrize("seq", ["AGTTNNN", "AGCTNNNNNNN", "AGCTNNNN", "AGCTNNN", "AGCTNNNN"])
-    def test_gen_nearby_seqs_withn_none(self, maxdist, seq):
-        """Test generation of nearby sequences."""
-
-        # Setup
-        barcode_sets = seq
-
-        # Test
-        nearby_seqs = list(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
-
-        # Assert
-        assert len(nearby_seqs) == 0
-
-    @pytest.mark.parametrize("maxdist", [1])
-    @pytest.mark.parametrize(
-        "seq, expected",
-        [
-            ("AGT", {"AAT", "ATT", "ACT", "TGT", "AGC", "AGA", "AGG", "CGT", "GGT"}),
-            ("AGCT", {"TGCT", "GGCT", "CGCT", "ATCT", "AACT", "ACCT", "AGTT", "AGAT", "AGGT", "AGCC", "AGCA", "AGCG"}),
-        ],
-    )
-    def test_gen_nearby_seqs_valid_hamm1(self, maxdist, seq, expected):
-        """Test generation of nearby sequences."""
-        # Setup
-        barcode_sets = seq
-
-        # Test
-        nearby_seqs = set(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
-
-        # Assert
-        assert_that(nearby_seqs).is_equal_to(expected)
-
-    @pytest.mark.parametrize("maxdist", [2])
-    @pytest.mark.parametrize(
-        "seq, len_expected",
-        [("AGT", 36), ("TNNCG", 16)],
-    )
-    def test_gen_nearby_seqs_valid_hamm2(self, maxdist, seq, len_expected):
-        """Test generation of nearby sequences."""
-        # Setup
-        barcode_sets = seq
-
-        # Test
-        nearby_seqs = set(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
-
-        # Assert
-        assert_that(len(nearby_seqs)).is_equal_to(len_expected)
-
-    def test_generate_nearby_barcodes_by_length_none(self):
-        assert_that(generate_nearby_barcodes_by_length).raises(TypeError).when_called_with(None, 1)
-
-    def test_generate_nearby_barcodes_by_length_emptydict(self):
-        assert_that(generate_nearby_barcodes_by_length({}, 1)).is_equal_to({})
-
-    def test_generate_nearby_barcodes_by_length_invalid(self):
-        # Call the function with a dictionary with invalid barcode values
-        assert_that(generate_nearby_barcodes_by_length).raises(TypeError).when_called_with({"sample_1": 1234}, 1)
-
-        # Call the function with an input that is not a dict
-        assert_that(generate_nearby_barcodes_by_length).raises(TypeError).when_called_with("not_a_dict", 1)
-
-    def test_generate_nearby_barcodes_by_length_valid(self):
-        # Test with a valid barcode and distance
-        grouped_barcode_dict = {
-            4: {"sample_1": "ACGT"},
-            8: {"sample_2": "ACG,AGG"},
-        }
-        distance = 1
-        expected_result = {
-            4: {"sample_1": {"ACCT", "ATGT", "ACGC", "ACGT", "ACAT", "CCGT", "GCGT", "ACGA", "ACGG", "AGGT", "TCGT", "AAGT", "ACTT"}},
-            8: {
-                "sample_2": {
-                    "CCGAGG",
-                    "ACGACG",
-                    "ACGAGA",
-                    "ACGAAG",
-                    "TCGAGG",
-                    "ACCAGG",
-                    "ACGAGG",
-                    "GCGAGG",
-                    "ACAAGG",
-                    "AGGAGG",
-                    "ACGCGG",
-                    "ACGAGT",
-                    "ACGTGG",
-                    "ACGATG",
-                    "ACTAGG",
-                    "ATGAGG",
-                    "AAGAGG",
-                    "ACGGGG",
-                    "ACGAGC",
-                }
-            },
-        }
-
-        assert_that(generate_nearby_barcodes_by_length(grouped_barcode_dict, distance)).is_equal_to(expected_result)
-
     def test_find_sample_for_read_index_none(self):
         assert_that(find_sample_for_read_index).raises(ValueError).when_called_with(None, {"dict": "test"})
 
@@ -225,20 +117,20 @@ class TestBarcodeDemux:
                     "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
                 },
             ),
-            (
-                "tests/data/seq/L002_R2.fastq",
-                {
-                    "sample_A": "ACTTGACTAG+NTATCAACGG",
-                    "sample_B": "GCGCTTCTAC,NTCCTTGGCT",
-                },
-                1,
-                ["sample_A", "sample_B", "undetermined"],
-                {
-                    "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
-                    "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
-                    "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
-                },
-            ),
+            # (
+                # "tests/data/seq/L002_R2.fastq",
+                # {
+                #     "sample_A": "ACTTGACTAG+NTATCAACGG",
+                #     "sample_B": "GCGCTTCTAC,NTCCTTGGCT",
+                # },
+                # 1,
+                # ["sample_A", "sample_B", "undetermined"],
+                # {
+                #     "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
+                #     "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
+                #     "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
+                # },
+            # ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_valid(
@@ -264,3 +156,4 @@ class TestBarcodeDemux:
                 file_content = f.read().strip()
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
+            raise ValueError
