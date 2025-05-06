@@ -87,35 +87,30 @@ class TestBarcodeDemux:
         # Test and Assert
         assert_that(list(gen_nearby_seqs(seq, barcode_sets))).is_equal_to(["atcg"])
 
-    # @pytest.mark.parametrize("maxdist", [1, 2])
-    # @pytest.mark.parametrize("seq", ["AGTTNNN", "AGCTNNNNNNN", "AGCTNNNN", "AGCTNNN", "AGCTNNNN"])
-    # def test_gen_nearby_seqs_withn_none(self, maxdist, seq):
-    #     """Test generation of nearby sequences."""
+    @pytest.mark.parametrize("maxdist", [1, 2])
+    @pytest.mark.parametrize("seq", ["AGTTNNN", "AGCTNNNNNNN", "AGCTNNNN", "AGCTNNN", "AGCTNNNN"])
+    def test_gen_nearby_seqs_withn_none(self, maxdist, seq):
+        """Test generation of nearby sequences."""
 
-    #     # Setup
-    #     barcode_sets = seq
+        # Setup
+        barcode_sets = seq
 
-    #     # Test
-    #     nearby_seqs = list(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
+        # Test
+        nearby_seqs = list(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
 
-    #     # Assert
-    #     assert len(nearby_seqs) == 0
+        # Assert
+        assert len(nearby_seqs) == 0
 
     @pytest.mark.parametrize("maxdist", [1])
     @pytest.mark.parametrize(
         "seq, expected",
         [
-            ("AGT", {"AGG", "AGC", "AGA", "AGN", "ACT", "AAT", "ANT", "ATT", "CGT", "TGT", "NGT", "GGT"}),
-            (
-                "AGCT",
-                {"AGCN", "AGNT", "TGCT", "AGAT", "AGTT", "ACCT", "CGCT", "AGCA", "NGCT", "AGCC", "AGCG", "ANCT", "ATCT", "AGGT", "GGCT", "AACT"},
-            ),
-            ("anc", {"anc", "atc", "acc", "aac", "agc", "ant", "ang", "ana", "ann", "nnc", "tnc", "gnc", "cnc"}),
+            ("AGT", {"AAT", "ATT", "ACT", "TGT", "AGC", "AGA", "AGG", "CGT", "GGT"}),
+            ("AGCT", {"TGCT", "GGCT", "CGCT", "ATCT", "AACT", "ACCT", "AGTT", "AGAT", "AGGT", "AGCC", "AGCA", "AGCG"}),
         ],
     )
     def test_gen_nearby_seqs_valid_hamm1(self, maxdist, seq, expected):
         """Test generation of nearby sequences."""
-
         # Setup
         barcode_sets = seq
 
@@ -128,11 +123,10 @@ class TestBarcodeDemux:
     @pytest.mark.parametrize("maxdist", [2])
     @pytest.mark.parametrize(
         "seq, len_expected",
-        [("AGT", 60), ("TNNCG", 181)],
+        [("AGT", 36), ("TNNCG", 16)],
     )
     def test_gen_nearby_seqs_valid_hamm2(self, maxdist, seq, len_expected):
         """Test generation of nearby sequences."""
-
         # Setup
         barcode_sets = seq
 
@@ -141,6 +135,47 @@ class TestBarcodeDemux:
 
         # Assert
         assert_that(len(nearby_seqs)).is_equal_to(len_expected)
+
+    # @pytest.mark.parametrize("maxdist", [1])
+    # @pytest.mark.parametrize(
+    #     "seq, expected",
+    #     [
+    #         ("AGT", {"AGG", "AGC", "AGA", "AGN", "ACT", "AAT", "ANT", "ATT", "CGT", "TGT", "NGT", "GGT"}),
+    #         (
+    #             "AGCT",
+    #             {"AGCN", "AGNT", "TGCT", "AGAT", "AGTT", "ACCT", "CGCT", "AGCA", "NGCT", "AGCC", "AGCG", "ANCT", "ATCT", "AGGT", "GGCT", "AACT"},
+    #         ),
+    #         ("anc", {"anc", "atc", "acc", "aac", "agc", "ant", "ang", "ana", "ann", "nnc", "tnc", "gnc", "cnc"}),
+    #     ],
+    # )
+    # def test_gen_nearby_seqs_valid_hamm1(self, maxdist, seq, expected):
+    #     """Test generation of nearby sequences."""
+
+    #     # Setup
+    #     barcode_sets = seq
+
+    #     # Test
+    #     nearby_seqs = set(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
+
+    #     # Assert
+    #     assert_that(nearby_seqs).is_equal_to(expected)
+
+    # @pytest.mark.parametrize("maxdist", [2])
+    # @pytest.mark.parametrize(
+    #     "seq, len_expected",
+    #     [("AGT", 60), ("TNNCG", 181)],
+    # )
+    # def test_gen_nearby_seqs_valid_hamm2(self, maxdist, seq, len_expected):
+    #     """Test generation of nearby sequences."""
+
+    #     # Setup
+    #     barcode_sets = seq
+
+    #     # Test
+    #     nearby_seqs = set(gen_nearby_seqs(seq, barcode_sets[0], maxdist))
+
+    #     # Assert
+    #     assert_that(len(nearby_seqs)).is_equal_to(len_expected)
 
     def test_generate_nearby_barcodes_by_length_none(self):
         assert_that(generate_nearby_barcodes_by_length).raises(TypeError).when_called_with(None, 1)
@@ -163,54 +198,28 @@ class TestBarcodeDemux:
         }
         distance = 1
         expected_result = {
-            4: {
-                "sample_1": {
-                    "CCGT",
-                    "ACTT",
-                    "ATGT",
-                    "ACGG",
-                    "AAGT",
-                    "ACNT",
-                    "ACAT",
-                    "ACCT",
-                    "ACGC",
-                    "GCGT",
-                    "ANGT",
-                    "TCGT",
-                    "ACGN",
-                    "AGGT",
-                    "NCGT",
-                    "ACGA",
-                    "ACGT",
-                }
-            },
+            4: {"sample_1": {"ACCT", "ATGT", "ACGC", "ACGT", "ACAT", "CCGT", "GCGT", "ACGA", "ACGG", "AGGT", "TCGT", "AAGT", "ACTT"}},
             8: {
                 "sample_2": {
-                    "ACGATG",
                     "CCGAGG",
-                    "ACGGGG",
-                    "ACGANG",
-                    "ANGAGG",
-                    "ACGTGG",
-                    "ACGCGG",
-                    "GCGAGG",
-                    "ATGAGG",
-                    "ACGAGG",
-                    "NCGAGG",
-                    "ACGAGC",
-                    "AGGAGG",
+                    "ACGACG",
                     "ACGAGA",
                     "ACGAAG",
-                    "ACNAGG",
-                    "ACAAGG",
-                    "ACGNGG",
-                    "ACTAGG",
-                    "ACGAGT",
-                    "ACCAGG",
-                    "ACGAGN",
                     "TCGAGG",
-                    "ACGACG",
+                    "ACCAGG",
+                    "ACGAGG",
+                    "GCGAGG",
+                    "ACAAGG",
+                    "AGGAGG",
+                    "ACGCGG",
+                    "ACGAGT",
+                    "ACGTGG",
+                    "ACGATG",
+                    "ACTAGG",
+                    "ATGAGG",
                     "AAGAGG",
+                    "ACGGGG",
+                    "ACGAGC",
                 }
             },
         }
@@ -246,7 +255,7 @@ class TestBarcodeDemux:
             (
                 "tests/data/seq/L002_R1.fastq",
                 {
-                    "sample_1": "GCTT,NTAT",
+                    "sample_1": "ACTT,NTAT",
                     "sample_2": "ACGT,AGGT",
                 },
                 1,
