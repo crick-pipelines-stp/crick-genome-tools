@@ -63,7 +63,6 @@ class ViralGenomicsReport(CrickReport):
             headers.append("Variant Viewer")
         return headers
 
-
     def generate_report(self, section_headers=[]):
         # section_headers = [
         #     "Pipeline Summary",

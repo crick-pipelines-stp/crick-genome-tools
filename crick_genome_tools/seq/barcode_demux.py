@@ -148,7 +148,6 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
                 # If the new sequence is in the whitelist, sum the QS scores for the changed sequences and return
                 yield new_seq
 
-
     # is_lower = seq.islower()
     # seq_upper = seq.upper()
 
