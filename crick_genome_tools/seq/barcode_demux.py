@@ -148,30 +148,6 @@ def gen_nearby_seqs(seq: str, barcode_set, maxdist: int = 0) -> str:
                 # If the new sequence is in the whitelist, sum the QS scores for the changed sequences and return
                 yield new_seq
 
-    # is_lower = seq.islower()
-    # seq_upper = seq.upper()
-
-    # if seq in barcode_set:
-    #     yield seq
-    # elif maxdist == 0:
-    #     yield seq
-    #     return
-    # else:
-    #     pass
-
-    # indices = range(len(seq))
-
-    # for dist in range(1, maxdist + 1):
-    #     for positions_to_modify in itertools.combinations(indices, dist):
-    #         substitution_choices = [ALPHABET_MINUS[seq_upper[i]] for i in positions_to_modify]
-    #         for replacements in itertools.product(*substitution_choices):
-    #             seq_list = list(seq_upper)
-    #             for idx, new_base in zip(positions_to_modify, replacements):
-    #                 seq_list[idx] = new_base
-    #             new_seq = "".join(seq_list)
-    #             yield new_seq.lower() if is_lower else new_seq
-
-
 def generate_nearby_barcodes_by_length(grouped_barcodes: dict, max_hamming_distance: str) -> dict:
     """
     Generates nearby barcodes within a specified Hamming distance for each sample in grouped barcode data.
@@ -292,10 +268,21 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", "", index)
 
-        # Check if the index is in the matches to any of the samples
-        match_sample = find_sample_for_read_index(index, all_barcodes_including_hamming_distance)
+        # Check if the index has any N's in it
+        read_index_seq_list = []
+        index_n_count = index.count('N')
+        if index_n_count >= 1:
+            barcode_set = {index}
+            read_index_seq_list = gen_nearby_seqs(index, barcode_set, index_n_count)
 
-        file_handles[match_sample].write(seq + "\n")
+        if read_index_seq_list is None:
+            read_index_seq_list = [index]
+
+        for seq in read_index_seq_list:
+            # Check if the index is in the matches to any of the samples
+            match_sample = find_sample_for_read_index(index, all_barcodes_including_hamming_distance)
+
+            file_handles[match_sample].write(seq + "\n")
 
     for f in file_handles.values():
         f.close()
