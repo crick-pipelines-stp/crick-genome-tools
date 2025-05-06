@@ -20,15 +20,9 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     """Test generate reads to a fastq file"""
 
     # Variables
-    # num_reads = 10000
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
 
     # Setup
-    profile = "illumina_pe_nextera"
-    # fasta_dir = os.path.join(TEST_FASTA_SOURCE_FOLDER, "valid")
-    # config_path = os.path.join(TEST_CONFIG_SOURCE_FOLDER, "full_config.yml")
-    # output_path = os.path.join(tmp_path, "output.fastq.gz")
-    # test = GenerateReads(config_path, fasta_dir)
     fastq_file = os.path.join("tests/data/seq/L002_R1.fastq")
     sample_dict = {
         "sample_1": "GCTT,NTAT",
@@ -36,18 +30,13 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     }
     max_hamming_distance = 1
     output_path = tmp_path
-    # test = demultiplex_fastq_by_barcode(fastq_file, dict, max_hamming_distance)
-    # demultiplex_fastq_by_barcode(fastq_file, dict, max_hamming_distance)
 
     # Test
-    # benchmark(test.run, profile, output_path, num_reads)
-    # benchmark(test.run, profile, output_path)
-    # benchmark(demultiplex_fastq_by_barcode(fastq_file, sample_dict, max_hamming_distance, output_path), profile, output_path)
     benchmark(lambda: (demultiplex_fastq_by_barcode(fastq_file, sample_dict, max_hamming_distance, output_path)))
 
-    # # Assert
-    # mean_ms = benchmark.stats["mean"] * 1000
-    # if mean_ms > max_time_ms:
-    #     pytest.fail(f"Benchmark failed: expected - {max_time_ms}ms | actual - {round(mean_ms, 2)}ms")
+    # Assert
+    mean_ms = benchmark.stats["mean"] * 1000
+    if mean_ms > max_time_ms:
+        pytest.fail(f"Benchmark failed: expected - {max_time_ms}ms | actual - {round(mean_ms, 2)}ms")
 
-    raise ValueError
+    # raise ValueError
