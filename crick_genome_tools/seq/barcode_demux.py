@@ -97,6 +97,37 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
 
     return grouped
 
+def hamming_distance(seq1, seq2) -> int:
+    """Computes the Hamming distance between two sequences."""
+    if seq1 is None or seq2 is None:
+        raise ValueError("Input sequences cannot be None.")
+
+    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+
+
+def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
+    """
+    Finds the sample and barcode with the smallest Hamming distance to the given sequence.
+
+    Args:
+        barcode_dict (dict): Dictionary mapping sample names to barcode strings.
+        seq (str): The sequence to compare against the barcodes.
+        max_hamming (int): Maximum allowed Hamming distance.
+
+    Returns:
+        str or None: Returns sample_name with the smallest
+            Hamming distance, or None if no barcode is within max_hamming.
+    """
+    best_match = "undetermined"
+    min_distance = float("inf")
+
+    for sample, barcode in barcode_dict.items():
+        dist = hamming_distance(seq, barcode)
+        if dist < min_distance and dist <= max_hamming:
+            min_distance = dist
+            best_match = sample
+
+    return best_match
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
     """
@@ -129,40 +160,6 @@ def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
     # If no match is found, return "undetermined"
     return "undetermined"
 
-
-def hamming_distance(seq1, seq2):
-    """Computes the Hamming distance between two sequences."""
-    if seq1 is None or seq2 is None:
-        raise ValueError("Input sequences cannot be None.")
-
-    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
-
-
-def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int):
-    """
-    Finds the sample and barcode with the smallest Hamming distance to the given sequence.
-
-    Args:
-        barcode_dict (dict): Dictionary mapping sample names to barcode strings.
-        seq (str): The sequence to compare against the barcodes.
-        max_hamming (int): Maximum allowed Hamming distance.
-
-    Returns:
-        str or None: Returns sample_name with the smallest
-            Hamming distance, or None if no barcode is within max_hamming.
-    """
-    best_match = None
-    min_distance = float("inf")
-
-    for sample, barcode in barcode_dict.items():
-        dist = hamming_distance(seq, barcode)
-        if dist < min_distance and dist <= max_hamming:
-            min_distance = dist
-            best_match = sample
-
-    return best_match
-
-
 def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> None:
     """
     Demultiplexes a FASTQ file by matching read indexes to known sample barcodes.
@@ -188,6 +185,7 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     for group in grouped_samples_by_length.values():
         for sample in group:
             group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
+    # print(grouped_samples_by_length)
 
     file_handles = defaultdict(lambda: open(os.path.join(output_dir, "undetermined.txt"), "a", encoding="utf-8"))
     for sample in samples_barcode_from_dict:
@@ -199,11 +197,20 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", "", index)
+        print(index)
+
+        # Search for the closest match in the grouped samples from the longest to the shortest indexes
+        match = "undetermined"
+        for key in sorted(grouped_samples_by_length.keys(), reverse=True):
+            group = grouped_samples_by_length[key]
+            print(group)
+            match = find_closest_match(group, index, max_hamming_distance)
+        print(match)
 
         # Check if the index is in the matches to any of the samples
-        match_sample = find_sample_for_read_index(index, grouped_samples_by_length)
+        # match_sample = find_sample_for_read_index(index, grouped_samples_by_length)
 
-        file_handles[match_sample].write(seq + "\n")
+        file_handles[match].write(seq + "\n")
 
     for f in file_handles.values():
         f.close()
