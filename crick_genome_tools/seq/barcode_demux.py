@@ -1,11 +1,8 @@
-import re
 import os
+import re
 from collections import defaultdict
 
 from crick_genome_tools.io.fastq_file import FastqFile
-
-
-DNA_ALPHABET = "AGCTN"
 
 
 def extract_index_from_header_illumina(name: str) -> str:
@@ -97,6 +94,7 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
 
     return grouped
 
+
 def hamming_distance(seq1, seq2) -> int:
     """Computes the Hamming distance between two sequences."""
     if seq1 is None or seq2 is None:
@@ -118,6 +116,18 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
         str or None: Returns sample_name with the smallest
             Hamming distance, or None if no barcode is within max_hamming.
     """
+    if not isinstance(seq, str):
+        raise ValueError(f"{seq} must be a string.")
+
+    if not isinstance(barcode_dict, dict):
+        raise ValueError(f"{barcode_dict} must be a dictionary.")
+
+    if not isinstance(max_hamming, int):
+        raise ValueError(f"{max_hamming} must be an integer.")
+
+    if max_hamming < 0:
+        raise ValueError(f"{max_hamming} must be a non-negative integer.")
+
     best_match = "undetermined"
     min_distance = float("inf")
 
@@ -128,6 +138,7 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
             best_match = sample
 
     return best_match
+
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
     """
@@ -159,6 +170,7 @@ def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
                 return sample_name
     # If no match is found, return "undetermined"
     return "undetermined"
+
 
 def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> None:
     """
@@ -202,16 +214,29 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
         # match_not_found = True
-        for key in sorted(grouped_samples_by_length.keys(), reverse=True):
-            group = grouped_samples_by_length[key]
-            # print(group)
-            if match == "undetermined":
-                match = find_closest_match(group, index, max_hamming_distance)
+        # for key in sorted(grouped_samples_by_length.keys(), reverse=True):
+        #     group = grouped_samples_by_length[key]
+        #     # print(group)
+        #     if match == "undetermined":
+        #         match = find_closest_match(group, index, max_hamming_distance)
+        #     print(match)
+        #     # if match != "undetermined":
+        #     #     match_not_found = False
+        #     #     break
+        # # print(match)
+
+        for length in sorted(grouped_samples_by_length.keys(), reverse=True):
+            trimmed_index = index[:length]
+            group = grouped_samples_by_length[
+                length
+            ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
+            print(group)
+            print(trimmed_index)
+
+            match = find_closest_match(group, trimmed_index, max_hamming_distance)
             print(match)
-            # if match != "undetermined":
-            #     match_not_found = False
-            #     break
-        print(match)
+            if match != "undetermined":
+                break
 
         # Check if the index is in the matches to any of the samples
         # match_sample = find_sample_for_read_index(index, grouped_samples_by_length)
