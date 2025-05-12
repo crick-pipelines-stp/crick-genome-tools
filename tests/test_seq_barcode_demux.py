@@ -12,11 +12,10 @@ from assertpy import assert_that
 from crick_genome_tools.seq.barcode_demux import (
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
-    find_sample_for_read_index,
-    hamming_distance,
     find_closest_match,
+    find_sample_for_read_index,
     group_samples_by_index_length,
-    demultiplex_fastq_by_barcode,
+    hamming_distance,
 )
 
 
@@ -130,6 +129,15 @@ class TestBarcodeDemux:
         result = hamming_distance(sequence1, sequence2)
         assert_that(result).is_equal_to(expected_result)
 
+    def test_find_closest_match_invalid_input(self):
+        # Test and assert
+        # not a dictionary
+        assert_that(find_closest_match).raises(ValueError).when_called_with("ACGT", "ACGTTT", 1)
+        # not a string
+        assert_that(find_closest_match).raises(ValueError).when_called_with({"sample_1": "ACGT"}, 1234, 1)
+        # not a number
+        assert_that(find_closest_match).raises(ValueError).when_called_with({"sample_1": "ACGT"}, "ACGTTT", "not_a_number")
+
     @pytest.mark.parametrize(
         "sample_barcode_dict, sequence, max_hamming_distance, expected_result",
         [
@@ -153,7 +161,7 @@ class TestBarcodeDemux:
                 1,
                 "sample_1",
             ),
-            ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, None),
+            ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, "undetermined"),
             (
                 {
                     "sample_1": "TTTTTTTT",
@@ -203,6 +211,20 @@ class TestBarcodeDemux:
                     "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
                 },
             ),
+            # (
+            #     "tests/data/seq/L002_R2_1000.fastq",
+            #     {
+            #         "sample_3": "ACTTGACTAG+NTATCAACGG",
+            #         "sample_4": "GCGCTTCTAC,NTCCTTGGCT",
+            #     },
+            #     1,
+            #     ["sample_3", "sample_4", "undetermined"],
+            #     {
+            #         "sample_3": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
+            #         "sample_4": "",
+            #         "undetermined": "",
+            #     },
+            # ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_valid(
