@@ -14,7 +14,7 @@ from crick_genome_tools.seq.barcode_demux import (
     extract_index_from_header_illumina,
     find_sample_for_read_index,
     group_samples_by_index_length,
-    vectorized_find_closest_match
+    vectorised_find_closest_match
 )
 
 
@@ -137,45 +137,45 @@ class TestBarcodeDemux:
     #     # not a number
     #     assert_that(find_closest_match).raises(ValueError).when_called_with({"sample_1": "ACGT"}, "ACGTTT", "not_a_number")
 
-    # @pytest.mark.parametrize(
-    #     "sample_barcode_dict, sequence, max_hamming_distance, expected_result",
-    #     [
-    #         (
-    #             {
-    #                 "sample_1": "ACGTAGGT",
-    #                 "sample_2": "ACGTAAAA",
-    #                 "sample_3": "AAGTAGGG",
-    #             },
-    #             "AAGTAGGG",
-    #             1,
-    #             "sample_3",
-    #         ),
-    #         (
-    #             {
-    #                 "sample_1": "ACGTAGGT",
-    #                 "sample_2": "ACGTAAAA",
-    #                 "sample_3": "AAGTAGGG",
-    #             },
-    #             "AAGTAGGT",
-    #             1,
-    #             "sample_1",
-    #         ),
-    #         ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, "undetermined"),
-    #         (
-    #             {
-    #                 "sample_1": "TTTTTTTT",
-    #                 "sample_2": "ACGTAGCT",
-    #             },
-    #             "ACCGAGCA",
-    #             4,
-    #             "sample_2",
-    #         ),
-    #     ],
-    # )
-    # def test_find_closest_match_isvalid(self, sample_barcode_dict, sequence, max_hamming_distance, expected_result):
-    #     # Test and assert
-    #     result = find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
-    #     assert_that(result).is_equal_to(expected_result)
+    @pytest.mark.parametrize(
+        "sample_barcode_dict, sequence, max_hamming_distance, expected_result",
+        [
+            (
+                {
+                    "sample_1": "ACGTAGGT",
+                    "sample_2": "ACGTAAAA",
+                    "sample_3": "AAGTAGGG",
+                },
+                "AAGTAGGG",
+                1,
+                "sample_3",
+            ),
+            (
+                {
+                    "sample_1": "ACGTAGGT",
+                    "sample_2": "ACGTAAAA",
+                    "sample_3": "AAGTAGGG",
+                },
+                "AAGTAGGT",
+                1,
+                "sample_1",
+            ),
+            ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, "undetermined"),
+            (
+                {
+                    "sample_1": "TTTTTTTT",
+                    "sample_2": "ACGTAGCT",
+                },
+                "ACCGAGCA",
+                4,
+                "sample_2",
+            ),
+        ],
+    )
+    def test_find_closest_match_isvalid(self, sample_barcode_dict, sequence, max_hamming_distance, expected_result):
+        # Test and assert
+        result = vectorised_find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
+        assert_that(result).is_equal_to(expected_result)
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
