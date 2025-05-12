@@ -197,7 +197,6 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     for group in grouped_samples_by_length.values():
         for sample in group:
             group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
-    # print(grouped_samples_by_length)
 
     file_handles = defaultdict(lambda: open(os.path.join(output_dir, "undetermined.txt"), "a", encoding="utf-8"))
     for sample in samples_barcode_from_dict:
@@ -209,38 +208,21 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", "", index)
-        print(index)
 
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
-        # match_not_found = True
-        # for key in sorted(grouped_samples_by_length.keys(), reverse=True):
-        #     group = grouped_samples_by_length[key]
-        #     # print(group)
-        #     if match == "undetermined":
-        #         match = find_closest_match(group, index, max_hamming_distance)
-        #     print(match)
-        #     # if match != "undetermined":
-        #     #     match_not_found = False
-        #     #     break
-        # # print(match)
-
         for length in sorted(grouped_samples_by_length.keys(), reverse=True):
             trimmed_index = index[:length]
             group = grouped_samples_by_length[
                 length
             ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
-            print(group)
-            print(trimmed_index)
 
+            # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
-            print(match)
             if match != "undetermined":
                 break
 
-        # Check if the index is in the matches to any of the samples
-        # match_sample = find_sample_for_read_index(index, grouped_samples_by_length)
-
+        # Write the sequence to the appropriate file
         file_handles[match].write(seq + "\n")
 
     for f in file_handles.values():
