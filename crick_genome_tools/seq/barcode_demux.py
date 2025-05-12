@@ -133,6 +133,10 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
 
     for sample, barcode in barcode_dict.items():
         dist = hamming_distance(seq, barcode)
+         # If the strings are a perfect match, skip further comparisons
+        # if dist == 0:
+        #     return sample
+
         if dist < min_distance and dist <= max_hamming:
             min_distance = dist
             best_match = sample

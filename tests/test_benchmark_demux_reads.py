@@ -23,10 +23,28 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
 
     # Setup
-    fastq_file = os.path.join("tests/data/seq/L002_R1.fastq")
+    # fastq_file = os.path.join("tests/data/seq/L002_R1.fastq")
+    # sample_dict = {
+    #     "sample_1": "GCTT,NTAT",
+    #     "sample_2": "ACGT,AGGT",
+    # }
+
+    fastq_file = os.path.join("tests/data/seq/sub_read_L002_R1.fastq")
+    # sample_dict = {
+    #     "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
+    #     "sample_2": "GCAGTCTTAT-CCGGCCATTA",
+    #     "sample_3": "CGCAGAACTT-GACGTCGATA",
+    #     "sample_4": "GCCTAGGACT-AGCCGTTCTC",
+    #     "sample_5": "ATGGTTGACT-TGGCACAAGC",
+    #     "sample_6": "GTGTTATCTC-AGTCTGGTGT",
+    # }
     sample_dict = {
-        "sample_1": "GCTT,NTAT",
-        "sample_2": "ACGT,AGGT",
+        "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
+        "sample_2": "AGGTGGCTAC+CCACGTAACG",
+        "sample_3": "TATCACTCTC+ACCTTGTTCT",
+        "sample_4": "AGGTGGCTAC+CCACGTAACG",
+        "sample_5": "ATGGTTGACT-TGGCACAAGC",
+        "sample_6": "GCAGTCTTAT+GGGGGGGGGG",
     }
     max_hamming_distance = 1
     output_path = tmp_path
