@@ -15,7 +15,7 @@ from crick_genome_tools.seq.barcode_demux import (
     find_closest_match,
     find_sample_for_read_index,
     group_samples_by_index_length,
-    hamming_distance,
+    vectorised_hamming,
 )
 
 
@@ -103,14 +103,14 @@ class TestBarcodeDemux:
         assert_that(find_sample_for_read_index(read_index, barcode_dict)).is_equal_to("sample_1")
 
     @pytest.mark.parametrize(
-        "sequence1, sequence2",
+        "sequence1, sequence2, max_distance",
         [
-            ("AATCG", None),
-            (None, "AATCG"),
+            ("AATCG", None, 1),
+            (None, "AATCG", 1),
         ],
     )
-    def test_hamming_distance_isnone(self, sequence1, sequence2):
-        assert_that(hamming_distance).raises(ValueError).when_called_with(sequence1, sequence2)
+    def test_vectorised_hamming_isnone(self, sequence1, sequence2, max_distance):
+        assert_that(vectorised_hamming).raises(ValueError).when_called_with(sequence1, sequence2, max_distance)
 
     @pytest.mark.parametrize(
         "sequence1, sequence2, expected_result",
@@ -124,9 +124,9 @@ class TestBarcodeDemux:
             ("ACCT", "ATAC", 3),
         ],
     )
-    def test_hamming_distance_isvalid(self, sequence1, sequence2, expected_result):
+    def test_vectorised_hamming_isvalid(self, sequence1, sequence2, expected_result):
         # Test and assert
-        result = hamming_distance(sequence1, sequence2)
+        result = vectorised_hamming(sequence1, sequence2, 1)
         assert_that(result).is_equal_to(expected_result)
 
     def test_find_closest_match_invalid_input(self):

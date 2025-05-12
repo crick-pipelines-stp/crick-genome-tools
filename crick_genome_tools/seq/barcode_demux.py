@@ -95,12 +95,41 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
     return grouped
 
 
-def hamming_distance(seq1, seq2) -> int:
-    """Computes the Hamming distance between two sequences."""
-    if seq1 is None or seq2 is None:
-        raise ValueError("Input sequences cannot be None.")
+import numpy as np
 
-    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+def vectorised_hamming(query_seq: str, barcodes: list[str], max_hamming: int):
+    """
+    Finds the barcode with the smallest Hamming distance using NumPy vectorization.
+
+    Args:
+        query_seq (str): The sequence to compare.
+        barcodes (list[str]): List of barcode strings of the same length as query_seq.
+        max_hamming (int): Maximum allowed Hamming distance.
+
+    Returns:
+        tuple: (best matching barcode, hamming distance), or (None, None) if no match.
+    """
+    if not barcodes:
+        return None, None
+
+    # Convert query and barcodes into numpy arrays of shape (num_barcodes, seq_length)
+    barcode_array = np.array([list(b) for b in barcodes], dtype='U1')  # shape (n, k)
+    query_array = np.array(list(query_seq), dtype='U1')                # shape (k,)
+
+    # Broadcast and compare: this returns a boolean array (n, k)
+    mismatches = barcode_array != query_array
+
+    # Sum mismatches (hamming distance) across each barcode (axis=1)
+    distances = np.sum(mismatches, axis=1)
+
+    # Find the smallest distance under the threshold
+    min_dist = np.min(distances)
+    if min_dist <= max_hamming:
+        best_idx = np.argmin(distances)
+        return barcodes[best_idx], min_dist
+    else:
+        return None, None
+
 
 
 def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
@@ -128,20 +157,18 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
     if max_hamming < 0:
         raise ValueError(f"{max_hamming} must be a non-negative integer.")
 
-    best_match = "undetermined"
+    best_sample = "undetermined"
     min_distance = float("inf")
 
-    for sample, barcode in barcode_dict.items():
-        dist = hamming_distance(seq, barcode)
-         # If the strings are a perfect match, skip further comparisons
-        # if dist == 0:
-        #     return sample
-
-        if dist < min_distance and dist <= max_hamming:
+    for sample, barcodes in barcode_dict.items():
+        match, dist = vectorised_hamming(seq, barcodes, max_hamming)
+        if match and dist < min_distance:
+            best_sample = sample
             min_distance = dist
-            best_match = sample
+            if dist == 0:  # perfect match
+                break
 
-    return best_match
+    return best_sample
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
@@ -174,6 +201,49 @@ def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
                 return sample_name
     # If no match is found, return "undetermined"
     return "undetermined"
+
+
+import numpy as np
+
+def vectorized_find_closest_sample(barcode_dict: dict[str, str], query_seq: str, max_hamming: int) -> str:
+    """
+    Finds the sample name with the closest matching barcode to the query sequence using NumPy vectorization.
+    
+    Args:
+        barcode_dict (dict): Dictionary mapping sample names to a single barcode string each.
+        query_seq (str): Sequence to compare against.
+        max_hamming (int): Maximum allowed Hamming distance.
+    
+    Returns:
+        str: The name of the best matching sample, or "undetermined" if no match within max_hamming.
+    """
+    best_sample = "undetermined"
+    min_distance = float("inf")
+
+    # Filter only barcodes of matching length
+    matching = {k: v for k, v in barcode_dict.items() if len(v) == len(query_seq)}
+    if not matching:
+        return best_sample
+
+    # Convert barcodes to a 2D NumPy array
+    sample_names = list(matching.keys())
+    barcodes = list(matching.values())
+    barcode_array = np.array([list(b) for b in barcodes], dtype="U1")
+    query_array = np.array(list(query_seq), dtype="U1")
+
+    # Compute Hamming distances
+    mismatches = barcode_array != query_array
+    distances = np.sum(mismatches, axis=1)
+
+    # Find best match
+    min_idx = np.argmin(distances)
+    min_dist = distances[min_idx]
+
+    if min_dist <= max_hamming:
+        best_sample = sample_names[min_idx]
+
+    return best_sample
+
 
 
 def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> None:
@@ -220,9 +290,11 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
             group = grouped_samples_by_length[
                 length
             ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
+            print(group)
 
             # Check if the read index matches to any of the samples
-            match = find_closest_match(group, trimmed_index, max_hamming_distance)
+            match = vectorized_find_closest_sample(group, trimmed_index, max_hamming_distance)
+            print(match)
             if match != "undetermined":
                 break
 
