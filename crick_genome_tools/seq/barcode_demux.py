@@ -201,10 +201,16 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
+        # match_not_found = True
         for key in sorted(grouped_samples_by_length.keys(), reverse=True):
             group = grouped_samples_by_length[key]
-            print(group)
-            match = find_closest_match(group, index, max_hamming_distance)
+            # print(group)
+            if match == "undetermined":
+                match = find_closest_match(group, index, max_hamming_distance)
+            print(match)
+            # if match != "undetermined":
+            #     match_not_found = False
+            #     break
         print(match)
 
         # Check if the index is in the matches to any of the samples
