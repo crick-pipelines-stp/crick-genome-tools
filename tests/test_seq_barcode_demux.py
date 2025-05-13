@@ -16,6 +16,7 @@ from crick_genome_tools.seq.barcode_demux import (
     find_sample_for_read_index,
     group_samples_by_index_length,
     hamming_distance,
+    crosscheck_barcode_proximity,
 )
 
 
@@ -178,6 +179,19 @@ class TestBarcodeDemux:
         result = find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
         assert_that(result).is_equal_to(expected_result)
 
+    def test_crosscheck_barcode_proximity_isvalid(self):
+        # Setup
+        sample_barcode_dict = {
+            "sample_1": "ACGTAGGT",
+            "sample_2": "ACGTAAAA",
+            "sample_3": "ACGTAGGA",
+        }
+        expected_result = [("sample_1", "sample_3", 1), ("sample_2", "sample_3", 2)]
+
+        # Test and assert
+        result = crosscheck_barcode_proximity(sample_barcode_dict, 2)
+        assert_that(result).is_equal_to(expected_result)
+
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
         [
@@ -211,20 +225,6 @@ class TestBarcodeDemux:
                     "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
                 },
             ),
-            # (
-            #     "tests/data/seq/L002_R2_1000.fastq",
-            #     {
-            #         "sample_3": "ACTTGACTAG+NTATCAACGG",
-            #         "sample_4": "GCGCTTCTAC,NTCCTTGGCT",
-            #     },
-            #     1,
-            #     ["sample_3", "sample_4", "undetermined"],
-            #     {
-            #         "sample_3": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
-            #         "sample_4": "",
-            #         "undetermined": "",
-            #     },
-            # ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_valid(
@@ -250,4 +250,4 @@ class TestBarcodeDemux:
                 file_content = f.read().strip()
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
-            # raise ValueError
+            raise ValueError

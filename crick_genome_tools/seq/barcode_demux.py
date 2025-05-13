@@ -133,7 +133,7 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
 
     for sample, barcode in barcode_dict.items():
         dist = hamming_distance(seq, barcode)
-         # If the strings are a perfect match, skip further comparisons
+        # If the strings are a perfect match, skip further comparisons
         # if dist == 0:
         #     return sample
 
@@ -142,6 +142,49 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
             best_match = sample
 
     return best_match
+
+def crosscheck_barcode_proximity(barcodes: dict, max_hamming: int) -> list:
+    """
+    Performs an all-vs-all comparison of barcode values and returns pairs with
+    Hamming distances below or equal to the specified threshold.
+
+    Args:
+        barcodes (dict): A dictionary mapping sample names to barcode strings.
+        max_hamming (int): The maximum allowed Hamming distance between barcode pairs.
+
+    Returns:
+        list: A list of tuples where each tuple contains the names of two samples with
+            barcodes below or equal to the max_hamming threshold, and their Hamming distance.
+
+    Raises:
+        ValueError: If barcode strings are not of equal length.
+    """
+    items = list(barcodes.items())
+    similar_pairs = []
+
+    for i in range(len(items)):
+        sample1, bc1 = items[i]
+        for j in range(i + 1, len(items)):
+            sample2, bc2 = items[j]
+
+            if len(bc1) != len(bc2):
+                raise ValueError(f"Barcodes '{sample1}' and '{sample2}' are of unequal length")
+
+            # Fast inline hamming distance with early exit
+            dist = 0
+            for a, b in zip(bc1, bc2):
+                if a != b:
+                    dist += 1
+                    if dist > max_hamming:
+                        break
+
+            if dist <= max_hamming:
+                similar_pairs.append((sample1, sample2, dist))
+
+    if similar_pairs:
+        raise ValueError(f"Found {len(similar_pairs)} pairs of barcodes with Hamming distance <= {max_hamming}: {similar_pairs}")
+    else:
+        return []
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
@@ -220,7 +263,7 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
             group = grouped_samples_by_length[
                 length
             ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
-
+                
             # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
             if match != "undetermined":
