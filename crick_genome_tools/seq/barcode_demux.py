@@ -175,16 +175,56 @@ def crosscheck_barcode_proximity(barcodes: dict, max_hamming: int) -> list:
             for a, b in zip(bc1, bc2):
                 if a != b:
                     dist += 1
-                    if dist > max_hamming:
-                        break
+            similar_pairs.append((bc1, bc2, dist))
+            #         if dist > max_hamming:
+            #             break
 
-            if dist <= max_hamming:
-                similar_pairs.append((sample1, sample2, dist))
+            # if dist <= max_hamming:
+            #     similar_pairs.append((sample1, sample2, dist))
 
-    if similar_pairs:
-        raise ValueError(f"Found {len(similar_pairs)} pairs of barcodes with Hamming distance <= {max_hamming}: {similar_pairs}")
-    else:
-        return []
+    # if similar_pairs:
+    #     raise ValueError(f"Found {len(similar_pairs)} pairs of barcodes with Hamming distance <= {max_hamming}: {similar_pairs}")
+    # else:
+    return similar_pairs
+
+def find_min_hamming_distances(grouped_sample_hamming_by_length):
+    """
+    Finds the minimum Hamming distance for each group length.
+
+    Args:
+        grouped_sample_hamming_by_length (dict): A dictionary where each key is a group length
+            and the value is a set of tuples (barcode1, barcode2, hamming_distance).
+
+    Returns:
+        dict: A dictionary mapping each group length to the smallest Hamming distance found.
+    """
+    min_distances = {}
+
+    for length, comparisons in grouped_sample_hamming_by_length.items():
+        distances = [dist for _, _, dist in comparisons]
+        if distances:
+            min_distances[length] = min(distances)
+
+    return min_distances
+
+def assert_min_hamming_above_threshold(min_distances_by_group, max_hamming):
+    """
+    Validates that the minimum Hamming distance in each group is >= max_hamming.
+
+    Args:
+        min_distances_by_group (dict): Output from `find_min_hamming_distances`,
+            mapping group length to its minimum Hamming distance.
+        max_hamming (int): The minimum allowed Hamming distance.
+
+    Raises:
+        ValueError: If any group has a minimum Hamming distance less than max_hamming.
+    """
+    for length, min_distance in min_distances_by_group.items():
+        if min_distance < max_hamming:
+            raise ValueError(
+                f"Minimum Hamming distance violation in group {length}: "
+                f"{min_distance} < {max_hamming}"
+            )
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
@@ -241,9 +281,21 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
     # Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
+    grouped_sample_hamming_by_length = {}
+    print(grouped_samples_by_length)
     for group in grouped_samples_by_length.values():
         for sample in group:
             group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
+
+    grouped_sample_hamming_by_length = {
+        length: crosscheck_barcode_proximity(samples, max_hamming_distance)
+        for length, samples in grouped_samples_by_length.items()
+        if len(samples) > 1
+    }
+    print(grouped_sample_hamming_by_length)
+    min_hamming_distances_by_length = find_min_hamming_distances(grouped_sample_hamming_by_length)
+    assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
+    print(min_hamming_distances_by_length)
 
     file_handles = defaultdict(lambda: open(os.path.join(output_dir, "undetermined.txt"), "a", encoding="utf-8"))
     for sample in samples_barcode_from_dict:
