@@ -17,6 +17,8 @@ from crick_genome_tools.seq.barcode_demux import (
     group_samples_by_index_length,
     hamming_distance,
     crosscheck_barcode_proximity,
+    find_min_hamming_distances,
+    assert_min_hamming_above_threshold,
 )
 
 
@@ -179,6 +181,35 @@ class TestBarcodeDemux:
         result = find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
         assert_that(result).is_equal_to(expected_result)
 
+    def test_crosscheck_barcode_proximity_invalid_input(self):
+        # Setup
+        sample_barcode_list = ["invalid", "input", "not", "a", "dict"]
+
+        # Test and assert
+        assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(sample_barcode_list)
+        assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with("invalid_input")
+        assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(1234)
+        assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(None)
+
+    def test_crosscheck_barcode_proximity_invalid_barcode_length(self):
+        # Setup
+        sample_barcode_dict = {
+            "sample_1": "ACGTAGGT",
+            "sample_2": "ACGTAA",
+            "sample_3": "ACGGA",
+        }
+
+        # Test and assert
+        assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(sample_barcode_dict)
+
+    def test_crosscheck_barcode_proximity_single_barcode(self):
+        # Setup
+        sample_barcode_dict = {"sample_1": "ACGTAGGT"}
+
+        # Test and assert
+        assert_that(crosscheck_barcode_proximity(sample_barcode_dict)).is_equal_to([])
+        # No pairs to compare, so the result should be an empty list
+
     def test_crosscheck_barcode_proximity_isvalid(self):
         # Setup
         sample_barcode_dict = {
@@ -186,11 +217,54 @@ class TestBarcodeDemux:
             "sample_2": "ACGTAAAA",
             "sample_3": "ACGTAGGA",
         }
-        expected_result = [("sample_1", "sample_3", 1), ("sample_2", "sample_3", 2)]
+        expected_result = [("ACGTAGGT", "ACGTAAAA", 3), ("ACGTAGGT", "ACGTAGGA", 1), ("ACGTAAAA", "ACGTAGGA", 2)]
+        # ('sample_1', 'sample_2', 3), ('sample_1', 'sample_3', 1), ('sample_2', 'sample_3', 2)
 
         # Test and assert
-        result = crosscheck_barcode_proximity(sample_barcode_dict, 2)
-        assert_that(result).is_equal_to(expected_result)
+        assert_that(crosscheck_barcode_proximity(sample_barcode_dict)).is_equal_to(expected_result)
+
+    def test_find_min_hamming_distances_invalid_input(self):
+        # Test and assert
+        # not a dictionary
+        assert_that(find_min_hamming_distances).raises(ValueError).when_called_with("ACGT")  # string
+        assert_that(find_min_hamming_distances).raises(ValueError).when_called_with(["sample_1"])  # list
+        assert_that(find_min_hamming_distances).raises(ValueError).when_called_with(1)  # int
+        assert_that(find_min_hamming_distances).raises(ValueError).when_called_with(None)  # None
+
+    def test_find_min_hamming_distances_isvalid(self):
+        # Setup
+        sample_barcode_dict = {
+            8: [("ACGTAGGT", "ACGTAAAA", 3), ("ACGTAAAT", "ACGTAGGA", 3), ("ACGTAAAA", "ACGTAGGA", 2)],
+            4: [("ACGT", "ACAA", 3), ("ACGT", "ACGA", 1), ("AAAA", "AGGA", 2)],
+        }
+
+        # Test and assert
+        assert_that(find_min_hamming_distances(sample_barcode_dict)).is_equal_to({8: 2, 4: 1})
+
+    def test_assert_min_hamming_above_threshold_hamming_below_max_threshold(self):
+        # Setup
+        sample_barcode_dict = {8: 4, 4: 5, 3: 3}
+
+        # Test and assert
+        assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(sample_barcode_dict, 4)
+        
+    def test_assert_min_hamming_above_threshold_isinvalid(self):
+        # Setup
+        sample_barcode_dict = {8: 4, 4: 5, 3: 3}
+        assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(sample_barcode_dict, None)
+        assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with("invalid_input", 3)
+        assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(None, 3)
+
+    def test_assert_min_hamming_above_threshold_isvalid(self):
+        # Setup
+        sample_barcode_dict = {8: 4, 4: 5, 3: 3}
+
+        # Test and assert
+        try:
+            assert_min_hamming_above_threshold(sample_barcode_dict, 3)  # function that doesn't return anything
+        except ValueError as e:
+            assert False, f"Function raised an unexpected exception: {e}"
+            # assertion can't be done using assertpy
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
