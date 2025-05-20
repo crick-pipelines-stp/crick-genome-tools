@@ -21,7 +21,7 @@ def get_version():
     """
     try:
         # Describe latest tag on main with commit count
-        describe = subprocess.check_output(["git", "describe", "--tags", "main"]).strip().decode("utf-8")
+        describe = subprocess.check_output(["git", "describe", "--tags", "origin/main"]).strip().decode("utf-8")
         if "-" in describe:
             base, commits, _ = describe.split("-")
             major_minor = base.lstrip("v")  # Remove 'v' prefix if present
