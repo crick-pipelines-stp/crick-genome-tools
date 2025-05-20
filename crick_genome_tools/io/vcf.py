@@ -63,6 +63,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             chrom = record.chrom
             pos = record.pos
             ref = record.ref
+            print(f"Processing {chrom}:{pos} {ref}")
             alt_list = [str(a) for a in record.alts] if record.alts else []
             alt = ",".join(alt_list)
             var_type = determine_variant_type(ref, alt_list[0])
