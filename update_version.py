@@ -27,7 +27,7 @@ def get_version():
             major_minor = base.lstrip("v")  # Remove 'v' prefix if present
             version = f"{major_minor}.{commits}"
         else:
-            version = describe.lstrip("v")
+            version = describe.lstrip("v") + ".0"
     except subprocess.CalledProcessError:
         version = "0.1.0"
 
