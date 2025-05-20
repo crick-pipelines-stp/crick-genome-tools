@@ -64,8 +64,11 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             pos = record.pos
             ref = record.ref
             alt_list = [str(a) for a in record.alts] if record.alts else []
-            alt = ",".join(alt_list)
-            var_type = determine_variant_type(ref, alt_list[0])
+            if len(alt_list) > 1:
+                alt = ",".join(alt_list)
+            elif len(alt_list) == 0:
+                alt_list = ref
+            var_type = determine_variant_type(ref, alt_list)
             qual = round(float(record.qual), 2)
             info = record.info
 

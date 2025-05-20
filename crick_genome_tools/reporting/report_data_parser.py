@@ -338,45 +338,41 @@ class ReportDataParser:
             sample_id = bam_info_file.split(".")[0]
             if sample_id not in self.result_dict:
                 self.result_dict[sample_id] = {}
-            # Read the bam info and save the starts/ends positions
+            # Read the bam info and save the starts/ends positions
             bam_info_df = pd.read_csv(
-                os.path.join(folder_path, bam_info_file),
-                sep='\t',
-                usecols=['Pos', 'EndPos'],
-                dtype={
-                    'Pos': np.uint32,
-                    'EndPos': np.uint32
-                })
-            bam_info_df = bam_info_df.rename(columns={'Pos': 'Read Start', 'EndPos': 'Read End'})
+                os.path.join(folder_path, bam_info_file), sep="\t", usecols=["Pos", "EndPos"], dtype={"Pos": np.uint32, "EndPos": np.uint32}
+            )
+            bam_info_df = bam_info_df.rename(columns={"Pos": "Read Start", "EndPos": "Read End"})
             self.result_dict[sample_id]["truncation"] = bam_info_df
             log.info(f"Processed truncation file: {sample_id} - {bam_info_file}")
 
             bam_info_df = pd.read_csv(
                 os.path.join(folder_path, bam_info_file),
-                sep='\t',
-                usecols=['Ref', 'Read', 'Pos', 'EndPos', 'ReadLen', 'Strand', 'IsSec', 'IsSup'],
-                dtype = {
-                'Read': 'string',
-                'Ref': 'string',
-                'Pos': np.int32,
-                'EndPos': np.int32,
-                'ReadLen': np.int32,
-                'Strand': np.int8,
-                'IsSec': np.int8,
-                'IsSup': np.int8,
-                })
-            bam_info_df[['Strand', 'IsSec', 'IsSup']] = bam_info_df[['Strand', 'IsSec', 'IsSup']].astype(np.bool_)
+                sep="\t",
+                usecols=["Ref", "Read", "Pos", "EndPos", "ReadLen", "Strand", "IsSec", "IsSup"],
+                dtype={
+                    "Read": "string",
+                    "Ref": "string",
+                    "Pos": np.int32,
+                    "EndPos": np.int32,
+                    "ReadLen": np.int32,
+                    "Strand": np.int8,
+                    "IsSec": np.int8,
+                    "IsSup": np.int8,
+                },
+            )
+            bam_info_df[["Strand", "IsSec", "IsSup"]] = bam_info_df[["Strand", "IsSec", "IsSup"]].astype(np.bool_)
 
             itr_length = 130
             itr_fl_threshold = 20
             payload_threshold = 100
             itr1_starts = 0
             itr1_ends = itr_length
-            itr2_ends = bam_info_df['EndPos'].max()
+            itr2_ends = bam_info_df["EndPos"].max()
             itr2_starts = itr2_ends - itr_length
 
-            starts = bam_info_df['Pos']
-            ends = bam_info_df['EndPos']
+            starts = bam_info_df["Pos"]
+            ends = bam_info_df["EndPos"]
             itr1_full = itr1_starts + itr_fl_threshold
             itr2_full = itr2_ends - itr_fl_threshold
             payload5_full = itr1_ends + payload_threshold
@@ -407,7 +403,7 @@ class ReportDataParser:
                 (starts < itr1_starts) & (ends >= itr1_starts),
                 (starts <= itr2_ends) & (ends > itr2_ends),
                 (starts < itr1_starts) & (ends < itr1_starts),
-                (starts > itr2_ends) & (ends > itr2_ends)
+                (starts > itr2_ends) & (ends > itr2_ends),
             ]
 
             choices = [
@@ -427,7 +423,7 @@ class ReportDataParser:
                 AlnType.vec_bb_5,
                 AlnType.vec_bb_3,
                 AlnType.bb,
-                AlnType.bb
+                AlnType.bb,
             ]
 
             choices_simple = [
@@ -447,23 +443,16 @@ class ReportDataParser:
                 AlnType.vec_bb_5,
                 AlnType.vec_bb_3,
                 AlnType.bb,
-                AlnType.bb
+                AlnType.bb,
             ]
 
-            bam_info_df["aln_type"] = np.select(
-                conditions,
-                choices,
-                default=AlnType.unknown
-            )
+            bam_info_df["aln_type"] = np.select(conditions, choices, default=AlnType.unknown)
             self.result_dict[sample_id]["truncation_type"] = bam_info_df
 
             bam_info_df_simple = bam_info_df.copy()
-            bam_info_df_simple["aln_type"] = np.select(
-                conditions,
-                choices_simple,
-                default=AlnType.unknown
-            )
+            bam_info_df_simple["aln_type"] = np.select(conditions, choices_simple, default=AlnType.unknown)
             self.result_dict[sample_id]["truncation_type_simple"] = bam_info_df_simple
+
 
 class AlnType(str, Enum):
     """Enum for Assigning categories to alignments.
@@ -477,31 +466,31 @@ class AlnType(str, Enum):
 
     # These are alignments that represent almost full AAV genomes. They have varying
     # amounts of ITR on both sides of the alignment and contain full mid-sections
-    complete = 'Complete'
-    full5_par3 = 'Full 5` ITR and partial 3` ITR'
-    par5_full3 = 'Partial 5` ITR and full 3` ITR'
-    par5_par3 = 'Partial 5` ITR and partial 3` ITR'
-    full_payload = 'Full payload'
+    complete = "Complete"
+    full5_par3 = "Full 5` ITR and partial 3` ITR"
+    par5_full3 = "Partial 5` ITR and full 3` ITR"
+    par5_par3 = "Partial 5` ITR and partial 3` ITR"
+    full_payload = "Full payload"
 
     # These alignments are truncated at the mid-section region but contain some
     # ITR region on one of the ends
-    truncated_payload = 'Truncated payload'
-    full5_par_mid = 'Full 5` ITR and partial payload'
-    par_mid_full3 = 'Partial payload section and full 3` ITR'
-    par5_par_mid = 'Partial 5` ITR and partial payload'
-    par_mid_par3 = 'Partial payload and partial 3` ITR'
+    truncated_payload = "Truncated payload"
+    full5_par_mid = "Full 5` ITR and partial payload"
+    par_mid_full3 = "Partial payload section and full 3` ITR"
+    par5_par_mid = "Partial 5` ITR and partial payload"
+    par_mid_par3 = "Partial payload and partial 3` ITR"
 
     # Alignment starts and ends within ITR
-    itr5_only = '5` ITR'
-    itr3_only = '3` ITR'
+    itr5_only = "5` ITR"
+    itr3_only = "3` ITR"
 
     # Transgene plamsid backbone alignments
-    vec_bb_5 = 'Vector backbone - 5` ends'
-    vec_bb_3 = 'Vector backbone - 3` ends'
-    bb = 'Backbone'
+    vec_bb_5 = "Vector backbone - 5` ends"
+    vec_bb_3 = "Vector backbone - 3` ends"
+    bb = "Backbone"
 
-    ext_itr = 'Extended ITR-ITR region'
-    unknown = 'Unknown'
+    ext_itr = "Extended ITR-ITR region"
+    unknown = "Unknown"
 
     def __str__(self):
         return self.value

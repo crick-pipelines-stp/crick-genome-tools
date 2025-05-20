@@ -12,15 +12,15 @@ from crick_genome_tools.reporting.plotly_graph_common import (
     default_graph_layout,
     format_float,
     format_int,
+    legend,
     line_width,
     plotly_background_color,
     read_length_distribution,
+    smooth_data,
     title,
     transparent_colors,
     xaxis,
     yaxis,
-    smooth_data,
-    legend
 )
 
 
@@ -272,7 +272,7 @@ def coverage_plot(data_frame, graph_name):
 
 
 def truncation_scatterplot(data_frame):
-    # Init
+    # Init
     graph_name = "Truncation histogram"
     npoints = 10000
     sigma = 3
@@ -283,7 +283,7 @@ def truncation_scatterplot(data_frame):
 
     count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma, data=start_pos, min_arg=min_all_pos, max_arg=max_all_pos)
     count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma, data=end_pos, min_arg=min_all_pos, max_arg=max_all_pos)
-    max_y = max(max(count_y1), max(count_y2))
+    # max_y = max(max(count_y1), max(count_y2))
 
     # Calc upper y
     combined_y = np.concatenate([count_y1, count_y2])
@@ -323,7 +323,7 @@ def truncation_barplot(data_frame, graph_name):
         marker_color=transparent_colors(colors, plotly_background_color, 0.5),
         marker_line_color=colors,
         marker_line_width=line_width,
-        name="Alignment Type"
+        name="Alignment Type",
     )
 
     layout = go.Layout(
@@ -332,7 +332,7 @@ def truncation_barplot(data_frame, graph_name):
         barmode="stack",
         hovermode="x",
         **xaxis("Truncation type", dict(tickangle=45, fixedrange=True)),
-        **yaxis("Read count")
+        **yaxis("Read count"),
     )
 
     fig = go.Figure(data=[trace], layout=layout)

@@ -1,5 +1,7 @@
 import itertools
+import os
 import re
+from collections import defaultdict
 
 import numpy as np
 
@@ -264,9 +266,6 @@ def gen_index_and_hamming_dict(fastq_file, group1, group2):
 
 
 #############################################################################
-
-import os
-from collections import defaultdict
 
 
 def build_barcode_maps(group1):

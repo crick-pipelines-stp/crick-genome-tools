@@ -20,8 +20,8 @@ from crick_genome_tools.reporting.tqc.plotly_charts import (
     mqc_samtools_contig_bar_plot,
     read_count_histogram,
     read_length_scatterplot,
+    truncation_barplot,
     truncation_scatterplot,
-    truncation_barplot
 )
 
 
