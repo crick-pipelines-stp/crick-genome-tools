@@ -71,6 +71,9 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             elif len(alt_list) == 0:
                 alt = ref
                 alt_var_type = ref
+            else:
+                alt = alt_list[0]
+                alt_var_type = alt_list[0]
             var_type = determine_variant_type(ref, alt_var_type)
             qual = round(float(record.qual), 2)
             info = record.info
