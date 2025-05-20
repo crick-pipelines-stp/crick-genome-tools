@@ -20,15 +20,16 @@ def get_version():
         str: The generated version string.
     """
     try:
-        # Get the latest tag from the main branch
-        tag = subprocess.check_output(["git", "describe", "--tags", "main"]).strip().decode("utf-8")
-        if "-" in tag:
-            tag, commits, _ = tag.split("-")
-            version = f"{tag}.{commits}"
+        # Describe latest tag on main with commit count
+        describe = subprocess.check_output(["git", "describe", "--tags", "main"]).strip().decode("utf-8")
+        if "-" in describe:
+            base, commits, _ = describe.split("-")
+            major_minor = base.lstrip("v")  # Remove 'v' prefix if present
+            version = f"{major_minor}.{commits}"
         else:
-            version = tag
+            version = describe.lstrip("v")
     except subprocess.CalledProcessError:
-        version = "0.1"
+        version = "0.1.0"
 
     # Get the current branch name
     branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode("utf-8")
