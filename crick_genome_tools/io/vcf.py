@@ -135,7 +135,10 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
 
             # Tool specific info: sniffles
             if tool == "snpeff":
-                annotation = info["ANN"]
+                if "ANN" in info:
+                    annotation = info["ANN"]
+                else:
+                    annotation = ""
 
             # Construct entry
             variant = {
