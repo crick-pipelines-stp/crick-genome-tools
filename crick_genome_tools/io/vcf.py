@@ -40,6 +40,11 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         tool_names (list): List of tool names corresponding to the VCF files
         output_file (str, optional): Path to the output file
     """
+    log.info("Generating merged VCF report")
+    log.info(f"VCF files: {vcf_files}")
+    log.info(f"Tool names: {tool_names}")
+    log.info(f"Output file: {output_file}")
+
     # Load vcf files
     vcf_data = []
     for vcf_file in vcf_files:
