@@ -223,12 +223,47 @@ def assert_min_hamming_above_threshold(min_distances_by_group: dict, max_hamming
     Raises:
         ValueError: If any group has a minimum Hamming distance less than max_hamming.
     """
+    if not isinstance(min_distances_by_group, dict):
+        raise ValueError(f"{min_distances_by_group} must be a dictionary.")
+    if not isinstance(max_hamming, int):
+        raise ValueError(f"{max_hamming} must be an integer.")
+
     for length, min_distance in min_distances_by_group.items():
         if min_distance < max_hamming:
-            raise ValueError(
-                f"Minimum Hamming distance violation in group {length}: "
-                f"{min_distance} < {max_hamming}"
-            )
+            raise ValueError(f"Minimum Hamming distance violation in group {length}: " f"{min_distance} < {max_hamming}")
+
+def split_trim_merge_string(input_str: str, length: int) -> str:
+    """
+    Splits a string into two halves, trims each half to a specified length,
+    and merges the trimmed parts together.
+
+    This function first divides the input string into two equal halves.
+    Then, it trims each half to a maximum of `length // 2` characters.
+    Finally, it concatenates the two trimmed halves into a single string.
+
+    Args:
+        input_str (str): The string to be processed.
+        length (int): The total number of characters to retain across both halves.
+
+    Returns:
+        str: The resulting string after splitting, trimming, and merging.
+
+    Raises:
+        ValueError: If the provided length is negative.
+    """
+    if length < 0:
+        raise ValueError("Length must be non-negative.")
+
+    half_len = length // 2
+    midpoint = len(input_str) // 2
+
+    part1 = input_str[:midpoint]
+    part2 = input_str[midpoint:]
+
+    trimmed1 = part1[:half_len]
+    trimmed2 = part2[:half_len]
+
+    return trimmed1 + trimmed2
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
@@ -334,11 +369,55 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
         for length in sorted(grouped_samples_by_length.keys(), reverse=True):
+#####
+# 2 options: either trim barcode from read
+# OR
+# trim index from csv file
+#####
+
+            # option 1
+
+            # print(length)
+
             trimmed_index = index[:length]
+            # print(index)
+            # print(trimmed_index)
             group = grouped_samples_by_length[
                 length
             ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
-                
+            # print(group)
+
+
+            # option 2
+
+            # trimming differes depending on whether it's a single or dual index
+            for sample in grouped_samples_by_length[length]:
+                if grouped_sample_by_length_single_or_dual_index[sample] == 1:
+                    # if it's a single index, trim the index to the length of the barcode
+                    # print(sample)
+                    trimmed_index = index[:length]
+                if grouped_sample_by_length_single_or_dual_index[sample] == 2:
+                    print('dual')
+                    trimmed_index = split_trim_merge_string(index, length)
+
+                    # length_to_trim = length // 2
+
+                    # midpoint = len(index) // 2
+                    # part1 = index[:midpoint]
+                    # part2 = index[midpoint:]
+
+                    # trimmed1 = part1[:length_to_trim]
+                    # trimmed2 = part2[:length_to_trim]
+
+                    # # Merge the trimmed parts
+                    # trimmed_index = trimmed1 + trimmed2
+                    print(trimmed_index)
+
+
+            ###### 
+            # in theory, we should trim the index extracted from the samplesheet, not from the illumina header
+            #####
+
             # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
             if match != "undetermined":
