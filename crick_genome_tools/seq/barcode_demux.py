@@ -232,38 +232,51 @@ def assert_min_hamming_above_threshold(min_distances_by_group: dict, max_hamming
         if min_distance < max_hamming:
             raise ValueError(f"Minimum Hamming distance violation in group {length}: " f"{min_distance} < {max_hamming}")
 
-def split_trim_merge_string(input_str: str, length: int) -> str:
-    """
-    Splits a string into two halves, trims each half to a specified length,
-    and merges the trimmed parts together.
 
-    This function first divides the input string into two equal halves.
-    Then, it trims each half to a maximum of `length // 2` characters.
-    Finally, it concatenates the two trimmed halves into a single string.
+def trim_merge_string(input_str: str, length: int) -> str:
+    """
+    Trims and optionally splits and merges a string based on a specified length.
+
+    If the input string contains no space, it is trimmed from the end to the specified length.
+    If the input string contains a space, it is split into two parts at the first space. Each part
+    is trimmed to `length // 2` characters, and the two trimmed parts are concatenated.
 
     Args:
-        input_str (str): The string to be processed.
-        length (int): The total number of characters to retain across both halves.
+        length (int): The total number of characters to retain.
+        input_str (str): The input string to process.
 
     Returns:
-        str: The resulting string after splitting, trimming, and merging.
+        str: A trimmed string (if no space is present), or a merged string composed of two trimmed
+            parts (if a space is present).
 
     Raises:
         ValueError: If the provided length is negative.
     """
+    if input_str is None:
+        raise ValueError("Input string is None.")
+    if length is None:
+        raise ValueError("Length is None.")
+
+    if not isinstance(input_str, str):
+        raise ValueError(f"{input_str} must be a string.")
+    if not isinstance(length, int):
+        raise ValueError(f"{length} must be an integer.")
+
     if length < 0:
         raise ValueError("Length must be non-negative.")
 
-    half_len = length // 2
-    midpoint = len(input_str) // 2
+    if length == 0:
+        # remove all non-alphabetic characters
+        input_str = re.sub(r"[^A-Za-z]", "", input_str)
+        return input_str
 
-    part1 = input_str[:midpoint]
-    part2 = input_str[midpoint:]
-
-    trimmed1 = part1[:half_len]
-    trimmed2 = part2[:half_len]
-
-    return trimmed1 + trimmed2
+    # check if the string contains a space
+    if " " in input_str:
+        part1, part2 = input_str.split(" ", 1)
+        half_len = length // 2  # Always returns a float
+        return part1[:-half_len] + part2[:-half_len]
+    else:
+        return input_str[:-length]
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:

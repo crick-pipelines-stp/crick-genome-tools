@@ -10,15 +10,16 @@ import pytest
 from assertpy import assert_that
 
 from crick_genome_tools.seq.barcode_demux import (
+    assert_min_hamming_above_threshold,
+    crosscheck_barcode_proximity,
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
     find_closest_match,
+    find_min_hamming_distances,
     find_sample_for_read_index,
     group_samples_by_index_length,
     hamming_distance,
-    crosscheck_barcode_proximity,
-    find_min_hamming_distances,
-    assert_min_hamming_above_threshold,
+    trim_merge_string,
 )
 
 
@@ -265,6 +266,24 @@ class TestBarcodeDemux:
         except ValueError as e:
             assert False, f"Function raised an unexpected exception: {e}"
             # assertion can't be done using assertpy
+
+    def test_trim_merge_string_isnone(self):
+        assert_that(trim_merge_string).raises(ValueError).when_called_with(None, 3)
+        assert_that(trim_merge_string).raises(ValueError).when_called_with("string", None)
+
+    def test_trim_merge_string_invalid(self):
+        # Test and assert
+        assert_that(trim_merge_string).raises(ValueError).when_called_with("ACGTAGGT", -3)
+        assert_that(trim_merge_string).raises(ValueError).when_called_with(["not_a_string"], 3)
+
+    def test_trim_merge_string_isvalid(self):
+        # Test and assert
+        assert_that(trim_merge_string("ACGTAGGT", 3)).is_equal_to("ACGTA")
+        assert_that(trim_merge_string("ACGTAGGT", 0)).is_equal_to("ACGTAGGT")
+        assert_that(trim_merge_string("ACGT AGGT", 2)).is_equal_to("ACGAGG")
+        assert_that(trim_merge_string("ACGT AGGT", 3)).is_equal_to("ACGAGG")
+        assert_that(trim_merge_string("ACGT AGGT", 0)).is_equal_to("ACGTAGGT")
+        assert_that(trim_merge_string("ACGTAAAC AGGT", 4)).is_equal_to("ACGTAAAG")
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
