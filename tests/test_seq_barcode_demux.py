@@ -248,7 +248,7 @@ class TestBarcodeDemux:
 
         # Test and assert
         assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(sample_barcode_dict, 4)
-        
+
     def test_assert_min_hamming_above_threshold_isinvalid(self):
         # Setup
         sample_barcode_dict = {8: 4, 4: 5, 3: 3}
@@ -296,25 +296,23 @@ class TestBarcodeDemux:
                     "sample_3": "ACGTA",
                 },
                 1,
-                ["sample_1", "sample_2", "undetermined"],
+                ["sample_1", "sample_2", "sample_3", "undetermined"],
                 {
                     "sample_1": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
                     "sample_2": "",
-                    "sample_3": "",
+                    "sample_3": "a",
                     "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
                 },
             ),
             (
                 "tests/data/seq/L002_R2.fastq",
-                {
-                    "sample_A": "ACTTGACTAG+NTATCAACGG",
-                    "sample_B": "GCGCTTCTAC,NTCCTTGGCT",
-                },
+                {"sample_A": "ACTTGACTAG+NTATCAACGG", "sample_B": "GCGCTTCTAC,NTCCTTGGCT", "sample_C": "ACCTTA+ACCTTA"},
                 1,
-                ["sample_A", "sample_B", "undetermined"],
+                ["sample_A", "sample_B", "sample_C", "undetermined"],
                 {
                     "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
                     "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
+                    "sample_C": "",
                     "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
                 },
             ),
@@ -343,4 +341,37 @@ class TestBarcodeDemux:
                 file_content = f.read().strip()
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
-            raise ValueError
+            # raise ValueError
+
+    @pytest.mark.parametrize(
+        "fastq_file, barcode_sample_dict, max_hamming_distance, expected_read_count",
+        [
+            (
+                "tests/data/seq/sub_read_L002_R1.fastq",
+                {
+                    "sample_1": "ACTT,NTAT",
+                    "sample_2": "ACGT,AGGT",
+                    "sample_3": "ACGTA",
+                },
+                1,
+                {
+                    "sample_1": 1,
+                    "sample_2": "",
+                    "sample_3": "",
+                    "undetermined": 1,
+                },
+            ),
+        ],
+    )
+    def test_demultiplex_fastq_by_barcode_read_count_valid(
+        self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_read_count
+    ):
+        # Setup
+        output_dir = tmp_path
+        # output_dir = "tests/data/seq/output"
+
+        # Test
+        read_count = demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+
+        # Assert
+        assert_that(read_count).is_equal_to(expected_read_count)

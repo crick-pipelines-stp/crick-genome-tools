@@ -352,8 +352,6 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
             # if no space is present, the barcode is single indexed
             grouped_sample_by_length_single_or_dual_index[sample] = 1
 
-    print(grouped_sample_by_length_single_or_dual_index)
-
     ## Compare the all the barcodes in each group against each other to find the Hamming distance for each pair compared
     grouped_sample_by_length_hamming_value = {}
     grouped_sample_by_length_hamming_value = {
@@ -372,72 +370,44 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     for sample in samples_barcode_from_dict:
         file_handles[sample] = open(os.path.join(output_dir, f"{sample}.txt"), "a", encoding="utf-8")
 
+    # Keep track of each read assigned to each sample
+    sample_assigned_read = defaultdict(list)  # this one keeps track of sample+read index
+    sample_count = defaultdict(int)  # this one keeps track of how many reads are assigned to each sample
+    matches = []
+
     ## Read the FASTQ file and extract indexes, save all indexes in a list
     fastq = FastqFile(fastq_file)
     for name, seq, _ in fastq.open_read_iterator(as_string=True):
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
-        index = re.sub(r"[^A-Za-z]", "", index)
+        index = re.sub(r"[^A-Za-z]", " ", index)
 
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
         for length in sorted(grouped_samples_by_length.keys(), reverse=True):
-#####
-# 2 options: either trim barcode from read
-# OR
-# trim index from csv file
-#####
-
-            # option 1
-
-            # print(length)
-
-            trimmed_index = index[:length]
-            # print(index)
-            # print(trimmed_index)
-            group = grouped_samples_by_length[
-                length
-            ]  # this trims the index at the end of the sequence, ingores the possibility of the sequence being 2 indexes merged into one
-            # print(group)
-
-
-            # option 2
 
             # trimming differes depending on whether it's a single or dual index
-            for sample in grouped_samples_by_length[length]:
-                if grouped_sample_by_length_single_or_dual_index[sample] == 1:
-                    # if it's a single index, trim the index to the length of the barcode
-                    # print(sample)
-                    trimmed_index = index[:length]
-                if grouped_sample_by_length_single_or_dual_index[sample] == 2:
-                    print('dual')
-                    trimmed_index = split_trim_merge_string(index, length)
-
-                    # length_to_trim = length // 2
-
-                    # midpoint = len(index) // 2
-                    # part1 = index[:midpoint]
-                    # part2 = index[midpoint:]
-
-                    # trimmed1 = part1[:length_to_trim]
-                    # trimmed2 = part2[:length_to_trim]
-
-                    # # Merge the trimmed parts
-                    # trimmed_index = trimmed1 + trimmed2
-                    print(trimmed_index)
-
-
-            ###### 
-            # in theory, we should trim the index extracted from the samplesheet, not from the illumina header
-            #####
+            trimmed_index = trim_merge_string(index, length)
+            group = grouped_samples_by_length[length]
 
             # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
+            print(match)
+            sample_assigned_read[match].append([name, trimmed_index])
+
+            matches.append(match)
+
             if match != "undetermined":
                 break
 
         # Write the sequence to the appropriate file
         file_handles[match].write(seq + "\n")
 
+    for match in matches:
+        sample_count[match] += 1  # Increment the count for each match
+    print(sample_assigned_read)
+    print(sample_count)
     for f in file_handles.values():
         f.close()
+
+    return sample_count
