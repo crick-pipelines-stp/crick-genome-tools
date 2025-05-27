@@ -12,15 +12,14 @@ from assertpy import assert_that
 from crick_genome_tools.seq.barcode_demux import (
     assert_min_hamming_above_threshold,
     crosscheck_barcode_proximity,
+    custom_priority_by_length_sort_key,
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
     find_closest_match,
     find_min_hamming_distances,
-    find_sample_for_read_index,
     group_samples_by_index_length,
     hamming_distance,
     trim_merge_string,
-    custom_priority_by_length_sort_key,
 )
 
 
@@ -86,29 +85,6 @@ class TestBarcodeDemux:
         # Test and assert
         assert_that(group_samples_by_index_length(input_dict)).is_equal_to(expected_dict)
         assert_that(group_samples_by_index_length(input_dict_2)).is_equal_to(expected_dict_2)
-
-    def test_find_sample_for_read_index_none(self):
-        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with(None, {"dict": "test"})
-
-        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with("str_input", None)
-
-    def test_find_sample_for_read_index_invalid(self):
-        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with(["not_a_string_input"], {"dict": "test"})
-
-        assert_that(find_sample_for_read_index).raises(ValueError).when_called_with("str_input", ["not_a_dict"])
-
-    def test_find_sample_for_read_index_valid(self):
-        # Setup
-        read_index = "ACGT"
-        barcode_dict = {
-            4: {
-                "sample_1": {"ACGT", "AGGT"},
-                "sample_2": {"CGTA", "TGCA"},
-            }
-        }
-
-        # Test and assert
-        assert_that(find_sample_for_read_index(read_index, barcode_dict)).is_equal_to("sample_1")
 
     @pytest.mark.parametrize(
         "sequence1, sequence2",
@@ -279,8 +255,8 @@ class TestBarcodeDemux:
 
     def test_custom_priority_by_length_sort_key_isvalid_tuple_input(self):
         # Normal 2-tuple, no zero
-        assert_that(custom_priority_by_length_sort_key((5, 5))).is_equal_to((False, -10)) # no 0 values, so returns False
-        assert_that(custom_priority_by_length_sort_key((4, 0))).is_equal_to((True, -4)) # 0 value, so returns True
+        assert_that(custom_priority_by_length_sort_key((5, 5))).is_equal_to((False, -10))  # no 0 values, so returns False
+        assert_that(custom_priority_by_length_sort_key((4, 0))).is_equal_to((True, -4))  # 0 value, so returns True
         assert_that(custom_priority_by_length_sort_key(6)).is_equal_to((True, -6))
 
         # Tie-breaker: same total length, but one has zero
@@ -368,7 +344,6 @@ class TestBarcodeDemux:
 
         for sample in expected_samples:
             sample_file_path = os.path.join(output_dir, f"{sample}.txt")
-            print(sample_file_path)
 
             # Check that the expected files were created
             assert_that(sample_file_path).exists()

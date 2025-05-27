@@ -332,38 +332,6 @@ def trim_merge_string(input_str: str, length: int) -> str:
         return input_str[:length]
 
 
-def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
-    """
-    Finds the sample name corresponding to a given barcode string.
-
-    This function searches through a nested barcode dictionary to identify which sample
-    the extracted barcode string belongs to.
-
-    Args:
-        index_str (str): The barcode string to search for.
-        sample_barcode_dict (dict): A nested dictionary where outer keys are read lengths and inner
-                             keys are sample names mapping to sets of barcode strings.
-
-    Returns:
-        str | undetermined: The sample name if a match is found; otherwise, undetermined.
-    """
-    if index_str is None or sample_barcode_dict is None:
-        raise ValueError("Input is None.")
-
-    if not isinstance(index_str, str):
-        raise ValueError(f"{index_str} must be a string.")
-
-    if not isinstance(sample_barcode_dict, dict):
-        raise ValueError(f"{sample_barcode_dict} must be a dictionary.")
-
-    for samples in sample_barcode_dict.values():
-        for sample_name, barcodes in samples.items():
-            if index_str in barcodes:
-                return sample_name
-    # If no match is found, return "undetermined"
-    return "undetermined"
-
-
 def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> dict:
     """
     Demultiplexes a FASTQ file by assigning reads to samples based on barcode sequences.
