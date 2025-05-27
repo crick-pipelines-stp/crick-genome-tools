@@ -68,15 +68,18 @@ class TestBarcodeDemux:
             "sample_2": "ACGT+AGGT",
             "sample_3": {"key": "value", "barcode": "ACGTAGCT"},
             "sample_4": {"key": "value", "index": "ACGTA:AGCTT"},
+            "sample_5": {"key": "value", "index": "AAATA", "index2": "ATCTT"},
         }
         expected_dict = {
-            4: {"sample_1": "ACGT"},
-            8: {"sample_2": "ACGT,AGGT", "sample_3": "ACGTAGCT"},
+            (4, 0): {"sample_1": "ACGT"},
+            (4, 4): {"sample_2": "ACGT,AGGT"},
+            (8, 0): {"sample_3": "ACGTAGCT"},
         }
         expected_dict_2 = {
-            4: {"sample_1": "ACGT"},
-            8: {"sample_2": "ACGT+AGGT", "sample_3": "ACGTAGCT"},
-            10: {"sample_4": "ACGTA:AGCTT"},
+            (4, 0): {"sample_1": "ACGT"},
+            (4, 4): {"sample_2": "ACGT+AGGT"},
+            (8, 0): {"sample_3": "ACGTAGCT"},
+            (5, 5): {"sample_4": "ACGTA:AGCTT", "sample_5": "AAATA,ATCTT"},
         }
 
         # Test and assert

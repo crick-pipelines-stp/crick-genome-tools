@@ -43,32 +43,38 @@ def extract_index_from_header_illumina(name: str) -> str:
     return index_part
 
 
-def group_samples_by_index_length(sample_index_dict: dict) -> dict:
+def group_samples_by_index_length(sample_index_dict: dict) -> list:
     """
-    Groups samples by the length of their barcode indices, counting only alphabetic characters.
+    Organizes sample barcode data by the lengths of their first and last components.
 
-    This function takes a dictionary of samples and their associated barcodes or nested metadata.
-    If a sample's value is a string, it's treated directly as a barcode. If it's a dictionary,
-    the function searches for a "barcode" or "index" key to extract the barcode. The barcodes are
-    then grouped into a new dictionary based on the number of alphabetic characters they contain.
+    This function processes a dictionary of sample barcode entries, where each value
+    can be either a string (representing the barcode) or a dictionary containing keys
+    such as "barcode", "index", and optionally "index2". The barcode string is split
+    into components using non-alphabetic characters as delimiters. The lengths of the
+    first and last components are used to create a tuple key, which maps to a nested
+    dictionary of sample names and their corresponding barcode strings.
 
     Args:
-        sample_index_dict (dict): A dictionary where each key is a sample name (str) and each value
-            is either a barcode string or a dictionary containing at least a "barcode" or "index" key.
+        sample_index_dict (dict): A dictionary where keys are sample names and values
+            are either:
+                - A string representing a barcode.
+                - A dictionary that may include "barcode", "index", and optionally "index2" keys.
 
     Returns:
-        dict: A dictionary where each key is an integer representing the count of alphabetic characters
-            in the barcode, and the corresponding value is a dictionary of sample-barcode pairs that
-            share that alphabetic character count.
+        dict: A nested dictionary where each key is a tuple of the lengths of the first
+            and last barcode components, and each value is a dictionary mapping sample
+            names to their raw barcode strings.
 
     Raises:
-        TypeError: If the input is not a dictionary, or if any barcode is not a string.
-        KeyError: If a sample has a dict value but lacks both "barcode" and "index" keys.
+        TypeError: If a sample value is neither a string nor a dictionary, or if a barcode
+            extracted from a sample is not a string.
     """
+    # Check if the input is a dictionary
     if not isinstance(sample_index_dict, dict):
-        raise TypeError("Input must be a dictionary.")
+        raise TypeError(f"{sample_index_dict} must be a dictionary.")
 
-    grouped = {}
+    result = defaultdict(dict)
+    # Calculate barcode lengths and organize samples by these lengths within `result`
     for sample, value in sample_index_dict.items():
         if isinstance(value, str):
             # if sample has a string value, treat it as a barcode
@@ -79,7 +85,12 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
             if "barcode" in value:
                 barcode = value["barcode"]
             elif "index" in value:
-                barcode = value["index"]
+                if "index2" in value:
+                    # if both index and index2 are present, use both entries as the barcode
+                    barcode = value["index"] + "," + value["index2"]
+                else:
+                    # if only index is present, use it as the barcode
+                    barcode = value["index"]
             else:
                 barcode = ""
         else:
@@ -88,11 +99,17 @@ def group_samples_by_index_length(sample_index_dict: dict) -> dict:
         if not isinstance(barcode, str):
             raise TypeError(f"Barcode for sample '{sample}' must be a string.")
 
-        # Calculate the length of the barcode, while ignoring non-alphabetic characters
-        barcode_len = sum(c.isalpha() for c in barcode)
-        grouped.setdefault(barcode_len, {})[sample] = barcode
+        # Split the barcode into parts based on non-alphabetic characters
+        parts = re.split(r"[^A-Za-z]+", barcode)
 
-    return grouped
+        # Determine the lengths of the first and last parts
+        first_len = len(parts[0]) if parts else 0
+        last_len = len(parts[-1]) if len(parts) > 1 else 0 if not parts else 0 if len(parts) == 1 else len(parts[-1])
+
+        key = (first_len, last_len)
+        result[key][sample] = barcode
+
+    return dict(result)
 
 
 def hamming_distance(seq1, seq2) -> int:
