@@ -365,7 +365,6 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     """
     ## Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
-    # grouped_sample_by_length_single_or_dual_index = {}
     for group in grouped_samples_by_length.values():
         for sample in group:
             # merge barcodes into an individual string for demux processing
