@@ -272,7 +272,7 @@ def custom_priority_by_length_sort_key(key):
     """
     if key is None:
         raise TypeError("Key cannot be None.")
-    
+
     if isinstance(key, int):
         key = (key, 0)
     elif isinstance(key, tuple):
@@ -364,50 +364,44 @@ def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
     return "undetermined"
 
 
-def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> None:
+def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> dict:
     """
-    Demultiplexes a FASTQ file by matching read indexes to known sample barcodes.
+    Demultiplexes a FASTQ file by assigning reads to samples based on barcode sequences.
 
-    This function extracts indexes from each read in a FASTQ file, compares them to a set
-    of known sample barcodes (allowing for mismatches up to a given Hamming distance),
-    and writes each read's sequence to a file named after the corresponding sample.
-    Unmatched reads are written to an 'undetermined.txt' file.
+    This function takes a FASTQ file and a dictionary of sample barcodes, groups the samples
+    by the length of their barcodes, and then assigns reads to samples based on the closest
+    barcode match within a specified Hamming distance threshold. Reads that do not match any
+    barcode within the threshold are written to an "undetermined" file.
+
+    The method enforces barcode dissimilarity by checking that the minimum Hamming distance
+    between barcodes in each group exceeds the specified threshold.
 
     Args:
-        fastq_file (str): Path to the FASTQ file containing sequencing reads.
-        samples_barcode_from_csv (dict): Dictionary mapping sample names to sets of barcode sequences.
-        max_hamming_distance (int, optional): Maximum number of mismatches allowed when comparing indexes.
-                                              Defaults to 0 (exact match only).
-        output_dir (str, optional): Directory where output files will be saved. Defaults to the current directory.
+        fastq_file (str): Path to the FASTQ file to be demultiplexed.
+        samples_barcode_from_dict (dict): A dictionary mapping sample names to their barcodes,
+            which may be simple strings or nested dicts with keys like "index" or "index2".
+        max_hamming_distance (int, optional): Maximum allowable Hamming distance between
+            a read’s index and a sample barcode to be considered a match. Defaults to 0.
+        output_dir (str, optional): Directory where demultiplexed FASTQ files will be written.
+            Defaults to the current directory.
 
     Returns:
-        None
-    """
+        dict: A dictionary mapping sample names to the number of reads assigned to each.
 
+    Raises:
+        ValueError: If any group of barcodes contains pairs with a minimum Hamming distance
+            less than or equal to the provided `max_hamming_distance`.
+        TypeError: If the barcode structure is not a valid string or expected dict format.
+        FileNotFoundError: If the input FASTQ file does not exist or cannot be opened.
+        IOError: If any of the output files cannot be created or written to.
+    """
     ## Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
-    print(grouped_samples_by_length)
     # grouped_sample_by_length_single_or_dual_index = {}
     for group in grouped_samples_by_length.values():
         for sample in group:
-            # split dual index barcodes by replacing non alphabetical characters with a space
-            split_barcode = re.sub(r"[^A-Za-z]", " ", group[sample])
-            # grouped_sample_by_length_single_or_dual_index[sample] = split_barcode
-
             # merge barcodes into an individual string for demux processing
             group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
-        # print(group)
-
-    # print(grouped_sample_by_length_single_or_dual_index)
-
-    # # Store barcode information for each sample(single or dual index)
-    # for sample in grouped_sample_by_length_single_or_dual_index:
-    #     if " " in grouped_sample_by_length_single_or_dual_index[sample]:
-    #         # if a space is present in the barcode string, it's a dual index
-    #         grouped_sample_by_length_single_or_dual_index[sample] = 2
-    #     else:
-    #         # if no space is present, the barcode is single indexed
-    #         grouped_sample_by_length_single_or_dual_index[sample] = 1
 
     ## Compare the all the barcodes in each group against each other to find the Hamming distance for each pair compared
     grouped_sample_by_length_hamming_value = {}
@@ -441,10 +435,11 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
         for length in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
+            group = grouped_samples_by_length[length]
 
             # trimming differes depending on whether it's a single or dual index
+            length = sum(length)
             trimmed_index = trim_merge_string(index, length)
-            group = grouped_samples_by_length[length]
 
             # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
