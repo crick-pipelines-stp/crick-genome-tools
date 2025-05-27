@@ -151,8 +151,8 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
     for sample, barcode in barcode_dict.items():
         dist = hamming_distance(seq, barcode)
         # If the strings are a perfect match, skip further comparisons
-        # if dist == 0:
-        #     return sample
+        if dist == 0:
+            return sample
 
         if dist < min_distance and dist <= max_hamming:
             min_distance = dist
@@ -250,6 +250,47 @@ def assert_min_hamming_above_threshold(min_distances_by_group: dict, max_hamming
             raise ValueError(f"Minimum Hamming distance violation in group {length}: " f"{min_distance} < {max_hamming}")
 
 
+def custom_priority_by_length_sort_key(key):
+    """
+    Sorts tuple or integer keys based on custom priority: keys without zeros are prioritized
+    and sorted by descending total length, while keys containing a zero are placed last.
+
+    This method is intended for sorting barcode length indicators. If a single integer is
+    passed instead of a tuple, it is treated as (value, 0).
+
+    Args:
+        key (tuple or int): A tuple of two integers representing barcode segment lengths,
+            or a single integer to be treated as (value, 0).
+
+    Returns:
+        tuple: A tuple used for sorting. The first element indicates whether the key
+            contains a zero (False = higher priority), and the second is the negative
+            sum of the tuple values (for descending order).
+
+    Raises:
+        TypeError: If the input is not an int or a tuple of one or two integers.
+    """
+    if key is None:
+        raise TypeError("Key cannot be None.")
+    
+    if isinstance(key, int):
+        key = (key, 0)
+    elif isinstance(key, tuple):
+        if len(key) == 1:
+            key = (key[0], 0)
+        elif len(key) != 2:
+            raise TypeError("Tuple key must have one or two integers.")
+    else:
+        raise TypeError("Input must be an int or a tuple of one or two integers.")
+
+    if not all(isinstance(i, int) for i in key):
+        raise TypeError("All elements in key must be integers.")
+
+    has_zero = 0 in key
+    total_len = sum(key)
+    return (has_zero, -total_len)
+
+
 def trim_merge_string(input_str: str, length: int) -> str:
     """
     Trims and optionally splits and merges a string based on a specified length.
@@ -345,24 +386,28 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
     ## Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
-    grouped_sample_by_length_single_or_dual_index = {}
+    print(grouped_samples_by_length)
+    # grouped_sample_by_length_single_or_dual_index = {}
     for group in grouped_samples_by_length.values():
         for sample in group:
             # split dual index barcodes by replacing non alphabetical characters with a space
             split_barcode = re.sub(r"[^A-Za-z]", " ", group[sample])
-            grouped_sample_by_length_single_or_dual_index[sample] = split_barcode
+            # grouped_sample_by_length_single_or_dual_index[sample] = split_barcode
 
             # merge barcodes into an individual string for demux processing
             group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
+        # print(group)
 
-    # Store barcode information for each sample(single or dual index)
-    for sample in grouped_sample_by_length_single_or_dual_index:
-        if " " in grouped_sample_by_length_single_or_dual_index[sample]:
-            # if a space is present in the barcode string, it's a dual index
-            grouped_sample_by_length_single_or_dual_index[sample] = 2
-        else:
-            # if no space is present, the barcode is single indexed
-            grouped_sample_by_length_single_or_dual_index[sample] = 1
+    # print(grouped_sample_by_length_single_or_dual_index)
+
+    # # Store barcode information for each sample(single or dual index)
+    # for sample in grouped_sample_by_length_single_or_dual_index:
+    #     if " " in grouped_sample_by_length_single_or_dual_index[sample]:
+    #         # if a space is present in the barcode string, it's a dual index
+    #         grouped_sample_by_length_single_or_dual_index[sample] = 2
+    #     else:
+    #         # if no space is present, the barcode is single indexed
+    #         grouped_sample_by_length_single_or_dual_index[sample] = 1
 
     ## Compare the all the barcodes in each group against each other to find the Hamming distance for each pair compared
     grouped_sample_by_length_hamming_value = {}
@@ -395,7 +440,7 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
-        for length in sorted(grouped_samples_by_length.keys(), reverse=True):
+        for length in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
 
             # trimming differes depending on whether it's a single or dual index
             trimmed_index = trim_merge_string(index, length)

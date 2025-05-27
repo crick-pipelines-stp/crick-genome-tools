@@ -20,6 +20,7 @@ from crick_genome_tools.seq.barcode_demux import (
     group_samples_by_index_length,
     hamming_distance,
     trim_merge_string,
+    custom_priority_by_length_sort_key,
 )
 
 
@@ -270,6 +271,37 @@ class TestBarcodeDemux:
             assert False, f"Function raised an unexpected exception: {e}"
             # assertion can't be done using assertpy
 
+    def test_custom_priority_by_length_sort_key_invalid(self):
+        # Test and assert
+        assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with(None)
+        assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with("invalid_input")
+        assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with([1234])
+
+    def test_custom_priority_by_length_sort_key_isvalid_tuple_input(self):
+        # Normal 2-tuple, no zero
+        assert_that(custom_priority_by_length_sort_key((5, 5))).is_equal_to((False, -10)) # no 0 values, so returns False
+        assert_that(custom_priority_by_length_sort_key((4, 0))).is_equal_to((True, -4)) # 0 value, so returns True
+        assert_that(custom_priority_by_length_sort_key(6)).is_equal_to((True, -6))
+
+        # Tie-breaker: same total length, but one has zero
+        assert custom_priority_by_length_sort_key((4, 4)) < custom_priority_by_length_sort_key((8, 0))
+
+    def test_custom_priority_by_length_sort_key_isvalid_dict_input(self):
+        # Setup
+        sample_barcode_dict = {
+            (4, 0): {"sample_1": "ACGT"},
+            (4, 4): {"sample_2": "ACGT+AGGT"},
+            (8, 0): {"sample_3": "ACGTAGCT"},
+            (5, 5): {"sample_4": "ACGTA:AGCTT"},
+        }
+        expected_sorted_samples = [(5, 5), (4, 4), (8, 0), (4, 0)]
+
+        # Test and assert
+        sorted_samples = sorted(sample_barcode_dict.keys(), key=custom_priority_by_length_sort_key)
+        print(sorted_samples)
+
+        assert_that(sorted_samples).is_equal_to(expected_sorted_samples)
+
     def test_trim_merge_string_isnone(self):
         assert_that(trim_merge_string).raises(ValueError).when_called_with(None, 3)
         assert_that(trim_merge_string).raises(ValueError).when_called_with("string", None)
@@ -378,15 +410,12 @@ class TestBarcodeDemux:
 
         # Test
         read_count = demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
-        print(read_count)
-        # read_count = {'undetermined': 938, 'sample_3': 57, 'sample_1': 5}
 
         # Assert
         assert_that(read_count).is_equal_to(expected_read_count)
 
         for sample in expected_samples:
             sample_file_path = os.path.join(output_dir, f"{sample}.txt")
-            print(sample_file_path)
 
             # Check that the expected files were created
             assert_that(sample_file_path).exists()
