@@ -265,18 +265,13 @@ def trim_merge_string(input_str: str, length: int) -> str:
     if length < 0:
         raise ValueError("Length must be non-negative.")
 
-    if length == 0:
-        # remove all non-alphabetic characters
-        input_str = re.sub(r"[^A-Za-z]", "", input_str)
-        return input_str
-
     # check if the string contains a space
     if " " in input_str:
         part1, part2 = input_str.split(" ", 1)
         half_len = length // 2  # Always returns a float
-        return part1[:-half_len] + part2[:-half_len]
+        return part1[:half_len] + part2[:half_len]
     else:
-        return input_str[:-length]
+        return input_str[:length]
 
 
 def find_sample_for_read_index(index_str, sample_barcode_dict: dict) -> str:
@@ -371,13 +366,12 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         file_handles[sample] = open(os.path.join(output_dir, f"{sample}.txt"), "a", encoding="utf-8")
 
     # Keep track of each read assigned to each sample
-    sample_assigned_read = defaultdict(list)  # this one keeps track of sample+read index
-    sample_count = defaultdict(int)  # this one keeps track of how many reads are assigned to each sample
-    matches = []
+    sample_assigned_read = defaultdict(list)  # this one keeps track of sample+read index information
+    sample_count = {}  # this one keeps track of how many reads are assigned to each sample
 
     ## Read the FASTQ file and extract indexes, save all indexes in a list
     fastq = FastqFile(fastq_file)
-    for name, seq, _ in fastq.open_read_iterator(as_string=True):
+    for name, seq, qual in fastq.open_read_iterator(as_string=True):
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", " ", index)
@@ -392,21 +386,20 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
             # Check if the read index matches to any of the samples
             match = find_closest_match(group, trimmed_index, max_hamming_distance)
-            print(match)
-            sample_assigned_read[match].append([name, trimmed_index])
 
-            matches.append(match)
-
+            # Stop searching if a match with a defined sample is found
             if match != "undetermined":
                 break
 
-        # Write the sequence to the appropriate file
-        file_handles[match].write(seq + "\n")
+        # Assign the read to the matched sample
+        sample_assigned_read[match].append([name, trimmed_index])
 
-    for match in matches:
-        sample_count[match] += 1  # Increment the count for each match
-    print(sample_assigned_read)
-    print(sample_count)
+        # Write the sequence to the appropriate file
+        file_handles[match].write("@" + name + "\n" + seq + "\n" + "+" + "\n" + qual + "\n")
+
+    for sample, reads in sample_assigned_read.items():
+        sample_count[sample] = len(reads)
+
     for f in file_handles.values():
         f.close()
 

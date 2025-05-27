@@ -278,12 +278,13 @@ class TestBarcodeDemux:
 
     def test_trim_merge_string_isvalid(self):
         # Test and assert
-        assert_that(trim_merge_string("ACGTAGGT", 3)).is_equal_to("ACGTA")
-        assert_that(trim_merge_string("ACGTAGGT", 0)).is_equal_to("ACGTAGGT")
-        assert_that(trim_merge_string("ACGT AGGT", 2)).is_equal_to("ACGAGG")
-        assert_that(trim_merge_string("ACGT AGGT", 3)).is_equal_to("ACGAGG")
-        assert_that(trim_merge_string("ACGT AGGT", 0)).is_equal_to("ACGTAGGT")
-        assert_that(trim_merge_string("ACGTAAAC AGGT", 4)).is_equal_to("ACGTAAAG")
+        assert_that(trim_merge_string("ACGTAGGT", 5)).is_equal_to("ACGTA")
+        assert_that(trim_merge_string("ACGTAGGT", 0)).is_equal_to("")
+        assert_that(trim_merge_string("ACGT AGGT", 4)).is_equal_to("ACAG")
+        assert_that(trim_merge_string("ACGT AGGT", 3)).is_equal_to("AA")
+        assert_that(trim_merge_string("ACGT AGGT", 8)).is_equal_to("ACGTAGGT")
+        assert_that(trim_merge_string("ACGTAAAC AGGT", 8)).is_equal_to("ACGTAGGT")
+        assert_that(trim_merge_string("ACGT AGGT", 10)).is_equal_to("ACGTAGGT")
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
@@ -298,10 +299,10 @@ class TestBarcodeDemux:
                 1,
                 ["sample_1", "sample_2", "sample_3", "undetermined"],
                 {
-                    "sample_1": "GNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA",
+                    "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 1:N:0:ACTT+NTAT\nGNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIII9IIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
                     "sample_2": "",
-                    "sample_3": "a",
-                    "undetermined": "CNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA",
+                    "sample_3": "",
+                    "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 1:N:0:TCACCAGGAC+NCCTTGTCTC\nCNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII*I9IIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 1:N:0:GCGCTTCTAC+NTCCTTGGCT\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIII*IIIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*",
                 },
             ),
             (
@@ -310,10 +311,10 @@ class TestBarcodeDemux:
                 1,
                 ["sample_A", "sample_B", "sample_C", "undetermined"],
                 {
-                    "sample_A": "ACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA",
-                    "sample_B": "AGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA",
+                    "sample_A": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 2:N:0:ACTTGACTAG+NTATCAACGG\nACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA\n+\nIIII*IIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIII",
+                    "sample_B": "@LH00442:107:22YHM5LT3:2:1101:1111:1064 2:N:0:GCGCTTCTAC+NTCCTTGGCT\nAGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA\n+\nIIIIIIIIIIIII",
                     "sample_C": "",
-                    "undetermined": "TGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG",
+                    "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC\nTGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG\n+\nIIIIIIIIIIIIIIIIIII*IIIIIIIII9I9IIII9III9IIIIIIIII9III9III9IIII9999II99I9IIIIIIIIIII9IIIIIIIIIIIII9II9I99I9IIIIIIIIIIII9IIIII9IIIIIIII99II9IIIIIIIIII*9",
                 },
             ),
         ],
@@ -332,6 +333,7 @@ class TestBarcodeDemux:
 
         for sample in expected_samples:
             sample_file_path = os.path.join(output_dir, f"{sample}.txt")
+            print(sample_file_path)
 
             # Check that the expected files were created
             assert_that(sample_file_path).exists()
@@ -341,10 +343,10 @@ class TestBarcodeDemux:
                 file_content = f.read().strip()
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
-            # raise ValueError
+        # raise ValueError
 
     @pytest.mark.parametrize(
-        "fastq_file, barcode_sample_dict, max_hamming_distance, expected_read_count",
+        "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_read_count",
         [
             (
                 "tests/data/seq/sub_read_L002_R1.fastq",
@@ -354,17 +356,18 @@ class TestBarcodeDemux:
                     "sample_3": "ACGTA",
                 },
                 1,
+                ["sample_1", "sample_2", "sample_3", "undetermined"],
                 {
-                    "sample_1": 1,
-                    "sample_2": "",
-                    "sample_3": "",
-                    "undetermined": 1,
+                    "sample_1": 5,
+                    # "sample_2": 0,
+                    "sample_3": 57,
+                    "undetermined": 938,
                 },
             ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_read_count_valid(
-        self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_read_count
+        self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_read_count
     ):
         # Setup
         output_dir = tmp_path
@@ -372,6 +375,25 @@ class TestBarcodeDemux:
 
         # Test
         read_count = demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+        print(read_count)
+        # read_count = {'undetermined': 938, 'sample_3': 57, 'sample_1': 5}
 
         # Assert
         assert_that(read_count).is_equal_to(expected_read_count)
+
+        for sample in expected_samples:
+            sample_file_path = os.path.join(output_dir, f"{sample}.txt")
+            print(sample_file_path)
+
+            # Check that the expected files were created
+            assert_that(sample_file_path).exists()
+
+            # Check that the content of each file is as expected
+            with open(sample_file_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+                newline_count = file_content.count("@")
+
+            if sample in expected_read_count:
+                assert_that(newline_count).is_equal_to(expected_read_count[sample])
+            else:
+                assert_that(newline_count).is_equal_to(0)
