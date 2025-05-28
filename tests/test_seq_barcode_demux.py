@@ -297,6 +297,25 @@ class TestBarcodeDemux:
         assert_that(trim_merge_string("ACGTAAAC AGGT", 8)).is_equal_to("ACGTAGGT")
         assert_that(trim_merge_string("ACGT AGGT", 10)).is_equal_to("ACGTAGGT")
 
+    def test_demultiplex_fastq_by_barcode_invalid_hamming_input(
+        self, tmp_path
+    ):
+        # Setup
+        fastq_file = "tests/data/seq/L002_R1.fastq"
+        barcode_sample_dict = {
+        "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
+        "sample_2": "AGGTGGCTAC+CCACGTAACG",
+        "sample_3": "TATCACTCTC+ACCTTGTTCT",
+        "sample_4": "AGGTGGCTAC+CCACGTAACG",
+        }
+        max_hamming_distance = 1
+        output_dir = tmp_path
+
+        # Test and assert
+        assert_that(demultiplex_fastq_by_barcode).raises(ValueError).when_called_with(
+            fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+        # demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
         [
@@ -341,7 +360,6 @@ class TestBarcodeDemux:
         demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
 
         # Assert
-
         for sample in expected_samples:
             sample_file_path = os.path.join(output_dir, f"{sample}.txt")
 
