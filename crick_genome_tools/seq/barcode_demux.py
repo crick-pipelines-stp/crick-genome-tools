@@ -401,11 +401,11 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
 
         # Search for the closest match in the grouped samples from the longest to the shortest indexes
         match = "undetermined"
-        for length in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
-            group = grouped_samples_by_length[length]
+        for length_key in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
+            group = grouped_samples_by_length[length_key]
 
             # trimming differes depending on whether it's a single or dual index
-            length = sum(length)
+            length = sum(length_key)
             trimmed_index = trim_merge_string(index, length)
 
             # Check if the read index matches to any of the samples
