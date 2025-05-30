@@ -109,7 +109,8 @@ def parse_mosdepth_per_base(data_folder):
             data[sample_id][contig].append((pos, depth))
 
         # Convert to dataframe
-        data[sample_id][contig] = pd.DataFrame(data[sample_id][contig], columns=["Position", "Depth"])
+        for recorded_contig in data[sample_id]:
+            data[sample_id][recorded_contig] = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
 
     # Sort dict by sample id
     data = dict(sorted(data.items()))
