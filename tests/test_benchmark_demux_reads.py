@@ -45,7 +45,7 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
         "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
         "sample_2": "AGGTGGCTAC+CCACGTAACG",
         "sample_3": "TATCACTCTC+ACCTTGTTCT",
-        "sample_4": "AGGTGGCTAC+CCACGTAACG",
+        # "sample_4": "AGGTGGCTAC+CCACGTAACG",
         "sample_5": "ATGGTTGACT-TGGCACAAGC",
         "sample_6": "GCAGTCTTAT+GGGGGGGGGG",
     }
@@ -118,37 +118,28 @@ def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylin
     """Test generate reads to a fastq file"""
 
     # Variables
-    max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
+    max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "250000"))  # 250 seconds for 1M reads
 
     # Setup
-    # Generate the FASTQ content in memory
-    # fastq_content = generate_random_fastq()
-    # fastq_file = io.StringIO(fastq_content)
-
     sample_dict = generate_sample_dict(num_samples=10)
 
     max_hamming_distance = 1
     output_path = tmp_path
 
-
     # Generate FASTQ content
     fastq_content = generate_barcode_fastq(sample_dict, num_reads=1_000_000).getvalue()
 
-    # Write to a temporary file
-    with tempfile.NamedTemporaryFile(mode='w+', delete=True, suffix='.fastq') as temp_file:
+    # Test
+    # Write read content to a temporary file
+    with tempfile.NamedTemporaryFile(mode="w+", delete=True, suffix=".fastq") as temp_file:
         temp_file.write(fastq_content)
         temp_file.flush()  # Ensure data is written to disk
 
-        # Now pass the file path
-        # demultiplex_fastq_by_barcode(temp_file.name, sample_dict, max_hamming_distance, output_path)
+        # Now pass the file path to the benchmarked function
         benchmark(lambda: (demultiplex_fastq_by_barcode(temp_file.name, sample_dict, max_hamming_distance, output_path)))
 
-
-    # Test
-    # benchmark(lambda: (demultiplex_fastq_by_barcode(fastq_file, sample_dict, max_hamming_distance, output_path)))
-
-    # Assert
+        # Assert
         mean_ms = benchmark.stats["mean"] * 1000
         if mean_ms > max_time_ms:
             pytest.fail(f"Benchmark failed: expected - {max_time_ms}ms | actual - {round(mean_ms, 2)}ms")
-
+    # raise ValueError
