@@ -2,7 +2,11 @@
 Benchmarking tests for generate reads
 """
 
+import io
 import os
+import random
+import tempfile
+
 import pytest
 
 # from .test_seq_barcode_demux import test_demultiplex_fastq_by_barcode_valid
@@ -59,52 +63,52 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     # raise ValueError
 
 
-import io
-import random
-import tempfile
-
-
-# def generate_random_fastq(num_reads=1_000_000, read_length=100):
-#     bases = ['A', 'C', 'G', 'T']
-#     qualities = ['I'] * read_length  # 'I' = high quality (ASCII 73)
-#     fastq_lines = []
-
-#     for i in range(num_reads):
-#         header = f"@LH00442 1:N:0:{i}"
-#         sequence = ''.join(random.choices(bases, k=read_length))
-#         plus_line = '+'
-#         quality = ''.join(qualities)
-#         fastq_lines.extend([header, sequence, plus_line, quality])
-
-#     return '\n'.join(fastq_lines)
-
-
 def generate_sample_dict(num_samples=10):
+    """
+    Generate a dictionary of sample names mapped to random dual-index barcodes.
+
+    Args:
+        num_samples (int): Number of samples to generate.
+
+    Returns:
+        dict: A dictionary where keys are sample names and values are barcodes.
+    """
     sample_dict = {}
     for i in range(1, num_samples + 1):
         # Use + or - to simulate dual-index formats
-        separator = '+'
-        barcode1 = ''.join(random.choices('ACGT', k=10))
-        barcode2 = ''.join(random.choices('ACGT', k=10))
+        separator = "+"
+        barcode1 = "".join(random.choices("ACGT", k=10))
+        barcode2 = "".join(random.choices("ACGT", k=10))
         sample_dict[f"sample_{i}"] = f"{barcode1}{separator}{barcode2}"
     return sample_dict
 
 
 def generate_barcode_fastq(sample_dict, num_reads=1_000_000, read_length=100):
+    """
+    Generate a FASTQ file-like object with reads containing barcodes from the sample dictionary.
+
+    Args:
+        sample_dict (dict): Dictionary of sample names and barcodes.
+        num_reads (int): Number of reads to generate.
+        read_length (int): Length of each read.
+
+    Returns:
+        io.StringIO: In-memory file-like object containing the FASTQ content.
+    """
     barcodes = list(sample_dict.values())
-    bases = ['A', 'C', 'G', 'T']
-    qualities = ['I'] * read_length
+    bases = ["A", "C", "G", "T"]
+    qualities = ["I"] * read_length
     fastq_lines = []
 
     for i in range(num_reads):
         barcode = random.choice(barcodes)
-        header = f"@SEQ_ID_{i}|{barcode}"
-        sequence = ''.join(random.choices(bases, k=read_length))
-        plus_line = '+'
-        quality = ''.join(qualities)
+        header = f"@LH00442{i} 1:N:0:{barcode}"
+        sequence = "".join(random.choices(bases, k=read_length))
+        plus_line = "+"
+        quality = "".join(qualities)
         fastq_lines.extend([header, sequence, plus_line, quality])
 
-    fastq_content = '\n'.join(fastq_lines)
+    fastq_content = "\n".join(fastq_lines)
     return io.StringIO(fastq_content)  # In-memory file-like object
 
 
