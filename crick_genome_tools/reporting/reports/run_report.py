@@ -11,7 +11,7 @@ import uuid
 
 import streamlit as st
 
-from crick_genome_tools.reporting.reports.vector_core_aav_report import VectorCoreAavReport
+from crick_genome_tools.reporting.reports.viral_genomics_report import ViralGenomicsReport
 
 
 # from crick_genome_tools.reporting.reports.viral_genomics_report import ViralGenomicsReport
@@ -31,7 +31,7 @@ def run(data_path, report_type):
     if report_type == "aav":
         app_url = "http://localhost:8501"
         file_prefix = str(f"{STATIC_TMP_DIR}/{uuid.uuid4().hex}")
-        report = VectorCoreAavReport("20241119_1033_P2S-02348-A_PAY61327_7eb45677", data_path, tmp_dir=file_prefix, app_url=app_url)
+        report = ViralGenomicsReport("20241119_1033_P2S-02348-A_PAY61327_7eb45677", data_path, tmp_dir=file_prefix, app_url=app_url)
         report.generate_report()
     else:
         print(f"ERROR: Unknown report type: {report_type}")

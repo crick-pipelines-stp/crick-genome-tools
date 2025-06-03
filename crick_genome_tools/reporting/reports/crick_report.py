@@ -14,6 +14,9 @@ log = logging.getLogger(__name__)
 
 
 class CrickReport:
+    """
+    Base class for generating crick streamlit reports.
+    """
     def __init__(self, report_title, data_path=None, data_obj=None, tmp_dir=None):
         self.data_path = data_path
         self.report_title = report_title
@@ -71,3 +74,4 @@ class CrickReport:
         """
         Activate the selected section.
         """
+
