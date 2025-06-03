@@ -265,8 +265,8 @@ class ReportDataParser:
 
             # Process each sample_id
             for sample_id in var_files_by_sample.keys():
-                if sample_id not in self.dataframe_dict:
-                    self.dataframe_dict[sample_id] = {}
+                if "variants" not in self.dataframe_dict:
+                    self.dataframe_dict["variants"] = {}
                 var_files_by_sample[sample_id].sort(key=lambda x: vcf_tools.index(x.split(".")[1]))
                 variants, header, processed_variants = generate_merged_vcf_report(var_files_by_sample[sample_id], vcf_tools)
                 self.dataframe_dict["variants"][sample_id] = pd.DataFrame(processed_variants, columns=header)
