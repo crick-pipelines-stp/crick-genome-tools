@@ -9,12 +9,7 @@ import tempfile
 
 import pytest
 
-# from .test_seq_barcode_demux import test_demultiplex_fastq_by_barcode_valid
 from crick_genome_tools.seq.barcode_demux import demultiplex_fastq_by_barcode
-
-
-# TEST_CONFIG_SOURCE_FOLDER = "tests/data/config"
-# TEST_FASTA_SOURCE_FOLDER = "tests/data/refs"
 
 
 @pytest.mark.benchmark(group="demux-reads-illumina", min_rounds=5)
@@ -26,21 +21,7 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
 
     # Setup
-    # fastq_file = os.path.join("tests/data/seq/L002_R1.fastq")
-    # sample_dict = {
-    #     "sample_1": "GCTT,NTAT",
-    #     "sample_2": "ACGT,AGGT",
-    # }
-
     fastq_file = os.path.join("tests/data/seq/sub_read_L002_R1.fastq")
-    # sample_dict = {
-    #     "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
-    #     "sample_2": "GCAGTCTTAT-CCGGCCATTA",
-    #     "sample_3": "CGCAGAACTT-GACGTCGATA",
-    #     "sample_4": "GCCTAGGACT-AGCCGTTCTC",
-    #     "sample_5": "ATGGTTGACT-TGGCACAAGC",
-    #     "sample_6": "GTGTTATCTC-AGTCTGGTGT",
-    # }
     sample_dict = {
         "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
         "sample_2": "AGGTGGCTAC+CCACGTAACG",
@@ -59,8 +40,6 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     mean_ms = benchmark.stats["mean"] * 1000
     if mean_ms > max_time_ms:
         pytest.fail(f"Benchmark failed: expected - {max_time_ms}ms | actual - {round(mean_ms, 2)}ms")
-
-    # raise ValueError
 
 
 def generate_sample_dict(num_samples=10):
@@ -142,4 +121,3 @@ def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylin
         mean_ms = benchmark.stats["mean"] * 1000
         if mean_ms > max_time_ms:
             pytest.fail(f"Benchmark failed: expected - {max_time_ms}ms | actual - {round(mean_ms, 2)}ms")
-    # raise ValueError
