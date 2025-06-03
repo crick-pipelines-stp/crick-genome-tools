@@ -127,12 +127,16 @@ class ReportDataParser:
         for fastq_file in fastq_files:
             config["fastq"] = os.path.join(folder_path, fastq_file)
 
+            if "toulligqc" not in self.result_dict:
+                self.result_dict["toulligqc"] = {}
+                self.dataframe_dict["toulligqc"] = {}
+
             # Check for sample_id entry
             sample_id = fastq_file.split(".")[0]
             if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+                self.result_dict["toulligqc"][sample_id] = {}
             if sample_id not in self.dataframe_dict:
-                self.dataframe_dict[sample_id] = {}
+                self.dataframe_dict["toulligqc"][sample_id] = {}
 
             # Extract data
             extractor = FastqExtractor(config)
@@ -141,9 +145,9 @@ class ReportDataParser:
             extractor.extract(result_dict)
 
             # Extract sample id from the first part of the fastq file name
-            self.result_dict[sample_id]["toulligqc"] = result_dict
-            self.dataframe_dict[sample_id]["toulligqc"] = extractor.dataframe_dict
-            log.info(f"Processed fastq file: {fastq_file}")
+            self.result_dict["toulligqc"][sample_id] = result_dict
+            self.dataframe_dict["toulligqc"][sample_id] = extractor.dataframe_dict
+            log.info(f"TOULLIGQC - Processed fastq file: {fastq_file}")
 
     def get_samtools_flagstat_data(self, folder_path, clean_ext, data_suffix):
         """
@@ -166,6 +170,7 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+        log.info(f"SAMTOOLS - Processed samtools {data_suffix} data for {len(df)} samples")
 
     def get_samtools_contam_data(self, folder_path, clean_ext, data_suffix):
         """
@@ -197,12 +202,14 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+        log.info(f"SAMTOOLS - Processed samtools {data_suffix} data for {len(df)} samples")
 
     def get_mosdepth_data(self, folder_path):
         """
         Get data from mosdepth reports.
         """
         self.dataframe_dict["coverage_per_base"] = parse_mosdepth_per_base(folder_path)
+        log.info(f"COVERAGE - Processed mosdepth coverage data for {len(self.dataframe_dict['coverage_per_base'])} samples")
 
     def get_ref_data(self, folder_path):
         """
@@ -212,22 +219,21 @@ class ReportDataParser:
         ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
         for ref_file in ref_files:
             sample_id = ref_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "reference" not in self.result_dict:
+                self.result_dict["reference"] = {}
+                self.result_dict["reference_index"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["ref"] = f.readlines()
-            log.info(f"Processed reference file: {sample_id} - {ref_file}")
+                self.result_dict["reference"][sample_id] = f.readlines()
+            log.info(f"REFERENCE - Processed reference file: {sample_id} - {ref_file}")
 
         # Get index files
         ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta.fai")]
         for ref_file in ref_files:
             sample_id = ref_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["fai"] = f.readlines()
-            log.info(f"Processed reference index file: {sample_id} - {ref_file}")
+                self.result_dict["reference_index"][sample_id] = f.readlines()
+            log.info(f"REFERENCE - Processed reference index file: {sample_id} - {ref_file}")
 
     def get_variant_data(self, folder_path, vcf_tools):
         """
@@ -238,13 +244,13 @@ class ReportDataParser:
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants"] = {}
+            if "variants" not in self.result_dict:
+                self.result_dict["variants"] = {}
+            if sample_id not in self.result_dict["variants"]:
+                self.result_dict["variants"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["variants"][tool_name] = f.readlines()
-            log.info(f"Processed variant file: {sample_id} - {var_file}")
+                self.result_dict["variants"][sample_id][tool_name] = f.readlines()
+            log.info(f"VARIANTS - Processed variant file: {sample_id} - {var_file}")
 
         if len(vcf_tools) > 0:
             # Make list of var files for each sample_id
@@ -263,8 +269,8 @@ class ReportDataParser:
                     self.dataframe_dict[sample_id] = {}
                 var_files_by_sample[sample_id].sort(key=lambda x: vcf_tools.index(x.split(".")[1]))
                 variants, header, processed_variants = generate_merged_vcf_report(var_files_by_sample[sample_id], vcf_tools)
-                self.dataframe_dict[sample_id]["variants"] = pd.DataFrame(processed_variants, columns=header)
-                log.info(f"Generated merged vcf report: {sample_id} - {var_files_by_sample[sample_id]}")
+                self.dataframe_dict["variants"][sample_id] = pd.DataFrame(processed_variants, columns=header)
+                log.info(f"VARIANTS - Generated merged vcf report: {sample_id} - {var_files_by_sample[sample_id]}")
 
     def get_compressed_variant_data(self, folder_path):
         # Get binary variant files
@@ -272,79 +278,81 @@ class ReportDataParser:
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants_gz" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants_gz"] = {}
+            if "variants_gz" not in self.result_dict:
+                self.result_dict["variants_gz"] = {}
+            if sample_id not in self.result_dict["variants_gz"]:
+                self.result_dict["variants_gz"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
-                self.result_dict[sample_id]["variants_gz"][tool_name] = f.read()
-            log.info(f"Processed variant gzip file: {sample_id} - {var_file}")
+                self.result_dict["variants_gz"][sample_id][tool_name] = f.read()
+            log.info(f"VARIANTS - Processed variant gzip file: {sample_id} - {var_file}")
 
         # Get Tabix files
         var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf.gz.tbi")]
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants_tbi" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants_tbi"] = {}
+            if "variants_tbi" not in self.result_dict:
+                self.result_dict["variants_tbi"] = {}
+            if sample_id not in self.result_dict["variants_tbi"]:
+                self.result_dict["variants_tbi"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
-                self.result_dict[sample_id]["variants_tbi"][tool_name] = f.read()
-            log.info(f"Processed variant tabix file: {sample_id} - {var_file}")
+                self.result_dict["variants_tbi"][sample_id][tool_name] = f.read()
+            log.info(f"VARIANTS - Processed variant tabix file: {sample_id} - {var_file}")
 
     def get_annotation_data(self, folder_path):
         # Get annotation files
         ann_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".gff")]
         for ann_file in ann_files:
             sample_id = ann_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "annotation" not in self.result_dict:
+                self.result_dict["annotation"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ann_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["annotation"] = f.readlines()
-            log.info(f"Processed annotation file: {sample_id} - {ann_file}")
+                self.result_dict["annotation"][sample_id] = f.readlines()
+            log.info(f"ANNOTATION - Processed annotation file: {sample_id} - {ann_file}")
 
     def get_samplesheet_data(self, folder_path):
         # Get path of first csv file in folder
         csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
         self.merged_dataframe_dict["samplesheet"] = pd.read_csv(os.path.join(folder_path, csv_files[0]), encoding="UTF-8")
-        log.info(f"Processed samplesheet file: {csv_files[0]}")
+        log.info(f"SAMPLESHEET - Processed samplesheet file: {csv_files[0]}")
 
     def get_count_table_data(self, folder_path):
         csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
         for csv_file in csv_files:
             sample_id = csv_file.split(".")[0]
-            if sample_id not in self.dataframe_dict:
-                self.dataframe_dict[sample_id] = {}
-            self.dataframe_dict[sample_id]["count_table"] = pd.read_csv(os.path.join(folder_path, csv_file), encoding="UTF-8", sep="\t")
-            log.info(f"Processed count table file: {csv_file}")
+            if "count_table" not in self.dataframe_dict:
+                self.dataframe_dict["count_table"] = {}
+            self.dataframe_dict["count_table"][sample_id] = pd.read_csv(os.path.join(folder_path, csv_file), encoding="UTF-8", sep="\t")
+            log.info(f"COUNT_TABLE - Processed count table file: {csv_file}")
 
     def get_consensus_data(self, folder_path):
         # Get consensus files
         cons_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
         for cons_file in cons_files:
             sample_id = cons_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "consensus" not in self.result_dict:
+                self.result_dict["consensus"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, cons_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["consensus"] = f.readlines()
-            log.info(f"Processed consensus file: {sample_id} - {cons_file}")
+                self.result_dict["consensus"][sample_id] = f.readlines()
+            log.info(f"CONSESNSUS - Processed consensus file: {sample_id} - {cons_file}")
 
     def get_truncation_data(self, folder_path):
         bam_info_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".tsv")]
         for bam_info_file in bam_info_files:
             sample_id = bam_info_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "truncation" not in self.result_dict:
+                self.result_dict["truncation"] = {}
+                self.result_dict["truncation_type"] = {}
+                self.result_dict["truncation_type_simple"] = {}
             # Read the bam info and save the starts/ends positions
             bam_info_df = pd.read_csv(
                 os.path.join(folder_path, bam_info_file), sep="\t", usecols=["Pos", "EndPos"], dtype={"Pos": np.uint32, "EndPos": np.uint32}
             )
             bam_info_df = bam_info_df.rename(columns={"Pos": "Read Start", "EndPos": "Read End"})
-            self.result_dict[sample_id]["truncation"] = bam_info_df
-            log.info(f"Processed truncation file: {sample_id} - {bam_info_file}")
+            self.result_dict["truncation"][sample_id] = bam_info_df
+            log.info(f"TRUNCATION - Processed truncation file: {sample_id} - {bam_info_file}")
 
             bam_info_df = pd.read_csv(
                 os.path.join(folder_path, bam_info_file),
@@ -447,11 +455,11 @@ class ReportDataParser:
             ]
 
             bam_info_df["aln_type"] = np.select(conditions, choices, default=AlnType.unknown)
-            self.result_dict[sample_id]["truncation_type"] = bam_info_df
+            self.result_dict["truncation_type"][sample_id] = bam_info_df
 
             bam_info_df_simple = bam_info_df.copy()
             bam_info_df_simple["aln_type"] = np.select(conditions, choices_simple, default=AlnType.unknown)
-            self.result_dict[sample_id]["truncation_type_simple"] = bam_info_df_simple
+            self.result_dict["truncation_type_simple"][sample_id] = bam_info_df_simple
 
 
 class AlnType(str, Enum):

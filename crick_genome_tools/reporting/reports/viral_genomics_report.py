@@ -2,7 +2,7 @@
 Class for generating a generic viral genomics report.
 """
 
-# pylint disable=missing-function-docstring,missing-class-docstring
+# pylint disable=missing-function-docstring,missing-class-docstring,missing-module-docstring,missing-function-docstring
 
 import json
 import logging
@@ -19,6 +19,8 @@ from crick_genome_tools.reporting.tqc.plotly_charts import (
     mqc_samtools_contig_bar_plot,
     read_count_histogram,
     read_length_scatterplot,
+    truncation_barplot,
+    truncation_scatterplot,
 )
 
 
@@ -27,7 +29,7 @@ log = logging.getLogger(__name__)
 
 class ViralGenomicsReport(CrickReport):
     """
-    Class for generating a generic viral genomics report.
+    Base class for generating a generic viral genomics report.
     """
 
     def __init__(self, run_id, data_path=None, data_obj=None, tmp_dir=None, jbrowse_component=None, app_url="localhost:8501"):
@@ -45,21 +47,23 @@ class ViralGenomicsReport(CrickReport):
         headers = []
         if dp.summary_data is not None:
             headers.append("Pipeline Summary")
-        if dp.merged_dataframe_dict["samplesheet"] is not None:
+        if "samplesheet" in dp.merged_dataframe_dict:
             headers.append("Samplesheet")
-        if "toulligqc" in dp.result_dict[list(dp.result_dict.keys())[0]]:
-            headers.append("Nanopore Read QC")
-        if "samtools_host" in dp.merged_dataframe_dict and "samtools_contam" in dp.merged_dataframe_dict:
+        if "toulligqc" in dp.result_dict:
+            headers.append("Read QC")
+        if "samtools_host" in dp.merged_dataframe_dict or "samtools_contam" in dp.merged_dataframe_dict:
             headers.append("Contaminant Removal")
         if "samtools_align" in dp.merged_dataframe_dict:
             headers.append("Alignment")
         if "coverage_per_base" in dp.dataframe_dict:
             headers.append("Coverage")
-        if "consensus" in dp.result_dict[list(dp.result_dict.keys())[0]]:
+        if "consensus" in dp.result_dict:
             headers.append("Consensus")
-        if "ref" in dp.result_dict[list(dp.result_dict.keys())[0]]:
+        if "truncation" in dp.result_dict:
+            headers.append("Truncation")
+        if "reference" in dp.result_dict:
             headers.append("Genome Viewer")
-        if "variants" in dp.dataframe_dict[list(dp.dataframe_dict.keys())[0]]:
+        if "variants" in dp.dataframe_dict:
             headers.append("Variant Viewer")
         return headers
 
@@ -80,7 +84,7 @@ class ViralGenomicsReport(CrickReport):
             self.summary_section(dp)
         elif st.session_state.selected_section == "Samplesheet":
             self.samplesheet_section(dp)
-        elif st.session_state.selected_section == "Nanopore Read QC":
+        elif st.session_state.selected_section == "Read QC":
             self.nanopore_read_qc_section(dp)
         elif st.session_state.selected_section == "Contaminant Removal":
             self.contaminant_removal_section(dp)
@@ -88,6 +92,8 @@ class ViralGenomicsReport(CrickReport):
             self.alignment_section(dp)
         elif st.session_state.selected_section == "Coverage":
             self.coverage_section(dp)
+        elif st.session_state.selected_section == "Truncation":
+            self.truncation_section(dp)
         elif st.session_state.selected_section == "Consensus":
             self.consensus_section(dp)
         elif st.session_state.selected_section == "Genome Viewer":
@@ -119,29 +125,36 @@ class ViralGenomicsReport(CrickReport):
         # st.write("This section shows read quality reporting.")
 
         # Create dropdown for selecting dataset
-        selected_dataset = st.selectbox("Choose a sample:", list(results_dict.keys()))
+        selected_dataset = st.selectbox("Choose a sample:", list(results_dict["toulligqc"].keys()))
 
         # Place charts and tables
-        read_count_histogram(results_dict[selected_dataset]["toulligqc"])
-        read_length_scatterplot(dataframe_dict[selected_dataset]["toulligqc"])
+        read_count_histogram(results_dict["toulligqc"][selected_dataset])
+        read_length_scatterplot(dataframe_dict["toulligqc"][selected_dataset])
 
     def contaminant_removal_section(self, dp):
         # Prepare data
         host_df = dp.merged_dataframe_dict["samtools_host"]
-        contam_df = dp.merged_dataframe_dict["samtools_contam"]
-        contam_columns = contam_df.columns[1:].tolist()
-        contam_columns.remove("Unmapped")
         host_df = host_df.reset_index(drop=True)
-        combined_df = contam_df.reset_index(drop=True)
-        combined_df.insert(2, "Host", host_df["Mapped"])
-        combined_df.insert(1, "Total", contam_df.iloc[:, 1:].sum(axis=1))
-        combined_columns = combined_df.columns[2:].tolist()
-        combined_columns.remove("Unmapped")
+
+        if "samtools_contam" in dp.merged_dataframe_dict:
+            contam_df = dp.merged_dataframe_dict["samtools_contam"]
+            contam_columns = contam_df.columns[1:].tolist()
+            contam_columns.remove("Unmapped")
+
+            combined_df = contam_df.reset_index(drop=True)
+            combined_df.insert(2, "Host", host_df["Mapped"])
+            combined_df.insert(1, "Total", contam_df.iloc[:, 1:].sum(axis=1))
+            combined_columns = combined_df.columns[2:].tolist()
+            combined_columns.remove("Unmapped")
 
         # Place charts and tables
-        mqc_samtools_contig_bar_plot(combined_df, "Summary", combined_columns)
+        if "samtools_contam" in dp.merged_dataframe_dict:
+            mqc_samtools_contig_bar_plot(combined_df, "Summary", combined_columns)
+
         mqc_samtools_bar_plot(dp.merged_dataframe_dict["samtools_host"], "Host Alignment")
-        mqc_samtools_contig_bar_plot(contam_df, "Contaminent Alignment", contam_columns)
+
+        if "samtools_contam" in dp.merged_dataframe_dict:
+            mqc_samtools_contig_bar_plot(contam_df, "Contaminent Alignment", contam_columns)
 
     def alignment_section(self, dp):
         # Place charts and tables
@@ -158,13 +171,21 @@ class ViralGenomicsReport(CrickReport):
         for contig, df in coverage_data[selected_dataset].items():
             coverage_plot(df, contig)
 
+    def truncation_section(self, dp):
+        # Create dropdown for selecting dataset
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["truncation"].keys()))
+
+        truncation_scatterplot(dp.result_dict["truncation"][selected_dataset])
+        truncation_barplot(dp.result_dict["truncation_type_simple"][selected_dataset], "Truncation Type Simple")
+        truncation_barplot(dp.result_dict["truncation_type"][selected_dataset], "Truncation Type")
+
     def consensus_section(self, dp):
         # Create dropdown for selecting dataset
-        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["consensus"].keys()))
 
         # Get data
-        fasta_seq = "".join(dp.result_dict[selected_dataset]["consensus"])
-        count_table = dp.dataframe_dict[selected_dataset]["count_table"]
+        fasta_seq = "".join(dp.result_dict["consensus"][selected_dataset])
+        count_table = dp.dataframe_dict["count_table"][selected_dataset]
 
         # Show the count table
         st.dataframe(count_table)
@@ -180,28 +201,28 @@ class ViralGenomicsReport(CrickReport):
 
     def genome_viewer_section(self, dp):
         # Create dropdown for selecting dataset
-        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["variants_gz"].keys()))
 
         # Write data to static folder
         ref_path = self.tmp_dir + "_" + selected_dataset + ".fasta"
         with open(ref_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["ref"]:
+            for line in dp.result_dict["reference"][selected_dataset]:
                 f.write(line.encode("utf-8"))
         index_path = self.tmp_dir + "_" + selected_dataset + ".fasta.fai"
         with open(index_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["fai"]:
+            for line in dp.result_dict["reference_index"][selected_dataset]:
                 f.write(line.encode("utf-8"))
-        for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
+        for tool_name in dp.result_dict["variants_gz"][selected_dataset].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz"
             with open(tool_path, "wb") as f:
-                f.write(dp.result_dict[selected_dataset]["variants_gz"][tool_name])
-        for tool_name in dp.result_dict[selected_dataset]["variants_tbi"].keys():
+                f.write(dp.result_dict["variants_gz"][selected_dataset][tool_name])
+        for tool_name in dp.result_dict["variants_tbi"][selected_dataset].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz.tbi"
             with open(tool_path, "wb") as f:
-                f.write(dp.result_dict[selected_dataset]["variants_tbi"][tool_name])
+                f.write(dp.result_dict["variants_tbi"][selected_dataset][tool_name])
         ann_path = self.tmp_dir + "_" + selected_dataset + ".gff"
         with open(ann_path, "wb") as f:
-            for line in dp.result_dict[selected_dataset]["annotation"]:
+            for line in dp.result_dict["annotation"][selected_dataset]:
                 f.write(line.encode("utf-8"))
 
         # Construct Uris
@@ -257,7 +278,7 @@ class ViralGenomicsReport(CrickReport):
         }
 
         # Add variant tracks
-        for tool_name in dp.result_dict[selected_dataset]["variants_gz"].keys():
+        for tool_name in dp.result_dict["variants_gz"][selected_dataset].keys():
             jbrowse_config["tracks"].append(
                 {
                     "type": "VariantTrack",
@@ -284,8 +305,8 @@ class ViralGenomicsReport(CrickReport):
 
     def variant_viewer_section(self, dp):
         # Get data frame
-        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict.keys()))
-        df = dp.dataframe_dict[selected_dataset]["variants"]
+        selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["variants"].keys()))
+        df = dp.dataframe_dict["variants"][selected_dataset]
         st.dataframe(self.filter_dataframe(df))
 
     def filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
