@@ -1,3 +1,4 @@
+import gzip
 import os
 import re
 from collections import defaultdict
@@ -384,9 +385,8 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
 
     ## Create a fastq file for each sample + an "undetermined" file for unassigned reads
-    file_handles = defaultdict(lambda: open(os.path.join(output_dir, "undetermined.txt"), "a", encoding="utf-8"))
-    for sample in samples_barcode_from_dict:
-        file_handles[sample] = open(os.path.join(output_dir, f"{sample}.txt"), "a", encoding="utf-8")
+    file_handles = {sample: gzip.open(os.path.join(output_dir, f"{sample}.fastq.gz"), "ab") for sample in samples_barcode_from_dict}
+    file_handles["undetermined"] = gzip.open(os.path.join(output_dir, "undetermined.fastq.gz"), "ab")
 
     # Keep track of each read assigned to each sample
     sample_assigned_read = defaultdict(list)  # this one keeps track of sample+read index information
@@ -395,6 +395,7 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     ## Read the FASTQ file and extract indexes, save all indexes in a list
     fastq = FastqFile(fastq_file)
     for name, seq, qual in fastq.open_read_iterator(as_string=True):
+
         # Extract the index from the read name and remove any non-alphabetic characters
         index = extract_index_from_header_illumina(name)
         index = re.sub(r"[^A-Za-z]", " ", index)
@@ -419,7 +420,7 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
         sample_assigned_read[match].append([name, trimmed_index])
 
         # Write the sequence to the appropriate file
-        file_handles[match].write("@" + name + "\n" + seq + "\n" + "+" + "\n" + qual + "\n")
+        FastqFile.write_read(file_handles[match], name, seq, qual)
 
     for sample, reads in sample_assigned_read.items():
         sample_count[sample] = len(reads)
