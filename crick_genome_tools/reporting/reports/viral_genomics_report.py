@@ -229,7 +229,7 @@ class ViralGenomicsReport(CrickReport):
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz.tbi"
             with open(tool_path, "wb") as f:
                 f.write(dp.result_dict["variants_tbi"][selected_dataset][tool_name])
-        ann_path = self.tmp_dir + "_" + selected_dataset + ".gff"
+        ann_path = self.tmp_dir + "_" + selected_anno + ".gff"
         with open(ann_path, "wb") as f:
             for line in dp.result_dict["annotation"][selected_anno]:
                 f.write(line.encode("utf-8"))
