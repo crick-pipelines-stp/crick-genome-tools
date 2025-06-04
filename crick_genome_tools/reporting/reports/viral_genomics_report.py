@@ -203,14 +203,20 @@ class ViralGenomicsReport(CrickReport):
         # Create dropdown for selecting dataset
         selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["variants_gz"].keys()))
 
+        # Select the reference sequence and index
+        if len(dp.result_dict["reference"]) > 1:
+            selected_ref = selected_dataset
+        else:
+            selected_ref = list(dp.result_dict["reference"].keys())[0]
+
         # Write data to static folder
-        ref_path = self.tmp_dir + "_" + selected_dataset + ".fasta"
+        ref_path = self.tmp_dir + "_" + selected_ref + ".fasta"
         with open(ref_path, "wb") as f:
-            for line in dp.result_dict["reference"][selected_dataset]:
+            for line in dp.result_dict["reference"][selected_ref]:
                 f.write(line.encode("utf-8"))
-        index_path = self.tmp_dir + "_" + selected_dataset + ".fasta.fai"
+        index_path = self.tmp_dir + "_" + selected_ref + ".fasta.fai"
         with open(index_path, "wb") as f:
-            for line in dp.result_dict["reference_index"][selected_dataset]:
+            for line in dp.result_dict["reference_index"][selected_ref]:
                 f.write(line.encode("utf-8"))
         for tool_name in dp.result_dict["variants_gz"][selected_dataset].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz"
