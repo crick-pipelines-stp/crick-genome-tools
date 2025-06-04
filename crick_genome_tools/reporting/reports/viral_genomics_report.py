@@ -32,11 +32,12 @@ class ViralGenomicsReport(CrickReport):
     Base class for generating a generic viral genomics report.
     """
 
-    def __init__(self, run_id, data_path=None, data_obj=None, tmp_dir=None, jbrowse_component=None, app_url="localhost:8501"):
+    def __init__(self, run_id, data_path=None, data_obj=None, tmp_dir=None, jbrowse_component=None, app_url="localhost:8501", alignment_folder=None):
         super().__init__("Viral Genomics Report", data_path, data_obj, tmp_dir)
         self.run_id = run_id
         self.jbrowse_component = jbrowse_component
         self.app_url = app_url
+        self.alignment_folder = alignment_folder
 
     def _scan_sections(self):
         """
@@ -97,7 +98,7 @@ class ViralGenomicsReport(CrickReport):
         elif st.session_state.selected_section == "Consensus":
             self.consensus_section(dp)
         elif st.session_state.selected_section == "Genome Viewer":
-            self.genome_viewer_section(dp)
+            self.genome_viewer_section(dp, self.alignment_folder)
         elif st.session_state.selected_section == "Variant Viewer":
             self.variant_viewer_section(dp)
 
@@ -200,7 +201,7 @@ class ViralGenomicsReport(CrickReport):
         )
         st.code(f"{fasta_seq}")
 
-    def genome_viewer_section(self, dp):
+    def genome_viewer_section(self, dp, alignment_folder=None):
         # Create dropdown for selecting dataset
         selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["variants_gz"].keys()))
 
@@ -322,6 +323,29 @@ class ViralGenomicsReport(CrickReport):
 
             # Also append to default session view
             jbrowse_config["defaultSession"]["view"]["init"]["tracks"].append(f"{tool_name}_vcf_track")
+
+        # Add alignment track if available
+        if alignment_folder is not None:
+            alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
+            jbrowse_config["tracks"].append(
+                {
+                    "type": "AlignmentsTrack",
+                    "trackId": "alignments",
+                    "name": "Alignments",
+                    "assemblyNames": [f"{contigs[0]}"],
+                    "adapter": {
+                        "type": "BamAdapter",
+                        "bamLocation": {
+                            "uri": f"{alignment_path}.bam",
+                        },
+                        "index": {
+                            "uri": f"{alignment_path}.bam.bai",
+                        }
+                    },
+                }
+            )
+            # Also append to default session view
+            jbrowse_config["defaultSession"]["view"]["init"]["tracks"].append("alignments")
 
         # Dump into string
         config_str = json.dumps(jbrowse_config, indent=4)
