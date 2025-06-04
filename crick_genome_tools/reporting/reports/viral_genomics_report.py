@@ -327,6 +327,7 @@ class ViralGenomicsReport(CrickReport):
         # Add alignment track if available
         if alignment_folder is not None:
             alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
+            log.info(f"Alignment path: {alignment_path}")
             jbrowse_config["tracks"].append(
                 {
                     "type": "AlignmentsTrack",
