@@ -218,7 +218,7 @@ class ViralGenomicsReport(CrickReport):
             for line in dp.result_dict["reference"][selected_ref]:
                 f.write(line.encode("utf-8"))
         log.info(f"Reference written to {ref_path}")
-        index_path = self.tmp_dir + "_" + selected_ref + ".fasta.fai"
+        index_path = self.tmp_dir + "_" + selected_ref + ".fai"
         with open(index_path, "wb") as f:
             for line in dp.result_dict["reference_index"][selected_ref]:
                 f.write(line.encode("utf-8"))
