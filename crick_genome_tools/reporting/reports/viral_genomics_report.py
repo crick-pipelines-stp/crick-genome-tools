@@ -239,11 +239,13 @@ class ViralGenomicsReport(CrickReport):
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
-        fasta_uri = base_uri
+        fasta_uri = base_uri + ".fasta"
+        fasta_index_uri = base_uri + ".fasta.fai"
         anno_uri = base_uri + ".gff"
 
         if len(dp.result_dict["reference"]) == 1:
-            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref
+            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta"
+            fasta_index_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta.fai"
             anno_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_anno + ".gff"
 
         # Read the fasta file
@@ -258,9 +260,16 @@ class ViralGenomicsReport(CrickReport):
             "assembly": {
                 "name": f"{contigs[0]}",
                 "sequence": {
-                    "type": "ReferenceSequenceTrack",
+                    "type": "IndexedFastaAdapter",
                     "trackId": f"{contigs[0]}-ReferenceSequenceTrack",
-                    "adapter": {"type": "IndexedFastaAdapter", "uri": f"{fasta_uri}"},
+                    "fastaLocation": {
+                        "uri": f"{fasta_uri}",
+                        "locationType": "UriLocation"
+                    },
+                    "faiLocation": {
+                        "uri": f"{fasta_index_uri}",
+                        "locationType": "UriLocation"
+                    }
                 },
             },
             "defaultSession": {
