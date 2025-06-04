@@ -260,16 +260,19 @@ class ViralGenomicsReport(CrickReport):
             "assembly": {
                 "name": f"{contigs[0]}",
                 "sequence": {
-                    "type": "IndexedFastaAdapter",
+                    "type": "ReferenceSequenceTrack",
                     "trackId": f"{contigs[0]}-ReferenceSequenceTrack",
-                    "fastaLocation": {
-                        "uri": f"{fasta_uri}",
-                        "locationType": "UriLocation"
+                    "adapter": {
+                        "type": "IndexedFastaAdapter", 
+                        "fastaLocation": {
+                            "uri": f"{fasta_uri}",
+                            "locationType": "UriLocation"
+                        },
+                        "faiLocation": {
+                            "uri": f"{fasta_index_uri}",
+                            "locationType": "UriLocation"
+                        }
                     },
-                    "faiLocation": {
-                        "uri": f"{fasta_index_uri}",
-                        "locationType": "UriLocation"
-                    }
                 },
             },
             "defaultSession": {
