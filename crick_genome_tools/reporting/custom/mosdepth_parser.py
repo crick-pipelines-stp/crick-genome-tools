@@ -110,7 +110,14 @@ def parse_mosdepth_per_base(data_folder):
 
         # Convert to dataframe
         for recorded_contig in data[sample_id]:
-            data[sample_id][recorded_contig] = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
+            df = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
+            min_pos = df["Position"].min()
+            max_pos = df["Position"].max()
+            full_range = pd.DataFrame({"Position": range(min_pos, max_pos + 1)})
+            df = full_range.merge(df, on="Position", how="left").fillna(0)
+            df["Depth"] = df["Depth"].astype(int)
+            data[sample_id][recorded_contig] = df
+            # data[sample_id][recorded_contig] = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
 
     # Sort dict by sample id
     data = dict(sorted(data.items()))
