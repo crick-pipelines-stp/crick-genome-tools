@@ -207,8 +207,10 @@ class ViralGenomicsReport(CrickReport):
         # Select the reference sequence and index
         if len(dp.result_dict["reference"]) > 1:
             selected_ref = selected_dataset
+            selected_anno = selected_dataset
         else:
             selected_ref = list(dp.result_dict["reference"].keys())[0]
+            selected_anno = list(dp.result_dict["annotation"].keys())[0]
 
         # Write data to static folder
         ref_path = self.tmp_dir + "_" + selected_ref + ".fasta"
@@ -229,7 +231,7 @@ class ViralGenomicsReport(CrickReport):
                 f.write(dp.result_dict["variants_tbi"][selected_dataset][tool_name])
         ann_path = self.tmp_dir + "_" + selected_dataset + ".gff"
         with open(ann_path, "wb") as f:
-            for line in dp.result_dict["annotation"][selected_dataset]:
+            for line in dp.result_dict["annotation"][selected_anno]:
                 f.write(line.encode("utf-8"))
 
         # Construct Uris
