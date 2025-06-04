@@ -217,10 +217,12 @@ class ViralGenomicsReport(CrickReport):
         with open(ref_path, "wb") as f:
             for line in dp.result_dict["reference"][selected_ref]:
                 f.write(line.encode("utf-8"))
+        log.info(f"Reference written to {ref_path}")
         index_path = self.tmp_dir + "_" + selected_ref + ".fasta.fai"
         with open(index_path, "wb") as f:
             for line in dp.result_dict["reference_index"][selected_ref]:
                 f.write(line.encode("utf-8"))
+        log.info(f"Index written to {index_path}")
         for tool_name in dp.result_dict["variants_gz"][selected_dataset].keys():
             tool_path = self.tmp_dir + "_" + selected_dataset + "_" + tool_name + ".vcf.gz"
             with open(tool_path, "wb") as f:
@@ -233,11 +235,16 @@ class ViralGenomicsReport(CrickReport):
         with open(ann_path, "wb") as f:
             for line in dp.result_dict["annotation"][selected_anno]:
                 f.write(line.encode("utf-8"))
+        log.info(f"Annotation written to {ann_path}")
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
         fasta_uri = base_uri + ".fasta"
-        # fai_uri = base_uri + ".fasta.fai"
+        anno_uri = base_uri + ".gff"
+
+        if len(dp.result_dict["reference"]) == 1:
+            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref
+            anno_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_anno
 
         # Read the fasta file
         fasta_data = Fasta.read_fasta_file(ref_path)
@@ -280,7 +287,7 @@ class ViralGenomicsReport(CrickReport):
                     "assemblyNames": [f"{contigs[0]}"],
                     "adapter": {
                         "type": "Gff3Adapter",
-                        "uri": f"{base_uri}.gff",
+                        "uri": f"{anno_uri}",
                     },
                 }
             ],
