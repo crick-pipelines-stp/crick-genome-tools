@@ -175,7 +175,8 @@ class ViralGenomicsReport(CrickReport):
         # Create dropdown for selecting dataset
         selected_dataset = st.selectbox("Choose a sample:", list(dp.result_dict["truncation"].keys()))
 
-        truncation_scatterplot(dp.result_dict["truncation"][selected_dataset])
+        truncation_scatterplot(dp.result_dict["truncation"][selected_dataset], "Truncation Histogram", zoom_y=False)
+        truncation_scatterplot(dp.result_dict["truncation"][selected_dataset], "Truncation Histogram (Scaled)", zoom_y=True)
         truncation_barplot(dp.result_dict["truncation_type_simple"][selected_dataset], "Truncation Type Simple")
         truncation_barplot(dp.result_dict["truncation_type"][selected_dataset], "Truncation Type")
 
