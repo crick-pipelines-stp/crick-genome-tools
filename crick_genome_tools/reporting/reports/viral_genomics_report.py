@@ -239,11 +239,11 @@ class ViralGenomicsReport(CrickReport):
 
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
-        fasta_uri = base_uri + ".fasta"
+        fasta_uri = base_uri
         anno_uri = base_uri + ".gff"
 
         if len(dp.result_dict["reference"]) == 1:
-            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta"
+            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref
             anno_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_anno + ".gff"
 
         # Read the fasta file
