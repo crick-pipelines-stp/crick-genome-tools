@@ -238,11 +238,24 @@ class ViralGenomicsReport(CrickReport):
                 f.write(line.encode("utf-8"))
         log.info(f"Annotation written to {ann_path}")
 
+        # Copy all alignment files to temp dir if available
+        if alignment_folder is not None:
+            alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
+            log.info(f"Copying alignment files from {alignment_path}")
+            for ext in [".bam", ".bam.bai"]:
+                src = f"{alignment_path}{ext}"
+                dst = f"{self.tmp_dir}/{selected_dataset}.viral.sorted{ext}"
+                with open(src, "rb") as src_file, open(dst, "wb") as dst_file:
+                    dst_file.write(src_file.read())
+            log.info("Alignment files copied.")
+
         # Construct Uris
         base_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_dataset
         fasta_uri = base_uri + ".fasta"
         fasta_index_uri = base_uri + ".fasta.fai"
         anno_uri = base_uri + ".gff"
+        bam_uri = base_uri + ".viral.sorted.bam"
+        bam_index_uri = base_uri + ".viral.sorted.bam.bai"
 
         if len(dp.result_dict["reference"]) == 1:
             fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta"
@@ -326,8 +339,6 @@ class ViralGenomicsReport(CrickReport):
 
         # Add alignment track if available
         if alignment_folder is not None:
-            alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
-            log.info(f"Alignment path: {alignment_path}")
             jbrowse_config["tracks"].append(
                 {
                     "type": "AlignmentsTrack",
@@ -337,10 +348,10 @@ class ViralGenomicsReport(CrickReport):
                     "adapter": {
                         "type": "BamAdapter",
                         "bamLocation": {
-                            "uri": f"{alignment_path}.bam",
+                            "uri": f"{bam_uri}",
                         },
                         "index": {
-                            "uri": f"{alignment_path}.bam.bai",
+                            "uri": f"{bam_index_uri}",
                         }
                     },
                 }
