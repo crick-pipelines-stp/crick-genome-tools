@@ -99,25 +99,28 @@ def parse_mosdepth_per_base(data_folder):
 
         # Read gzipped bed file
         bed_file = GzipFile(os.path.join(data_folder, file))
+        per_contig = {}
         for line in bed_file.open_read_iterator(as_string=True):
             fields = line.strip().split("\t")
             contig = fields[0]
-            pos = int(fields[1])
+            start = int(fields[1])
+            end = int(fields[2])
             depth = int(fields[3])
-            if contig not in data[sample_id]:
-                data[sample_id][contig] = []
-            data[sample_id][contig].append((pos, depth))
 
-        # Convert to dataframe
-        for recorded_contig in data[sample_id]:
-            df = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
+            if contig not in per_contig:
+                per_contig[contig] = []
+
+            per_contig[contig].extend((pos, depth) for pos in range(start, end))
+
+        # For each contig, convert to DataFrame and fill gaps
+        for contig, entries in per_contig.items():
+            df = pd.DataFrame(entries, columns=["Position", "Depth"])
             min_pos = df["Position"].min()
             max_pos = df["Position"].max()
             full_range = pd.DataFrame({"Position": range(min_pos, max_pos + 1)})
             df = full_range.merge(df, on="Position", how="left").fillna(0)
             df["Depth"] = df["Depth"].astype(int)
-            data[sample_id][recorded_contig] = df
-            # data[sample_id][recorded_contig] = pd.DataFrame(data[sample_id][recorded_contig], columns=["Position", "Depth"])
+            data[sample_id][contig] = df
 
     # Sort dict by sample id
     data = dict(sorted(data.items()))
