@@ -271,9 +271,8 @@ def coverage_plot(data_frame, graph_name):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def truncation_scatterplot(data_frame):
+def truncation_scatterplot(data_frame, graph_name, zoom_y=True):
     # Init
-    graph_name = "Truncation histogram"
     npoints = 10000
     sigma = 3
     start_pos = data_frame["Read Start"]
@@ -283,11 +282,13 @@ def truncation_scatterplot(data_frame):
 
     count_x1, count_y1, cum_count_y1 = smooth_data(npoints=npoints, sigma=sigma, data=start_pos, min_arg=min_all_pos, max_arg=max_all_pos)
     count_x2, count_y2, cum_count_y2 = smooth_data(npoints=npoints, sigma=sigma, data=end_pos, min_arg=min_all_pos, max_arg=max_all_pos)
-    # max_y = max(max(count_y1), max(count_y2))
 
     # Calc upper y
     combined_y = np.concatenate([count_y1, count_y2])
-    y_upper = np.percentile(combined_y, 99.5)
+    if zoom_y:
+        y_upper = np.percentile(combined_y, 99.5)
+    else:
+        y_upper = max(combined_y) * 1.05
 
     fig = go.Figure()
 
