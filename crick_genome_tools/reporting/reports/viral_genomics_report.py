@@ -243,8 +243,8 @@ class ViralGenomicsReport(CrickReport):
         anno_uri = base_uri + ".gff"
 
         if len(dp.result_dict["reference"]) == 1:
-            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref
-            anno_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_anno
+            fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta"
+            anno_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_anno + ".gff"
 
         # Read the fasta file
         fasta_data = Fasta.read_fasta_file(ref_path)
@@ -283,7 +283,7 @@ class ViralGenomicsReport(CrickReport):
                 {
                     "type": "FeatureTrack",
                     "trackId": "features",
-                    "name": "Snapgene Features",
+                    "name": "Features",
                     "assemblyNames": [f"{contigs[0]}"],
                     "adapter": {
                         "type": "Gff3Adapter",
