@@ -242,7 +242,7 @@ class ViralGenomicsReport(CrickReport):
         if alignment_folder is not None:
             source_alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
             dest_alignment_path_bam = self.tmp_dir + "_" + selected_dataset + ".viral.sorted.bam"
-            dest_alignment_path_bai = self.tmp_dir + "_" + selected_dataset + ".viral.sorted.bai"
+            dest_alignment_path_bai = self.tmp_dir + "_" + selected_dataset + ".viral.sorted.bam.bai"
             log.info(f"Copying alignment files from {source_alignment_path} to {dest_alignment_path_bam}")
             with open(f"{source_alignment_path}.bam", "rb") as src_file, open(dest_alignment_path_bam, "wb") as dst_file:
                 dst_file.write(src_file.read())
