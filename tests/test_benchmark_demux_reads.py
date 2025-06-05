@@ -21,7 +21,7 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
 
     # Setup
-    fastq_file = os.path.join("tests/data/seq/sub_read_L002_R1.fastq")
+    fastq_file = os.path.join("tests/data/seq/sub_read_S1_L002_R1.fastq")
     sample_dict = {
         "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
         "sample_2": "AGGTGGCTAC+CCACGTAACG",
@@ -34,7 +34,7 @@ def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylin
     output_path = tmp_path
 
     # Test
-    benchmark(lambda: (demultiplex_fastq_by_barcode(fastq_file, sample_dict, max_hamming_distance, output_path)))
+    benchmark(lambda: (demultiplex_fastq_by_barcode(sample_dict, fastq_file, max_hamming_distance, output_path)))
 
     # Assert
     mean_ms = benchmark.stats["mean"] * 1000
@@ -76,15 +76,17 @@ def generate_barcode_fastq(sample_dict, num_reads=1_000_000, read_length=100):
     """
     barcodes = list(sample_dict.values())
     bases = ["A", "C", "G", "T"]
+    sequence = "".join(random.choices(bases, k=read_length))
+    plus_line = "+"
     qualities = ["I"] * read_length
+    quality = "".join(qualities)
+
     fastq_lines = []
 
     for i in range(num_reads):
         barcode = random.choice(barcodes)
         header = f"@LH00442{i} 1:N:0:{barcode}"
-        sequence = "".join(random.choices(bases, k=read_length))
-        plus_line = "+"
-        quality = "".join(qualities)
+
         fastq_lines.extend([header, sequence, plus_line, quality])
 
     fastq_content = "\n".join(fastq_lines)
@@ -93,7 +95,7 @@ def generate_barcode_fastq(sample_dict, num_reads=1_000_000, read_length=100):
 
 @pytest.mark.benchmark(group="demux-reads-illumina", min_rounds=5)
 @pytest.mark.only_run_with_direct_target
-def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylint: disable=unused-argument
+def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylint: disable=unused-argument,invalid-name
     """Test generate reads to a fastq file"""
 
     # Variables
@@ -110,12 +112,12 @@ def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylin
 
     # Test
     # Write read content to a temporary file
-    with tempfile.NamedTemporaryFile(mode="w+", delete=True, suffix=".fastq") as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w+", delete=True, suffix="_L001_R1.fastq") as temp_file:
         temp_file.write(fastq_content)
         temp_file.flush()  # Ensure data is written to disk
 
         # Now pass the file path to the benchmarked function
-        benchmark(lambda: (demultiplex_fastq_by_barcode(temp_file.name, sample_dict, max_hamming_distance, output_path)))
+        benchmark(lambda: (demultiplex_fastq_by_barcode(sample_dict, temp_file.name, max_hamming_distance, output_path)))
 
         # Assert
         mean_ms = benchmark.stats["mean"] * 1000
