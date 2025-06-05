@@ -2,6 +2,7 @@ import gzip
 import os
 import re
 from collections import defaultdict
+import numpy as np
 
 from crick_genome_tools.io.fastq_file import FastqFile
 
@@ -118,7 +119,7 @@ def hamming_distance(seq1, seq2) -> int:
     if seq1 is None or seq2 is None:
         raise ValueError("Input sequences cannot be None.")
 
-    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+    return np.count_nonzero(np.frombuffer(seq1.encode(), dtype='S1') != np.frombuffer(seq2.encode(), dtype='S1'))
 
 
 def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
