@@ -246,7 +246,7 @@ class ViralGenomicsReport(CrickReport):
             log.info(f"Copying alignment files from {source_alignment_path} to {dest_alignment_path_bam}")
             with open(f"{source_alignment_path}.bam", "rb") as src_file, open(dest_alignment_path_bam, "wb") as dst_file:
                 dst_file.write(src_file.read())
-            with open(f"{source_alignment_path}.bai", "rb") as src_file, open(dest_alignment_path_bai, "wb") as dst_file:
+            with open(f"{source_alignment_path}.bam.bai", "rb") as src_file, open(dest_alignment_path_bai, "wb") as dst_file:
                 dst_file.write(src_file.read())
             log.info("Alignment files copied.")
 
