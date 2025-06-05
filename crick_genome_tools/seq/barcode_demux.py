@@ -332,8 +332,31 @@ def trim_merge_string(input_str: str, length: int) -> str:
     else:
         return input_str[:length]
 
+def index_to_match_key(index: str, grouped_samples_by_length: dict, max_hamming_distance: int) -> tuple:
+    # Extract the index from the read name and remove any non-alphabetic characters
+    index = extract_index_from_header_illumina(index)
+    index = re.sub(r"[^A-Za-z]", " ", index)
 
-def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dict, max_hamming_distance: int = 0, output_dir: str = ".") -> dict:
+    # Search for the closest match in the grouped samples from the longest to the shortest indexes
+    match = "undetermined"
+    for length_key in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
+        group = grouped_samples_by_length[length_key]
+
+        # trimming differes depending on whether it's a single or dual index
+        length = sum(length_key)
+        trimmed_index = trim_merge_string(index, length)
+
+        # Check if the read index matches to any of the samples
+        match = find_closest_match(group, trimmed_index, max_hamming_distance)
+
+        # Stop searching if a match with a defined sample is found
+        if match != "undetermined":
+            break
+    
+    return match, trimmed_index
+
+
+def demultiplex_fastq_by_barcode(samples_barcode_from_dict: dict, fastq_file_R1: str, max_hamming_distance: int = 0, output_dir: str = ".", fastq_file_R2: str = None) -> dict:
     """
     Demultiplexes a FASTQ file by assigning reads to samples based on barcode sequences.
 
@@ -385,47 +408,76 @@ def demultiplex_fastq_by_barcode(fastq_file: str, samples_barcode_from_dict: dic
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
 
     ## Create a fastq file for each sample + an "undetermined" file for unassigned reads
-    file_handles = {sample: gzip.open(os.path.join(output_dir, f"{sample}.fastq.gz"), "ab") for sample in samples_barcode_from_dict}
-    file_handles["undetermined"] = gzip.open(os.path.join(output_dir, "undetermined.fastq.gz"), "ab")
+    file_handles_R1 = {sample: gzip.open(os.path.join(output_dir, f"{sample}_R1.fastq.gz"), "ab") for sample in samples_barcode_from_dict}
+    file_handles_R1["undetermined"] = gzip.open(os.path.join(output_dir, "undetermined_R1.fastq.gz"), "ab")
+
+    if fastq_file_R2:
+        file_handles_R2 = {sample: gzip.open(os.path.join(output_dir, f"{sample}_R2.fastq.gz"), "ab") for sample in samples_barcode_from_dict}
+        file_handles_R2["undetermined"] = gzip.open(os.path.join(output_dir, "undetermined_R2.fastq.gz"), "ab")
 
     # Keep track of each read assigned to each sample
     sample_assigned_read = defaultdict(list)  # this one keeps track of sample+read index information
     sample_count = {}  # this one keeps track of how many reads are assigned to each sample
 
     ## Read the FASTQ file and extract indexes, save all indexes in a list
-    fastq = FastqFile(fastq_file)
-    for name, seq, qual in fastq.open_read_iterator(as_string=True):
+    fastq_1 = FastqFile(fastq_file_R1)
+    if fastq_file_R2:
+        fastq_2 = FastqFile(fastq_file_R2)
+        fastq_2_iter = fastq_2.open_read_iterator(as_string=True)
 
-        # Extract the index from the read name and remove any non-alphabetic characters
-        index = extract_index_from_header_illumina(name)
-        index = re.sub(r"[^A-Za-z]", " ", index)
+    for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
 
-        # Search for the closest match in the grouped samples from the longest to the shortest indexes
-        match = "undetermined"
-        for length_key in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
-            group = grouped_samples_by_length[length_key]
-
-            # trimming differes depending on whether it's a single or dual index
-            length = sum(length_key)
-            trimmed_index = trim_merge_string(index, length)
-
-            # Check if the read index matches to any of the samples
-            match = find_closest_match(group, trimmed_index, max_hamming_distance)
-
-            # Stop searching if a match with a defined sample is found
-            if match != "undetermined":
-                break
+        match, trimmed_index = index_to_match_key(name, grouped_samples_by_length, max_hamming_distance)
 
         # Assign the read to the matched sample
         sample_assigned_read[match].append([name, trimmed_index])
 
         # Write the sequence to the appropriate file
-        FastqFile.write_read(file_handles[match], name, seq, qual)
+        FastqFile.write_read(file_handles_R1[match], name, seq, qual)
+
+        if fastq_file_R2:
+            # Read the corresponding R2 read
+            name_R2, seq_R2, qual_R2 = next(fastq_2_iter)
+
+            # name_R2, seq_R2, qual_R2 = next(fastq_2.open_read_iterator(as_string=True))
+            # Write the R2 read to the appropriate file
+            FastqFile.write_read(file_handles_R2[match], name_R2, seq_R2, qual_R2)
+            
+
+        # # Extract the index from the read name and remove any non-alphabetic characters
+        # index = extract_index_from_header_illumina(name)
+        # index = re.sub(r"[^A-Za-z]", " ", index)
+
+        # # Search for the closest match in the grouped samples from the longest to the shortest indexes
+        # match = "undetermined"
+        # for length_key in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
+        #     group = grouped_samples_by_length[length_key]
+
+        #     # trimming differes depending on whether it's a single or dual index
+        #     length = sum(length_key)
+        #     trimmed_index = trim_merge_string(index, length)
+
+        #     # Check if the read index matches to any of the samples
+        #     match = find_closest_match(group, trimmed_index, max_hamming_distance)
+
+        #     # Stop searching if a match with a defined sample is found
+        #     if match != "undetermined":
+        #         break
+
+        # # Assign the read to the matched sample
+        # sample_assigned_read[match].append([name, trimmed_index])
+
+        # # Write the sequence to the appropriate file
+        # FastqFile.write_read(file_handles[match], name, seq, qual)
 
     for sample, reads in sample_assigned_read.items():
         sample_count[sample] = len(reads)
 
-    for f in file_handles.values():
+    for f in file_handles_R1.values():
         f.close()
+
+    if fastq_file_R2:
+        for f in file_handles_R2.values():
+            f.close()
 
     return sample_count
