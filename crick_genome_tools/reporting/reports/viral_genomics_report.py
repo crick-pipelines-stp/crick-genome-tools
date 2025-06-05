@@ -240,11 +240,12 @@ class ViralGenomicsReport(CrickReport):
 
         # Copy all alignment files to temp dir if available
         if alignment_folder is not None:
-            alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
-            log.info(f"Copying alignment files from {alignment_path}")
+            source_alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
+            dest_alignment_path = self.tmp_dir + "_" + selected_dataset + ".viral.sorted"
+            log.info(f"Copying alignment files from {source_alignment_path} to {dest_alignment_path}")
             for ext in [".bam", ".bam.bai"]:
-                src = f"{alignment_path}{ext}"
-                dst = f"{self.tmp_dir}/{selected_dataset}.viral.sorted{ext}"
+                src = f"{source_alignment_path}{ext}"
+                dst = f"{dest_alignment_path}{ext}"
                 with open(src, "rb") as src_file, open(dst, "wb") as dst_file:
                     dst_file.write(src_file.read())
             log.info("Alignment files copied.")
