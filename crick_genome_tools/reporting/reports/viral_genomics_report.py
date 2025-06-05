@@ -241,13 +241,13 @@ class ViralGenomicsReport(CrickReport):
         # Copy all alignment files to temp dir if available
         if alignment_folder is not None:
             source_alignment_path = f"{alignment_folder}/{selected_dataset}.viral.sorted"
-            dest_alignment_path = self.tmp_dir + "_" + selected_dataset + ".viral.sorted"
-            log.info(f"Copying alignment files from {source_alignment_path} to {dest_alignment_path}")
-            for ext in [".bam", ".bam.bai"]:
-                src = f"{source_alignment_path}{ext}"
-                dst = f"{dest_alignment_path}{ext}"
-                with open(src, "rb") as src_file, open(dst, "wb") as dst_file:
-                    dst_file.write(src_file.read())
+            dest_alignment_path_bam = self.tmp_dir + "_" + selected_dataset + ".viral.sorted.bam"
+            dest_alignment_path_bai = self.tmp_dir + "_" + selected_dataset + ".viral.sorted.bam.bai"
+            log.info(f"Copying alignment files from {source_alignment_path} to {dest_alignment_path_bam}")
+            with open(f"{source_alignment_path}.bam", "rb") as src_file, open(dest_alignment_path_bam, "wb") as dst_file:
+                dst_file.write(src_file.read())
+            with open(f"{source_alignment_path}.bam.bai", "rb") as src_file, open(dest_alignment_path_bai, "wb") as dst_file:
+                dst_file.write(src_file.read())
             log.info("Alignment files copied.")
 
         # Construct Uris
@@ -256,7 +256,7 @@ class ViralGenomicsReport(CrickReport):
         fasta_index_uri = base_uri + ".fasta.fai"
         anno_uri = base_uri + ".gff"
         bam_uri = base_uri + ".viral.sorted.bam"
-        bam_index_uri = base_uri + ".viral.sorted.bam.bai"
+        # bam_index_uri = base_uri + ".viral.sorted.bai"
 
         if len(dp.result_dict["reference"]) == 1:
             fasta_uri = "ORIGIN_PLACEHOLDER/app/static/tmp/" + self.tmp_dir.split("/")[-1] + "_" + selected_ref + ".fasta"
@@ -347,13 +347,8 @@ class ViralGenomicsReport(CrickReport):
                     "name": "Alignments",
                     "assemblyNames": [f"{contigs[0]}"],
                     "adapter": {
-                        "type": "BamAdapter",
-                        "bamLocation": {
-                            "uri": f"{bam_uri}",
-                        },
-                        "index": {
-                            "uri": f"{bam_index_uri}",
-                        }
+                        "type": 'BamAdapter',
+                        "uri": f"{bam_uri}",
                     },
                 }
             )
