@@ -17,64 +17,63 @@ def count_table_from_pileup(pileup_path: str, output_path: str):
     with open(pileup_path, "r", encoding="UTF-8") as pileup_file:
         pileup_lines = pileup_file.readlines()
 
-    # Parse the pilup lines
     data = {}
+
     for line in pileup_lines:
         fields = line.strip().split("\t")
+        if len(fields) < 6:
+            continue
 
-        # Extract the fields
         contig = fields[0]
         position = int(fields[1])
-        ref_base = fields[2]
+        ref_base = fields[2].upper()
         coverage = int(fields[3])
         bases = fields[4]
         qualities = fields[5]
 
-        # Decode quality scores and get average
-        if len(qualities) > 0:
-            qualities = [ord(quality) - 33 for quality in qualities]
-            avg_quality = int(sum(qualities) / len(qualities))
+        if qualities:
+            qual_vals = [ord(q) - 33 for q in qualities]
+            avg_quality = int(sum(qual_vals) / len(qual_vals))
         else:
             avg_quality = 0
 
-        # Loop each base and count
         forward_count = 0
         rev_count = 0
         count_data = defaultdict(int, {"A": 0, "C": 0, "G": 0, "T": 0})
 
         i = 0
         while i < len(bases):
-            base_char = bases[i]
+            char = bases[i]
 
-            if base_char == '^':
-                i += 2  # skip '^' and mapping quality
+            if char == '^':
+                i += 2  # skip ^ and mapping quality
                 continue
-            elif base_char == '$':
-                i += 1  # end of read
+            elif char == '$':
+                i += 1
                 continue
-            elif base_char in '+-':
+            elif char in '+-':
                 i += 1
                 indel_len_str = ''
                 while i < len(bases) and bases[i].isdigit():
                     indel_len_str += bases[i]
                     i += 1
                 indel_len = int(indel_len_str) if indel_len_str else 0
-                i += indel_len  # skip inserted/deleted bases
+                i += indel_len
                 continue
-            else:
-                if base_char == '.':
-                    base = ref_base
+            elif char == '.':
+                count_data[ref_base] += 1
+                forward_count += 1
+            elif char == ',':
+                count_data[ref_base] += 1
+                rev_count += 1
+            elif char.upper() in "ACGT":
+                count_data[char.upper()] += 1
+                if char.isupper():
                     forward_count += 1
-                elif base_char == ',':
-                    base = ref_base
-                    rev_count += 1
-                elif base_char.upper() in "ACGT":
-                    base = base_char.upper()
                 else:
-                    i += 1
-                    continue
-                count_data[base] += 1
-                i += 1
+                    rev_count += 1
+            # skip anything else
+            i += 1
 
         if coverage > 0:
             for base in "ACGT":
