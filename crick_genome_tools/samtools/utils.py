@@ -17,7 +17,7 @@ def count_table_from_pileup(pileup_path: str, output_path: str):
     with open(pileup_path, "r", encoding="UTF-8") as pileup_file:
         pileup_lines = pileup_file.readlines()
 
-    data = {}
+    entries = []
 
     for line in pileup_lines:
         fields = line.strip().split("\t")
@@ -82,23 +82,25 @@ def count_table_from_pileup(pileup_path: str, output_path: str):
             for base in "ACGT":
                 count_data[base] = 0.0
 
-        data[position] = {
-            "contig": contig,
-            "ref_base": ref_base,
-            "coverage": coverage,
-            "avg_quality": avg_quality,
-            "forward_count": forward_count,
-            "rev_count": rev_count,
-            "A": count_data["A"],
-            "C": count_data["C"],
-            "G": count_data["G"],
-            "T": count_data["T"],
-        }
+        entries.append((
+            position,
+            {
+                "contig": contig,
+                "ref_base": ref_base,
+                "coverage": coverage,
+                "avg_quality": avg_quality,
+                "forward_count": forward_count,
+                "rev_count": rev_count,
+                "A": count_data["A"],
+                "C": count_data["C"],
+                "G": count_data["G"],
+                "T": count_data["T"],
+            }
+        ))
 
     with open(output_path, "w", encoding="UTF-8") as output_file:
         output_file.write("position\tcontig\tref\tcoverage\tavg_qual\tfwd_cnt\trev_cnt\tA%\tC%\tG%\tT%\n")
-        for position in sorted(data.keys()):
-            d = data[position]
+        for position, d in entries:
             output_file.write(
                 f"{position}\t{d['contig']}\t{d['ref_base']}\t{d['coverage']}\t{d['avg_quality']}\t{d['forward_count']}\t{d['rev_count']}\t{d['A']}\t{d['C']}\t{d['G']}\t{d['T']}\n"
             )

@@ -10,16 +10,6 @@ from crick_genome_tools.samtools.utils import count_table_from_pileup
 
 
 class TestSamtoolsUtils:
-    def test_samtools_utils_count_table_from_pileup(self, tmp_path):
-        output_path = tmp_path / "count_table.txt"
-
-        count_table_from_pileup("tests/data/mpileup/h1n1.txt", str(output_path))
-
-        assert_that(output_path.exists()).is_true()
-
-        lines = output_path.read_text(encoding="utf-8").splitlines()
-        assert_that(lines).is_length(401)
-
     def test_samtools_utils_count_table_from_pileup_empty_file(self, tmp_path):
         output_path = tmp_path / "count_table.txt"
         empty_input = tmp_path / "empty.txt"
@@ -41,3 +31,23 @@ class TestSamtoolsUtils:
         assert_that(output_path.exists()).is_true()
         lines = output_path.read_text(encoding="utf-8").splitlines()
         assert_that(lines).is_length(2)
+
+    def test_samtools_utils_count_table_from_pileup_valid_single_contig(self, tmp_path):
+        output_path = tmp_path / "count_table.txt"
+
+        count_table_from_pileup("tests/data/mpileup/h1n1.txt", str(output_path))
+
+        assert_that(output_path.exists()).is_true()
+
+        lines = output_path.read_text(encoding="utf-8").splitlines()
+        assert_that(lines).is_length(401)
+
+    def test_samtools_utils_count_table_from_pileup_valid_multi_contig(self, tmp_path):
+        output_path = tmp_path / "count_table.tsv"
+
+        count_table_from_pileup("tests/data/mpileup/SRR33681751_H5N1_cattle.mpileup", str(output_path))
+
+        assert_that(output_path.exists()).is_true()
+
+        lines = output_path.read_text(encoding="utf-8").splitlines()
+        assert_that(lines).is_length(1501)
