@@ -7,6 +7,46 @@ import numpy as np
 from crick_genome_tools.io.fastq_file import FastqFile
 
 
+class BKTree:
+    def __init__(self, distance_func):
+        self.distance_func = distance_func
+        self.tree = None
+
+    def add(self, word):
+        if self.tree is None:
+            self.tree = (word, {})
+            return
+
+        node = self.tree
+        while True:
+            parent_word, children = node
+            dist = self.distance_func(word, parent_word)
+            print(dist)
+            print(parent_word)
+            print(children)
+            if dist in children:
+                node = children[dist]
+            else:
+                children[dist] = (word, {})
+                break
+
+    def search(self, word, max_dist):
+        if self.tree is None:
+            return []
+
+        matches = []
+        nodes = [self.tree]
+        while nodes:
+            current_word, children = nodes.pop()
+            dist = self.distance_func(word, current_word)
+            if dist <= max_dist:
+                matches.append(current_word)
+            for d in range(dist - max_dist, dist + max_dist + 1):
+                child = children.get(d)
+                if child:
+                    nodes.append(child)
+        return matches
+
 def extract_index_from_header_illumina(name: str) -> str:
     """
     Extract the index sequence from a FASTQ read header.
@@ -119,7 +159,8 @@ def hamming_distance(seq1, seq2) -> int:
     if seq1 is None or seq2 is None:
         raise ValueError("Input sequences cannot be None.")
 
-    return np.count_nonzero(np.frombuffer(seq1.encode(), dtype='S1') != np.frombuffer(seq2.encode(), dtype='S1'))
+    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+    # return np.count_nonzero(np.frombuffer(seq1.encode(), dtype='S1') != np.frombuffer(seq2.encode(), dtype='S1'))
 
 
 def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
@@ -162,6 +203,32 @@ def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
 
     return best_match
 
+
+
+def build_bk_tree_index(grouped_samples_by_length: dict) -> dict:
+    grouped_bk_trees = {}
+    print(grouped_samples_by_length.items())
+    # print(grouped_samples_by_length)
+
+    # for length_key, group in grouped_samples_by_length.items():
+    i5_tree = BKTree(hamming_distance)
+    i7_tree = BKTree(hamming_distance)
+    barcode_map = {}
+    # print(group)
+
+    for sample, barcode in grouped_samples_by_length.items():
+        parts = re.split(r"[^A-Za-z]", barcode)
+        i5, i7 = (parts[0], parts[1]) if len(parts) > 1 else (parts[0], None)
+        i5_tree.add(i5)
+        if i7:
+            i7_tree.add(i7)
+        barcode_map[(i5, i7)] = sample
+
+        grouped_bk_trees = (i5_tree, i7_tree, barcode_map)
+        # print("ok")
+        # print(grouped_bk_trees)
+
+    return grouped_bk_trees
 
 def crosscheck_barcode_proximity(barcodes: dict) -> list:
     """
@@ -334,28 +401,67 @@ def trim_merge_string(input_str: str, length: int) -> str:
         return input_str[:length]
 
 
-def index_to_match_key(index: str, grouped_samples_by_length: dict, max_hamming_distance: int) -> tuple:
-    # Extract the index from the read name and remove any non-alphabetic characters
-    index = extract_index_from_header_illumina(index)
-    index = re.sub(r"[^A-Za-z]", " ", index)
+# def index_to_match_key(index: str, sorted_grouped_samples_by_length: dict, grouped_samples_by_length: dict, max_hamming_distance: int) -> tuple:
+#     # Extract the index from the read name and remove any non-alphabetic characters
+#     index = extract_index_from_header_illumina(index)
+#     index = re.sub(r"[^A-Za-z]", " ", index)
 
-    # Search for the closest match in the grouped samples from the longest to the shortest indexes
-    match = "undetermined"
-    for length_key in sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key):
-        group = grouped_samples_by_length[length_key]
+#     # Search for the closest match in the grouped samples from the longest to the shortest indexes
+#     match = "undetermined"
+#     for length_key in sorted_grouped_samples_by_length:
+#         group = grouped_samples_by_length[length_key]
 
-        # trimming differes depending on whether it's a single or dual index
-        length = sum(length_key)
-        trimmed_index = trim_merge_string(index, length)
+#         # trimming differes depending on whether it's a single or dual index
+#         length = sum(length_key)
+#         trimmed_index = trim_merge_string(index, length)
+#         print(f"Trimmed index: {trimmed_index} for length key: {length_key}")
 
-        # Check if the read index matches to any of the samples
-        match = find_closest_match(group, trimmed_index, max_hamming_distance)
+#         # Check if the read index matches to any of the samples
+#         match = find_closest_match(group, trimmed_index, max_hamming_distance)
 
-        # Stop searching if a match with a defined sample is found
-        if match != "undetermined":
-            break
+#         # Stop searching if a match with a defined sample is found
+#         if match != "undetermined":
+#             break
 
-    return match, trimmed_index
+#     return match, trimmed_index
+
+def index_to_match_key(read_header: str, sorted_group_lengths: dict, grouped_sample_by_length: dict, max_hamming_distance: int) -> tuple:
+    """
+    Matches a read index to a sample using BK-tree search.
+
+    Args:
+        read_header (str): Read name/header containing the barcode.
+        sorted_group_lengths (list): Sorted list of index length tuples.
+        grouped_bk_trees (dict): Maps (i5_len, i7_len) to BK-trees and barcode mapping.
+        max_hamming_distance (int): Max allowable per-index Hamming distance.
+
+    Returns:
+        tuple: (matched sample name or 'undetermined', trimmed index used)
+    """
+    raw_index = extract_index_from_header_illumina(read_header)
+    parts = re.split(r"[^A-Za-z]", raw_index)
+    i5_read, i7_read = (parts[0], parts[1]) if len(parts) > 1 else (parts[0], None)
+    trimmed_index = f"{i5_read}+{i7_read}" if i7_read else i5_read
+
+    for length_key in sorted_group_lengths:
+        i5_tree, i7_tree, barcode_map = build_bk_tree_index(grouped_sample_by_length[length_key])
+        # print(i5_tree)
+        # print(i7_tree)
+        # print(barcode_map)
+
+        i5_matches = i5_tree.search(i5_read, max_hamming_distance)
+        i7_matches = i7_tree.search(i7_read, max_hamming_distance) if length_key[1] > 0 else [None]
+
+        for i5 in i5_matches:
+            for i7 in i7_matches:
+                if (i5, i7) in barcode_map:
+                    return barcode_map[(i5, i7)], trimmed_index
+        
+        print(f"Trying to match i5: {i5_matches}, i7: {i7_matches}  against length_key: {length_key}")
+
+
+    return "undetermined", trimmed_index
+
 
 
 def demultiplex_fastq_by_barcode(
@@ -411,6 +517,12 @@ def demultiplex_fastq_by_barcode(
     # returns ValueError if any group has a minimum Hamming distance less than max_hamming
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
 
+    ## Sort the grouped samples by length, prioritizing those without zeros
+    sorted_grouped_samples_by_length = sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key)
+
+    # # Create BK-trees for each sample's i5, i7 values based on their lengths
+    # grouped_bk_trees = build_bk_tree_index(grouped_samples_by_length)
+
     ## Create a fastq file for each sample + an "undetermined" file for unassigned reads
     if isinstance(fastq_file_r1, str):
         # Extract read and lane information from the R1 fastq file name
@@ -445,10 +557,11 @@ def demultiplex_fastq_by_barcode(
 
     for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
 
-        match, trimmed_index = index_to_match_key(name, grouped_samples_by_length, max_hamming_distance)
+        match, trimmed_index = index_to_match_key(name, sorted_grouped_samples_by_length, grouped_samples_by_length, max_hamming_distance)
+        print(match)
 
         # Assign the read to the matched sample
-        sample_assigned_read[match].append([name, trimmed_index])
+        sample_assigned_read[match].append(name)
 
         # Write the sequence to the appropriate file
         FastqFile.write_read(file_handles_r1[match], name, seq, qual)
