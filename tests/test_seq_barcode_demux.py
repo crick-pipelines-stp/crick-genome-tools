@@ -101,16 +101,17 @@ class TestBarcodeDemux:
     )
     def test_hamming_distance_isnone(self, sequence1, sequence2):
         assert_that(hamming_distance).raises(ValueError).when_called_with(sequence1, sequence2)
+    
+    def test_hamming_distance_uneven_lengths(self):
+        # Test and assert
+        assert_that(hamming_distance).raises(ValueError).when_called_with("ACGT", "ACGTT")
+        assert_that(hamming_distance).raises(ValueError).when_called_with("ACGT", "ACG")
 
     @pytest.mark.parametrize(
         "sequence1, sequence2, expected_result",
         [
             ("ACGT", "ACGT", 0),
             ("ACGT", "AGGT", 1),
-            ("ACGT", "ACGTT", 0),
-            ("ACGT", "ACG", 0),
-            ("ACGT", "invalid", 4),
-            ("invalid", "ACGT", 4),
             ("ACCT", "ATAC", 3),
         ],
     )
