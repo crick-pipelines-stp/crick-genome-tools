@@ -75,16 +75,18 @@ class TestBarcodeDemux:
             "sample_5": {"key": "value", "index": "AAATA", "index2": "ATCTT"},
         }
         expected_dict = {
-            (4, 0): {"sample_1": "ACGT"},
-            (4, 4): {"sample_2": "ACGT,AGGT"},
-            (8, 0): {"sample_3": "ACGTAGCT"},
+            (4, 0): {"sample_1": ["ACGT"]},
+            (4, 4): {"sample_2": ["ACGT", "AGGT"]},
+            (8, 0): {"sample_3": ["ACGTAGCT"]},
         }
         expected_dict_2 = {
-            (4, 0): {"sample_1": "ACGT"},
-            (4, 4): {"sample_2": "ACGT+AGGT"},
-            (8, 0): {"sample_3": "ACGTAGCT"},
-            (5, 5): {"sample_4": "ACGTA:AGCTT", "sample_5": "AAATA,ATCTT"},
+            (4, 0): {"sample_1": ["ACGT"]},
+            (4, 4): {"sample_2": ["ACGT", "AGGT"]},
+            (8, 0): {"sample_3": ["ACGTAGCT"]},
+            (5, 5): {"sample_4": ["ACGTA", "AGCTT"], "sample_5": ["AAATA","ATCTT"]},
         }
+
+        print(group_samples_by_index_length(input_dict))
 
         # Test and assert
         assert_that(group_samples_by_index_length(input_dict)).is_equal_to(expected_dict)

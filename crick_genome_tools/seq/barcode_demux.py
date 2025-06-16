@@ -118,38 +118,38 @@ def group_samples_by_index_length(sample_index_dict: dict) -> list:
     result = defaultdict(dict)
     # Calculate barcode lengths and organize samples by these lengths within `result`
     for sample, value in sample_index_dict.items():
+        index = []
+
         if isinstance(value, str):
             # if sample has a string value, treat it as a barcode
-            barcode = value
+            index = re.split(r"[^A-Za-z]+", value)
 
         elif isinstance(value, dict):
             # if sample has a dict value, look for "barcode" or "index" keys
             if "barcode" in value:
-                barcode = value["barcode"]
+                index = re.split(r"[^A-Za-z]+", value["barcode"])
             elif "index" in value:
                 if "index2" in value:
                     # if both index and index2 are present, use both entries as the barcode
-                    barcode = value["index"] + "," + value["index2"]
+                    index = [value["index"], value["index2"]]
                 else:
                     # if only index is present, use it as the barcode
-                    barcode = value["index"]
-            else:
-                barcode = ""
+                    index = re.split(r"[^A-Za-z]+", value["index"])
         else:
             raise TypeError(f"Sample '{sample}' has an unsupported value type: {type(value).__name__}")
 
-        if not isinstance(barcode, str):
-            raise TypeError(f"Barcode for sample '{sample}' must be a string.")
+        # Ensure that there are 2 indexes maximum
+        if len(index) > 2:
+            raise ValueError(f"Sample '{sample}' has more than two index components: {index}")
 
-        # Split the barcode into parts based on non-alphabetic characters
-        parts = re.split(r"[^A-Za-z]+", barcode)
-
-        # Determine the lengths of the first and last parts
-        first_len = len(parts[0]) if parts else 0
-        last_len = len(parts[-1]) if len(parts) > 1 else 0 if not parts else 0 if len(parts) == 1 else len(parts[-1])
+        # Determine the lengths of the first and second index
+        first_len = len(index[0])
+        last_len = 0
+        if len(index) == 2:
+            last_len = len(index[1])
 
         key = (first_len, last_len)
-        result[key][sample] = barcode
+        result[key][sample] = index
 
     return dict(result)
 
