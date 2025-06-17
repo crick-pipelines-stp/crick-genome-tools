@@ -5,25 +5,25 @@ Tests for iterative alignment
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-# import os
-# import unittest
+import os
+import unittest
 
-# import pytest
+import pytest
 
-# from crick_genome_tools.io.fasta import Fasta
-# from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
+from crick_genome_tools.io.fasta import Fasta
+from crick_genome_tools.workflows.iterative_alignment import Aligner, IterationMode, IterativeAlignment
 
 
 # class TestIterativeAlignment(unittest.TestCase):
 
-#     @pytest.mark.container(image="thecrick/pipetech_iterative_alignment:test")
+#     @pytest.mark.container(image="thecrick/pipetech_iterative_alignment:latest")
 #     def test_iterative_alignment(self):
-#         if not os.getenv("IN_CONTAINER"):
-#             return
+#         # if not os.getenv("IN_CONTAINER"):
+#         #     return
 
 #         # Setup
 #         output_path = os.environ.get("TMPDIR")
-#         # output_path = "/Users/cheshic/dev/test_data/iter_alignment"
+#         # output_path = "./iter_alignment"
 #         iter_align = IterativeAlignment(
 #             num_cores=8,
 #             output_path=output_path,
@@ -47,18 +47,12 @@ Tests for iterative alignment
 #             r2_file,
 #             ref_file,
 #         )
-#         # raise NotImplementedError("MANUAL END")
 
 #         # Verify that the final consensus file was created
 #         final_consensus_path = os.path.join(output_path, sample_id, f"{sample_id}_final_consensus.fasta")
 #         assert os.path.exists(final_consensus_path), "Final consensus FASTA not found."
 
-#         # Read and verify that the contents of the final consensus file is the same as the reference
-#         # final_consensus = Fasta.read_fasta_file(final_consensus_path)
-#         # ref_seq = Fasta.read_fasta_file(ref_file)
-#         # assert final_consensus == ref_seq, "Final consensus does not match reference."
-
-#         # Verify the BAM and flagstat files
+#        # Verify the BAM and flagstat files
 #         final_bam_path = os.path.join(output_path, sample_id, f"{sample_id}_final.bam")
 #         assert os.path.exists(final_bam_path), "Final BAM file not found."
 

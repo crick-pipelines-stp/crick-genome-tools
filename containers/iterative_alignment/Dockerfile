@@ -27,7 +27,6 @@ RUN mamba install -y python=3.12
 RUN mamba install -y bwa-mem2
 RUN mamba install -y samtools
 RUN mamba install -y bcftools
-RUN mamba install -y abra2
 RUN mamba install -y pysam
 RUN mamba clean --all --yes
 
@@ -39,7 +38,6 @@ COPY . /usr/src/crick_genome_tools
 WORKDIR /usr/src/crick_genome_tools
 
 # Install the program
-RUN pip install pytest
 RUN pip install .[tests]
 
 CMD ["bash"]
