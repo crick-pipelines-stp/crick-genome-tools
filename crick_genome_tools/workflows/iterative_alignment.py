@@ -33,8 +33,7 @@ class Aligner(Enum):
     """
 
     BWA = "bwa"
-    # BOWTIE2 = "bowtie2"
-    # HISAT2 = "hisat2"
+    MINIMAP2 = "minimap2"
 
 
 class IterativeAlignment:
@@ -50,7 +49,6 @@ class IterativeAlignment:
         max_iterations: int,
         aligner: Aligner,
         iteration_mode: IterationMode,
-        var_thresh: float,
         min_coverage: int,
         **kwargs,
     ):
@@ -63,7 +61,6 @@ class IterativeAlignment:
         self.max_iterations = max_iterations
         self.aligner = aligner
         self.iteration_mode = iteration_mode
-        self.var_thresh = var_thresh
         self.min_coverage = min_coverage
 
         # Mode-specific configurations
@@ -75,6 +72,7 @@ class IterativeAlignment:
         #     log.info(f"Initialized with HAMMING mode, hamming_distance: {self.hamming_distance}")
 
         # Aligner specific configurations
+        self.aligner_param_increments = {}
         if aligner == Aligner.BWA:
             # Initialize dynamic params for BWA (mem, mmpen, gappen)
             self.aligner_params = {
@@ -262,6 +260,31 @@ class IterativeAlignment:
             commands = [
                 bwa_command,  # BWA mem
                 ["samtools", "view", "-@", str(self.num_cores), "-Sb", "-"],  # Convert to BAM
+                ["samtools", "sort", "-@", str(self.num_cores), "-o", bam_file, "-"],  # Sort
+            ]
+            command_chain = CommandChain(commands)
+            command_chain.run()
+
+        elif self.aligner == Aligner.MINIMAP2:
+            # Call minimap2 index
+            CommandChain.command_to_logfile(["minimap2", "-d", f"{ref_path}.mmi", ref_path], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"))
+
+            # Define the minimap2 command
+            minimap2_command = [
+                "minimap2",
+                "-t",
+                str(self.num_cores),
+                "-x",
+                "lr:hq",  # Long reads, high quality
+                "-a",
+                ref_path,
+                read1_path,
+            ]
+            log.info(f"Running Minimap2 with command: {minimap2_command}")
+
+            # Define the alignment command chain and run
+            commands = [
+                minimap2_command,  # Minimap2
                 ["samtools", "sort", "-@", str(self.num_cores), "-o", bam_file, "-"],  # Sort
             ]
             command_chain = CommandChain(commands)
