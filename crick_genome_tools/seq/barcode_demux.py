@@ -400,31 +400,20 @@ def trim_merge_string(input_str: str, length: int) -> str:
         return input_str[:length]
 
 
-# def index_to_match_key(index: str, sorted_grouped_samples_by_length: dict, grouped_samples_by_length: dict, max_hamming_distance: int) -> tuple:
-#     # Extract the index from the read name and remove any non-alphabetic characters
-#     index = extract_index_from_header_illumina(index)
-#     index = re.sub(r"[^A-Za-z]", " ", index)
+def build_bk_tree_index(sorted_grouped_samples_by_length:dict, grouped_samples_by_length: dict) -> dict:
+    grouped_bk_trees = {}
+    for length in sorted_grouped_samples_by_length:
+        if length not in grouped_bk_trees:
+            grouped_bk_trees[length] = {}
+        for sample in grouped_samples_by_length[length]:
+            index1_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][0])
+            index2_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][1]) if len(grouped_samples_by_length[length][sample]) > 1 else None
+            grouped_bk_trees[length][sample] = [index1_tree, index2_tree]
 
-#     # Search for the closest match in the grouped samples from the longest to the shortest indexes
-#     match = "undetermined"
-#     for length_key in sorted_grouped_samples_by_length:
-#         group = grouped_samples_by_length[length_key]
+    return grouped_bk_trees
 
-#         # trimming differes depending on whether it's a single or dual index
-#         length = sum(length_key)
-#         trimmed_index = trim_merge_string(index, length)
-#         print(f"Trimmed index: {trimmed_index} for length key: {length_key}")
 
-#         # Check if the read index matches to any of the samples
-#         match = find_closest_match(group, trimmed_index, max_hamming_distance)
-
-#         # Stop searching if a match with a defined sample is found
-#         if match != "undetermined":
-#             break
-
-#     return match, trimmed_index
-
-def index_to_match_key(read_header: str, sorted_group_lengths: dict, grouped_sample_by_length: dict, max_hamming_distance: int) -> tuple:
+def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_distance: int) -> tuple:
     """
     Matches a read index to a sample using BK-tree search.
 
