@@ -485,31 +485,27 @@ def demultiplex_fastq_by_barcode(
         FileNotFoundError: If the input FASTQ file does not exist or cannot be opened.
         IOError: If any of the output files cannot be created or written to.
     """
-    ## Group samples by index length, then generate sequences based on a pre-determined Hamming sequence
+    ## Group samples by index length
     grouped_samples_by_length = group_samples_by_index_length(samples_barcode_from_dict)
-    for group in grouped_samples_by_length.values():
-        for sample in group:
-            # merge barcodes into an individual string for demux processing
-            group[sample] = re.sub(r"[^A-Za-z]", "", group[sample])
 
-    ## Compare the all the barcodes in each group against each other to find the Hamming distance for each pair compared
+    # Compare the all the barcodes in each group against each other to find the Hamming distance for each pair compared
     grouped_sample_by_length_hamming_value = {}
     grouped_sample_by_length_hamming_value = {
         length: crosscheck_barcode_proximity(samples)
         for length, samples in grouped_samples_by_length.items()
         if len(samples) > 1  # Skip groups with only one entry
     }
+    # print(grouped_sample_by_length_hamming_value)
     # find the minimum hamming distance for each index-length group
     min_hamming_distances_by_length = find_min_hamming_distances(grouped_sample_by_length_hamming_value)
     # check if the minimum hamming distance is above the threshold max hamming distance
     # returns ValueError if any group has a minimum Hamming distance less than max_hamming
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
+    # print(assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance))
 
     ## Sort the grouped samples by length, prioritizing those without zeros
     sorted_grouped_samples_by_length = sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key)
-
-    # # Create BK-trees for each sample's i5, i7 values based on their lengths
-    # grouped_bk_trees = build_bk_tree_index(grouped_samples_by_length)
+    # print(sorted_grouped_samples_by_length)
 
     ## Create a fastq file for each sample + an "undetermined" file for unassigned reads
     if isinstance(fastq_file_r1, str):
@@ -543,10 +539,30 @@ def demultiplex_fastq_by_barcode(
         fastq_2 = FastqFile(fastq_file_r2)
         fastq_2_iter = fastq_2.open_read_iterator(as_string=True)
 
-    for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
+    # Build BK-trees based on a pre-determined Hamming sequence
+    # barcode_map = {}
+    grouped_bk_trees = build_bk_tree_index(sorted_grouped_samples_by_length, grouped_samples_by_length)
+    # for length in sorted_grouped_samples_by_length:
+    #     if length not in barcode_map:
+    #         barcode_map[length] = {}
+    #     # print(f"Processing length group: {grouped_samples_by_length[length]}")
+    #     for sample in grouped_samples_by_length[length]:
+    #         # print(f"Building BK-tree for length {length} with samples: {grouped_samples_by_length[length]}")
+    #         # print(grouped_samples_by_length[length][sample])
+    #         # index1_tree, index2_tree, barcode_map = BKTree(hamming_distance, grouped_samples_by_length[length][sample])
+    #         index1_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][0])
+    #         index2_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][1]) if len(grouped_samples_by_length[length][sample]) > 1 else None
+    #         # print(index2_tree)
+    #         barcode_map[length][sample] = [index1_tree, index2_tree]
 
-        match, trimmed_index = index_to_match_key(name, sorted_grouped_samples_by_length, grouped_samples_by_length, max_hamming_distance)
-        print(match)
+    # print(grouped_samples_by_length)
+
+    for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
+        match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance)
+    #     # print(match)
+
+        # raw_index = extract_index_from_header_illumina(name)
+    #     match = find_matching_sample(raw_index, trees, max_hamming_distance) or 'undetermined'
 
         # Assign the read to the matched sample
         sample_assigned_read[match].append(name)
