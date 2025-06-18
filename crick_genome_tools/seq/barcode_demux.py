@@ -3,113 +3,72 @@ import os
 import re
 from collections import defaultdict
 import numpy as np
+from pybktree import BKTree, hamming_distance
 
 from crick_genome_tools.io.fastq_file import FastqFile
 
 
-class BKTree:
-    def __init__(self, distance_func):
-        self.distance_func = distance_func
-        self.tree = None
+# class BKTree:
+#     def __init__(self, distance_func):
+#         self.distance_func = distance_func
+#         self.tree = None
 
-    def add(self, word):
-        if self.tree is None:
-            self.tree = (word, {})
-            return
+#     def add(self, word):
+#         if self.tree is None:
+#             self.tree = (word, {})
+#             return
 
-        node = self.tree
-        while True:
-            parent_word, children = node
-            dist = self.distance_func(word, parent_word)
-            print(dist)
-            print(parent_word)
-            print(children)
-            if dist in children:
-                node = children[dist]
-            else:
-                children[dist] = (word, {})
-                break
+#         node = self.tree
+#         while True:
+#             parent_word, children = node
+#             dist = self.distance_func(word, parent_word)
+#             print(dist)
+#             print(parent_word)
+#             print(children)
+#             if dist in children:
+#                 node = children[dist]
+#             else:
+#                 children[dist] = (word, {})
+#                 break
 
-    def search(self, word, max_dist):
-        if self.tree is None:
-            return []
+#     def search(self, word, max_dist):
+#         if self.tree is None:
+#             return []
 
-        matches = []
-        nodes = [self.tree]
-        while nodes:
-            current_word, children = nodes.pop()
-            dist = self.distance_func(word, current_word)
-            if dist <= max_dist:
-                matches.append(current_word)
-            for d in range(dist - max_dist, dist + max_dist + 1):
-                child = children.get(d)
-                if child:
-                    nodes.append(child)
-        return matches
-
-def extract_index_from_header_illumina(name: str) -> str:
-    """
-    Extract the index sequence from a FASTQ read header.
-
-    The function assumes that the index is located at the end of the header string,
-    separated by spaces and colons. It extracts the portion of the header after the
-    third colon in the last space-separated segment.
-
-    Args:
-        name (str): The read header from the FASTQ file. This is typically a string
-                    containing metadata about the read, including the index.
-
-    Returns:
-        str: The extracted index sequence from the header.
-
-    Raises:
-        ValueError: If the header is empty, None, or malformed (e.g., contains too
-                    many colons in the index portion).
-    """
-    if not name:
-        raise ValueError("Read header is empty.")
-    if name is None:
-        raise ValueError("Read header is None.")
-
-    # Split the name by spaces and take the last part
-    # this assumes the index is always at the end of the header
-    split_str = name.rsplit(" ", 1)[-1]
-    # Split that last part by colons and join everything after the third colon
-    parts = split_str.split(":")
-    index_part = ":".join(parts[3:])
-
-    # Check for malformed index
-    if index_part.count(":") > 1:
-        raise ValueError("Too many colons in index portion — possibly malformed index.")
-
-    return index_part
+#         matches = []
+#         nodes = [self.tree]
+#         while nodes:
+#             current_word, children = nodes.pop()
+#             dist = self.distance_func(word, current_word)
+#             if dist <= max_dist:
+#                 matches.append(current_word)
+#             for d in range(dist - max_dist, dist + max_dist + 1):
+#                 child = children.get(d)
+#                 if child:
+#                     nodes.append(child)
+#         return matches
 
 
 def group_samples_by_index_length(sample_index_dict: dict) -> list:
     """
-    Organizes sample barcode data by the lengths of their first and last components.
+    Groups samples by the lengths of their barcode index components.
 
-    This function processes a dictionary of sample barcode entries, where each value
-    can be either a string (representing the barcode) or a dictionary containing keys
-    such as "barcode", "index", and optionally "index2". The barcode string is split
-    into components using non-alphabetic characters as delimiters. The lengths of the
-    first and last components are used to create a tuple key, which maps to a nested
-    dictionary of sample names and their corresponding barcode strings.
+    This function processes a dictionary mapping sample names to barcode data,
+    which may be a string or a dictionary with keys like "barcode", "index", or "index2".
+    It parses these barcodes, splits them into components (if needed), and groups samples
+    into categories based on the lengths of their first and optional second index component.
 
     Args:
-        sample_index_dict (dict): A dictionary where keys are sample names and values
-            are either:
-                - A string representing a barcode.
-                - A dictionary that may include "barcode", "index", and optionally "index2" keys.
+        sample_index_dict (dict): A dictionary where keys are sample names and values are
+            either strings representing barcodes or dictionaries containing barcode/index fields.
 
     Returns:
-        dict: A nested dictionary where each key is a tuple of the lengths of the first
-            and last barcode components, and each value is a dictionary mapping sample
-            names to their raw barcode strings.
+        dict: A dictionary where keys are tuples representing the lengths of index components
+            (e.g., (4, 4)), and values are dictionaries mapping sample names to lists of index parts.
 
     Raises:
-        TypeError: If a sample value is neither a string nor a dictionary, or if a barcode
-            extracted from a sample is not a string.
+        TypeError: If the input is not a dictionary or if a sample value is of an unsupported type.
+        ValueError: If a sample's barcode splits into more than two components.
     """
     # Check if the input is a dictionary
     if not isinstance(sample_index_dict, dict):
@@ -161,73 +120,6 @@ def hamming_distance(seq1, seq2) -> int:
 
     return np.count_nonzero(np.frombuffer(seq1.encode(), dtype='S1') != np.frombuffer(seq2.encode(), dtype='S1'))
 
-
-def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
-    """
-    Finds the sample and barcode with the smallest Hamming distance to the given sequence.
-
-    Args:
-        barcode_dict (dict): Dictionary mapping sample names to barcode strings.
-        seq (str): The sequence to compare against the barcodes.
-        max_hamming (int): Maximum allowed Hamming distance.
-
-    Returns:
-        str or None: Returns sample_name with the smallest
-            Hamming distance, or None if no barcode is within max_hamming.
-    """
-    if not isinstance(seq, str):
-        raise ValueError(f"{seq} must be a string.")
-
-    if not isinstance(barcode_dict, dict):
-        raise ValueError(f"{barcode_dict} must be a dictionary.")
-
-    if not isinstance(max_hamming, int):
-        raise ValueError(f"{max_hamming} must be an integer.")
-
-    if max_hamming < 0:
-        raise ValueError(f"{max_hamming} must be a non-negative integer.")
-
-    best_match = "undetermined"
-    min_distance = float("inf")
-
-    for sample, barcode in barcode_dict.items():
-        dist = hamming_distance(seq, barcode)
-        # If the strings are a perfect match, skip further comparisons
-        if dist == 0:
-            return sample
-
-        if dist < min_distance and dist <= max_hamming:
-            min_distance = dist
-            best_match = sample
-
-    return best_match
-
-
-
-def build_bk_tree_index(grouped_samples_by_length: dict) -> dict:
-    grouped_bk_trees = {}
-    print(grouped_samples_by_length.items())
-    # print(grouped_samples_by_length)
-
-    # for length_key, group in grouped_samples_by_length.items():
-    i5_tree = BKTree(hamming_distance)
-    i7_tree = BKTree(hamming_distance)
-    barcode_map = {}
-    # print(group)
-
-    for sample, barcode in grouped_samples_by_length.items():
-        parts = re.split(r"[^A-Za-z]", barcode)
-        i5, i7 = (parts[0], parts[1]) if len(parts) > 1 else (parts[0], None)
-        i5_tree.add(i5)
-        if i7:
-            i7_tree.add(i7)
-        barcode_map[(i5, i7)] = sample
-
-        grouped_bk_trees = (i5_tree, i7_tree, barcode_map)
-        # print("ok")
-        # print(grouped_bk_trees)
-
-    return grouped_bk_trees
 
 def crosscheck_barcode_proximity(barcodes: dict) -> list:
     """
@@ -359,6 +251,44 @@ def custom_priority_by_length_sort_key(key):
     return (has_zero, -total_len)
 
 
+def extract_index_from_header_illumina(name: str) -> str:
+    """
+    Extract the index sequence from a FASTQ read header.
+
+    The function assumes that the index is located at the end of the header string,
+    separated by spaces and colons. It extracts the portion of the header after the
+    third colon in the last space-separated segment.
+
+    Args:
+        name (str): The read header from the FASTQ file. This is typically a string
+                    containing metadata about the read, including the index.
+
+    Returns:
+        str: The extracted index sequence from the header.
+
+    Raises:
+        ValueError: If the header is empty, None, or malformed (e.g., contains too
+                    many colons in the index portion).
+    """
+    if not name:
+        raise ValueError("Read header is empty.")
+    if name is None:
+        raise ValueError("Read header is None.")
+
+    # Split the name by spaces and take the last part
+    # this assumes the index is always at the end of the header
+    split_str = name.rsplit(" ", 1)[-1]
+    # Split that last part by colons and join everything after the third colon
+    parts = split_str.split(":")
+    index_part = ":".join(parts[3:])
+
+    # Check for malformed index
+    if index_part.count(":") > 1:
+        raise ValueError("Too many colons in index portion — possibly malformed index.")
+
+    return index_part
+
+
 def trim_merge_string(input_str: str, length: int) -> str:
     """
     Trims and optionally splits and merges a string based on a specified length.
@@ -427,28 +357,104 @@ def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_d
         tuple: (matched sample name or 'undetermined', trimmed index used)
     """
     raw_index = extract_index_from_header_illumina(read_header)
-    parts = re.split(r"[^A-Za-z]", raw_index)
-    i5_read, i7_read = (parts[0], parts[1]) if len(parts) > 1 else (parts[0], None)
-    trimmed_index = f"{i5_read}+{i7_read}" if i7_read else i5_read
+    print(raw_index)
+    index_split = re.split(r"[^A-Za-z]", raw_index)
+    print(index_split)
+    read_index1, read_index2 = (index_split[0], index_split[1]) if len(index_split) > 1 else (index_split[0], None)
 
-    for length_key in sorted_group_lengths:
-        i5_tree, i7_tree, barcode_map = build_bk_tree_index(grouped_sample_by_length[length_key])
-        # print(i5_tree)
-        # print(i7_tree)
-        # print(barcode_map)
 
-        i5_matches = i5_tree.search(i5_read, max_hamming_distance)
-        i7_matches = i7_tree.search(i7_read, max_hamming_distance) if length_key[1] > 0 else [None]
+    for length_key in barcode_bktree_map:
+        read_index1_trimmed = trim_merge_string(read_index1, length_key[0])
+        read_index2_trimmed = trim_merge_string(read_index2, length_key[1]) if length_key[1] > 0 else None
 
-        for i5 in i5_matches:
-            for i7 in i7_matches:
-                if (i5, i7) in barcode_map:
-                    return barcode_map[(i5, i7)], trimmed_index
+        print(read_index1_trimmed, read_index2_trimmed)
+        print(barcode_bktree_map[length_key].items())
+        for sample, (index1_tree, index2_tree) in barcode_bktree_map[length_key].items():
+            print(f"Searching for sample: {sample} with index1: {index1_tree} and index2: {index2_tree}")
+
+            index1_matches = index1_tree.find(read_index1_trimmed, max_hamming_distance)
+            print(f"Index1 matches: {index1_matches}")
+            index2_matches = index2_tree.find(read_index2_trimmed, max_hamming_distance) if length_key[1] > 0 else [None]
+            print(f"Index2 matches: {index2_matches}")
+
+            # for index1 in index1_matches:
+            #     for index2 in index2_matches:
+            #         if (index1, index2) in barcode_map:
+            #             return barcode_map[(index1, index2)]
         
-        print(f"Trying to match i5: {i5_matches}, i7: {i7_matches}  against length_key: {length_key}")
+        print(f"Trying to match i5: {index1_matches}, i7: {index2_matches}  against length_key: {length_key}")
+
+    return "undetermined"
+
+def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
+    """
+    Finds the sample and barcode with the smallest Hamming distance to the given sequence.
+
+    Args:
+        barcode_dict (dict): Dictionary mapping sample names to barcode strings.
+        seq (str): The sequence to compare against the barcodes.
+        max_hamming (int): Maximum allowed Hamming distance.
+
+    Returns:
+        str or None: Returns sample_name with the smallest
+            Hamming distance, or None if no barcode is within max_hamming.
+    """
+    if not isinstance(seq, str):
+        raise ValueError(f"{seq} must be a string.")
+
+    if not isinstance(barcode_dict, dict):
+        raise ValueError(f"{barcode_dict} must be a dictionary.")
+
+    if not isinstance(max_hamming, int):
+        raise ValueError(f"{max_hamming} must be an integer.")
+
+    if max_hamming < 0:
+        raise ValueError(f"{max_hamming} must be a non-negative integer.")
+
+    best_match = "undetermined"
+    min_distance = float("inf")
+
+    for sample, barcode in barcode_dict.items():
+        dist = hamming_distance(seq, barcode)
+        # If the strings are a perfect match, skip further comparisons
+        if dist == 0:
+            return sample
+
+        if dist < min_distance and dist <= max_hamming:
+            min_distance = dist
+            best_match = sample
+
+    return best_match
+
+# def build_bk_trees(barcode_sample_dict):
+#     grouped = defaultdict(list)
+#     for sample, barcode in barcode_sample_dict.items():
+#         for bc in barcode.split(','):
+#             grouped[len(bc)].append((bc, sample))  # (barcode, sample)
+#         print(grouped)
+
+    # trees = {}
+    # for length, entries in grouped.items():
+    #     tree = BKTree(hamming_distance)
+    #     for bc, _ in entries:
+    #         tree.add(bc)
+    #     trees[length] = (tree, {bc: sample for bc, sample in entries})
+    # return trees
 
 
-    return "undetermined", trimmed_index
+
+# def find_matching_sample(barcode, trees, max_hamming_distance):
+#     length = len(barcode)
+#     if length not in trees:
+#         return None
+#     tree, barcode_to_sample = trees[length]
+#     matches = tree.find(barcode, max_hamming_distance)
+#     if matches:
+#         # Prefer lowest distance match
+#         matches.sort()
+#         matched_barcode = matches[0][1]
+#         return barcode_to_sample[matched_barcode]
+#     return None
 
 
 
