@@ -10,20 +10,20 @@ import re
 
 import pytest
 from assertpy import assert_that
+from pybktree import BKTree
 
 from crick_genome_tools.seq.barcode_demux import (
     assert_min_hamming_above_threshold,
+    build_bk_tree_index,
     crosscheck_barcode_proximity,
     custom_priority_by_length_sort_key,
     demultiplex_fastq_by_barcode,
     extract_index_from_header_illumina,
-    find_closest_match,
     find_min_hamming_distances,
     group_samples_by_index_length,
     hamming_distance,
-    trim_merge_string,
     index_to_match_key,
-    build_bk_tree_index
+    trim_merge_string,
 )
 
 
@@ -118,55 +118,6 @@ class TestBarcodeDemux:
     def test_hamming_distance_isvalid(self, sequence1, sequence2, expected_result):
         # Test and assert
         result = hamming_distance(sequence1, sequence2)
-        assert_that(result).is_equal_to(expected_result)
-
-    def test_find_closest_match_invalid_input(self):
-        # Test and assert
-        # not a dictionary
-        assert_that(find_closest_match).raises(ValueError).when_called_with("ACGT", "ACGTTT", 1)
-        # not a string
-        assert_that(find_closest_match).raises(ValueError).when_called_with({"sample_1": "ACGT"}, 1234, 1)
-        # not a number
-        assert_that(find_closest_match).raises(ValueError).when_called_with({"sample_1": "ACGT"}, "ACGTTT", "not_a_number")
-
-    @pytest.mark.parametrize(
-        "sample_barcode_dict, sequence, max_hamming_distance, expected_result",
-        [
-            (
-                {
-                    "sample_1": "ACGTAGGT",
-                    "sample_2": "ACGTAAAA",
-                    "sample_3": "AAGTAGGG",
-                },
-                "AAGTAGGG",
-                1,
-                "sample_3",
-            ),
-            (
-                {
-                    "sample_1": "ACGTAGGT",
-                    "sample_2": "ACGTAAAA",
-                    "sample_3": "AAGTAGGG",
-                },
-                "AAGTAGGT",
-                1,
-                "sample_1",
-            ),
-            ({"sample_1": "ACGTAGGT"}, "AAAAAAA", 3, "undetermined"),
-            (
-                {
-                    "sample_1": "TTTTTTTT",
-                    "sample_2": "ACGTAGCT",
-                },
-                "ACCGAGCA",
-                4,
-                "sample_2",
-            ),
-        ],
-    )
-    def test_find_closest_match_isvalid(self, sample_barcode_dict, sequence, max_hamming_distance, expected_result):
-        # Test and assert
-        result = find_closest_match(sample_barcode_dict, sequence, max_hamming_distance)
         assert_that(result).is_equal_to(expected_result)
 
     def test_crosscheck_barcode_proximity_invalid_input(self):
