@@ -329,194 +329,6 @@ def build_bk_tree_index(sorted_grouped_samples_by_length: dict, grouped_samples_
     return grouped_bk_trees
 
 
-# def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_distance_1: int, max_hamming_distance_2: int = None) -> tuple:
-#     """
-#     Matches a read index to a sample using BK-tree search.
-
-#     Args:
-#         read_header (str): Read name/header containing the barcode.
-#         sorted_group_lengths (list): Sorted list of index length tuples.
-#         grouped_bk_trees (dict): Maps (i5_len, i7_len) to BK-trees and barcode mapping.
-#         max_hamming_distance (int): Max allowable per-index Hamming distance.
-
-#     Returns:
-#         tuple: (matched sample name or 'undetermined', trimmed index used)
-# """
-# raw_index = extract_index_from_header_illumina(read_header)
-# index_split = re.split(r"[^A-Za-z]", raw_index)
-# read_index1, read_index2 = (index_split[0], index_split[1]) if len(index_split) > 1 else (index_split[0], None)
-
-# best_index1_match = None
-# best_index2_match = None
-
-# index1_exact_match_found = False
-# index2_exact_match_found = False
-
-# sample_index_match = {}
-# # best_total = max_hamming_distance_1 + 1  # Initialize to a value greater than max_hamming_distance
-# # best_sample = "undetermined"
-
-# for length_key in barcode_bktree_map:
-#     read_index1_trimmed = trim_merge_string(read_index1, length_key[0])
-#     read_index2_trimmed = trim_merge_string(read_index2, length_key[1]) if length_key[1] > 0 else None
-
-#     for sample, (index1_tree, index2_tree) in barcode_bktree_map[length_key].items():
-#         # Only search if we haven't found a perfect match already
-
-#         # best_index1 = 0
-#         # best_index2 = 0
-
-#         if not index1_exact_match_found:
-#             index1_matches = index1_tree.find(read_index1_trimmed, max_hamming_distance_1)
-#     for dist, val in index1_matches:
-#         #     print(dist, val)
-#         # if dist == 0:
-#         #     best_index1_match = [val, sample]
-#         #     index1_exact_match_found = True
-#         # break  # stop checking index1 matches
-#         # if best_index1_match is None or dist < best_index1_match[0]:
-#         if best_index1_match is None:
-#             best_index1_match = [dist, sample]
-#         if best_index1_match is not None and dist < best_index1_match[0]:
-#             best_index1_match = [dist, sample]
-
-#     # best_index1 = min(index1_matches, key=lambda x: x[0])
-
-# # print("best_index1_match: ", best_index1_match)
-
-# if not index2_exact_match_found and length_key[1] > 0:
-#     if max_hamming_distance_2 is None:
-#         index2_matches = index2_tree.find(read_index2_trimmed, max_hamming_distance_1)
-#     else:
-#         index2_matches = index2_tree.find(read_index2_trimmed, max_hamming_distance_2)
-#     for dist2, val2 in index2_matches:
-#         print(dist2)
-#         if dist2 == 0:
-#             best_index2_match = [dist2, sample]
-#             index2_exact_match_found = True
-#             break  # stop checking index2 matches
-#         if best_index2_match is None or dist2 < best_index2_match[0]:
-#             best_index2_match = [dist2, sample]
-# print("best_index2_match: ", best_index2_match)
-
-# sample_index_match[sample] = (best_index1_match, best_index2_match)
-
-# best_index2 = min(index2_matches, key=lambda x: x[0]) if index2_matches else (max_hamming_distance_2 + 1, None)
-
-#     total_distance = best_index1[0] + best_index2[0]
-#     if total_distance < best_total:
-#         best_total = total_distance
-#         best_sample = sample
-
-#     print(total_distance, best_index1, best_index2)
-
-# return best_sample
-
-#         # Break the sample loop if exact matches for both indexes are found
-#         if index1_exact_match_found and index2_exact_match_found:
-#             break
-
-#     # Break the barcode_bktree_map loop if exact matches for both indexes are found
-#     if index1_exact_match_found and index2_exact_match_found:
-#         break
-
-# # If no matches were found, return "undetermined"
-# if best_index1_match is None and best_index2_match is None:
-#     return "undetermined"
-
-# print("here: " + str(best_index1_match) + " " + str(best_index2_match))
-# # If both indexes have been matched to the same sample, return the sample name
-# if best_index1_match[1] == best_index2_match[1]:
-#     print("Returning matched sample: " + best_index1_match[1])
-#     return best_index1_match[1]  # Return sample name
-# print(f"Trying to match i5: {index1_matches}, i7: {index2_matches}  against length_key: {length_key}")
-
-# return best_index1_match, best_index2_match
-
-
-# def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_distance_1: int, max_hamming_distance_2: int = None) -> tuple:
-#     """
-#     Matches a read index to a sample using BK-tree search.
-
-#     Args:
-#         read_header (str): Read name/header containing the barcode.
-#         sorted_group_lengths (list): Sorted list of index length tuples.
-#         grouped_bk_trees (dict): Maps (i5_len, i7_len) to BK-trees and barcode mapping.
-#         max_hamming_distance (int): Max allowable per-index Hamming distance.
-
-#     Returns:
-#         tuple: (matched sample name or 'undetermined', trimmed index used)
-#     """
-#     raw_index = extract_index_from_header_illumina(read_header)
-#     index_split = re.split(r"[^A-Za-z]", raw_index)
-#     read_index1, read_index2 = (index_split[0], index_split[1]) if len(index_split) > 1 else (index_split[0], None)
-
-#     # # If we have a separate hamming distance value for each index, the total combined distance is the sum of both, else we use the only hamming distance value provided as the default value for both indexes
-#     # max_hamming_distance_combined = max_hamming_distance_1 + (max_hamming_distance_2 if max_hamming_distance_2 is not None else max_hamming_distance_1) + 1
-#     # # any possible matches must have a hamming distance equal to or less than (max_hamming_distance_1+max_hamming_distance_2), so we initialize the best matches to a value greater than that
-#     # best_index1_match = [max_hamming_distance_combined, "undetermined"]
-#     # best_index2_match = [max_hamming_distance_combined, "undetermined"]
-
-#     best_index1_match = [max_hamming_distance_1 + 1, "undetermined"]
-#     best_index2_match = [max_hamming_distance_2 + 1, "undetermined"] if max_hamming_distance_2 else [max_hamming_distance_1 + 1, "undetermined"]
-
-#     index1_exact_match_found = False
-#     index2_exact_match_found = False
-
-#     sample_index_match = {}
-
-#     for length_key in barcode_bktree_map:
-#         read_index1_trimmed = trim_merge_string(read_index1, length_key[0])
-#         read_index2_trimmed = trim_merge_string(read_index2, length_key[1]) if length_key[1] > 0 else None
-
-#         for sample, (index1_tree, index2_tree) in barcode_bktree_map[length_key].items():
-#             # Only search if we haven't found a perfect match already
-#             if not index1_exact_match_found:
-#                 index1_matches = index1_tree.find(read_index1_trimmed, max_hamming_distance_1)
-#                 for dist, val in index1_matches:
-#                     if dist < best_index1_match[0]:
-#                         best_index1_match = [dist, sample]
-
-#             if not index2_exact_match_found and length_key[1] > 0:
-#                 if max_hamming_distance_2 is None:
-#                     index2_matches = index2_tree.find(read_index2_trimmed, max_hamming_distance_1)
-#                 else:
-#                     index2_matches = index2_tree.find(read_index2_trimmed, max_hamming_distance_2)
-#                 for dist2, val2 in index2_matches:
-#                     # print(dist2)
-#                     if dist2 == 0:
-#                         best_index2_match = [dist2, sample]
-#                         index2_exact_match_found = True
-#                         break  # stop checking index2 matches
-#                     if best_index2_match[1] == "undetermined" or dist2 < best_index2_match[0]:
-#                         best_index2_match = [dist2, sample]
-
-#             # Break the sample loop if exact matches for both indexes are found
-#             if index1_exact_match_found and index2_exact_match_found:
-#                 break
-
-#             if sample == "sample_4" and best_index1_match[0] < 2 and best_index2_match[0] < 2:
-#         # #     print(f"Trying to match i5: {index1_matches}, i7: {index2_matches}  against length_key: {length_key}")
-#                 print("best_index1_match: ", best_index1_match, best_index2_match, sample)
-
-#         # Break the barcode_bktree_map loop if exact matches for both indexes are found
-#         if index1_exact_match_found and index2_exact_match_found:
-#             break
-
-#     if read_index2 is None:
-#         return best_index1_match[1]
-#     else:
-#         # If no matches were found, return "undetermined"
-#         if best_index1_match[1] == "undetermined" and best_index2_match[1] == "undetermined" or best_index1_match[1] != best_index2_match[1]:
-#             return "undetermined"
-
-#         # If both indexes have been matched to the same sample, return the sample name
-#         if best_index1_match[1] == best_index2_match[1]:
-#             if best_index1_match[1] == "sample_4":
-#                 print("Returning matched sample: " + best_index1_match[1])
-#             return best_index1_match[1]  # Return sample name
-
-
 def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_distance_1: int, max_hamming_distance_2: int = None) -> str:
     """
     Matches a read index to a sample using BK-tree search based on combined Hamming distances.
@@ -581,80 +393,13 @@ def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_d
 
     return best_sample
 
-
-# def find_closest_match(barcode_dict: dict, seq: str, max_hamming: int) -> str:
-#     """
-#     Finds the sample and barcode with the smallest Hamming distance to the given sequence.
-
-#     Args:
-#         barcode_dict (dict): Dictionary mapping sample names to barcode strings.
-#         seq (str): The sequence to compare against the barcodes.
-#         max_hamming (int): Maximum allowed Hamming distance.
-
-# Returns:
-#     str or None: Returns sample_name with the smallest
-#         Hamming distance, or None if no barcode is within max_hamming.
-# """
-# if not isinstance(seq, str):
-#     raise ValueError(f"{seq} must be a string.")
-
-# if not isinstance(barcode_dict, dict):
-#     raise ValueError(f"{barcode_dict} must be a dictionary.")
-
-# if not isinstance(max_hamming, int):
-#     raise ValueError(f"{max_hamming} must be an integer.")
-
-# if max_hamming < 0:
-#     raise ValueError(f"{max_hamming} must be a non-negative integer.")
-
-# best_match = "undetermined"
-# min_distance = float("inf")
-
-# for sample, barcode in barcode_dict.items():
-#     dist = hamming_distance(seq, barcode)
-#     # If the strings are a perfect match, skip further comparisons
-#     if dist == 0:
-#         return sample
-
-#     if dist < min_distance and dist <= max_hamming:
-#         min_distance = dist
-#         best_match = sample
-
-# return best_match
-
-
-# def build_bk_trees(barcode_sample_dict):
-#     grouped = defaultdict(list)
-#     for sample, barcode in barcode_sample_dict.items():
-#         for bc in barcode.split(','):
-#             grouped[len(bc)].append((bc, sample))  # (barcode, sample)
-#         print(grouped)
-
-# trees = {}
-# for length, entries in grouped.items():
-#     tree = BKTree(hamming_distance)
-#     for bc, _ in entries:
-#         tree.add(bc)
-#     trees[length] = (tree, {bc: sample for bc, sample in entries})
-# return trees
-
-
-# def find_matching_sample(barcode, trees, max_hamming_distance):
-#     length = len(barcode)
-#     if length not in trees:
-#         return None
-#     tree, barcode_to_sample = trees[length]
-#     matches = tree.find(barcode, max_hamming_distance)
-#     if matches:
-#         # Prefer lowest distance match
-#         matches.sort()
-#         matched_barcode = matches[0][1]
-#         return barcode_to_sample[matched_barcode]
-#     return None
-
-
 def demultiplex_fastq_by_barcode(
-    samples_barcode_from_dict: dict, fastq_file_r1: str, max_hamming_distance: int = 0, output_dir: str = ".", fastq_file_r2: str = None
+    samples_barcode_from_dict: dict,
+    fastq_file_r1: str,
+    max_hamming_distance: int = 0,
+    output_dir: str = ".",
+    fastq_file_r2: str = None,
+    max_hamming_distance_2: int = None,
 ) -> dict:
     """
     Demultiplexes a FASTQ file by assigning reads to samples based on barcode sequences.
@@ -696,7 +441,6 @@ def demultiplex_fastq_by_barcode(
         for length, samples in grouped_samples_by_length.items()
         if len(samples) > 1  # Skip groups with only one entry
     }
-    # print(grouped_sample_by_length_hamming_value)
     # find the minimum hamming distance for each index-length group
     min_hamming_distances_by_length = find_min_hamming_distances(grouped_sample_by_length_hamming_value)
     # check if the minimum hamming distance is above the threshold max hamming distance
@@ -704,11 +448,9 @@ def demultiplex_fastq_by_barcode(
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
     if max_hamming_distance_2 is not None:
         assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance_2)
-    # print(assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance))
 
     ## Sort the grouped samples by length, prioritizing those without zeros
     sorted_grouped_samples_by_length = sorted(grouped_samples_by_length.keys(), key=custom_priority_by_length_sort_key)
-    # print(sorted_grouped_samples_by_length)
 
     ## Create a fastq file for each sample + an "undetermined" file for unassigned reads
     if isinstance(fastq_file_r1, str):
@@ -745,34 +487,14 @@ def demultiplex_fastq_by_barcode(
         fastq_2_iter = fastq_2.open_read_iterator(as_string=True)
 
     # Build BK-trees based on a pre-determined Hamming sequence
-    # barcode_map = {}
     grouped_bk_trees = build_bk_tree_index(sorted_grouped_samples_by_length, grouped_samples_by_length)
-    # for length in sorted_grouped_samples_by_length:
-    #     if length not in barcode_map:
-    #         barcode_map[length] = {}
-    #     # print(f"Processing length group: {grouped_samples_by_length[length]}")
-    #     for sample in grouped_samples_by_length[length]:
-    #         # print(f"Building BK-tree for length {length} with samples: {grouped_samples_by_length[length]}")
-    #         # print(grouped_samples_by_length[length][sample])
-    #         # index1_tree, index2_tree, barcode_map = BKTree(hamming_distance, grouped_samples_by_length[length][sample])
-    #         index1_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][0])
-    #         index2_tree = BKTree(hamming_distance, grouped_samples_by_length[length][sample][1]) if len(grouped_samples_by_length[length][sample]) > 1 else None
-    #         # print(index2_tree)
-    #         barcode_map[length][sample] = [index1_tree, index2_tree]
-
-    # print(grouped_samples_by_length)
 
     for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
-        # print(f"name: {name}")
         if max_hamming_distance_2 is not None:
             # Use the index_to_match_key function to find the best match for the read
             match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance, max_hamming_distance_2)
         else:
             match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance)
-        # print(match)
-
-        # raw_index = extract_index_from_header_illumina(name)
-        #     match = find_matching_sample(raw_index, trees, max_hamming_distance) or 'undetermined'
 
         # Assign the read to the matched sample
         sample_assigned_read[match].append(name)
