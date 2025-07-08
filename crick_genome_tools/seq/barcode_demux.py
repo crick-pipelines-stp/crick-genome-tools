@@ -702,6 +702,8 @@ def demultiplex_fastq_by_barcode(
     # check if the minimum hamming distance is above the threshold max hamming distance
     # returns ValueError if any group has a minimum Hamming distance less than max_hamming
     assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance)
+    if max_hamming_distance_2 is not None:
+        assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance_2)
     # print(assert_min_hamming_above_threshold(min_hamming_distances_by_length, max_hamming_distance))
 
     ## Sort the grouped samples by length, prioritizing those without zeros
@@ -757,12 +759,15 @@ def demultiplex_fastq_by_barcode(
     #         barcode_map[length][sample] = [index1_tree, index2_tree]
 
     # print(grouped_samples_by_length)
-    
 
     for name, seq, qual in fastq_1.open_read_iterator(as_string=True):
-        print(f"name: {name}")
-        match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance)
-        print(match)
+        # print(f"name: {name}")
+        if max_hamming_distance_2 is not None:
+            # Use the index_to_match_key function to find the best match for the read
+            match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance, max_hamming_distance_2)
+        else:
+            match = index_to_match_key(name, grouped_bk_trees, max_hamming_distance)
+        # print(match)
 
         # raw_index = extract_index_from_header_illumina(name)
         #     match = find_matching_sample(raw_index, trees, max_hamming_distance) or 'undetermined'
