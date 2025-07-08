@@ -1,5 +1,5 @@
 """
-Benchmarking tests for generate reads
+Benchmarking tests for demultiplexing reads.
 """
 
 import io
@@ -15,7 +15,13 @@ from crick_genome_tools.seq.barcode_demux import demultiplex_fastq_by_barcode
 @pytest.mark.benchmark(group="demux-reads-illumina", min_rounds=5)
 @pytest.mark.only_run_with_direct_target
 def test_benchmarking_generate_reads_fastq(*args, tmp_path, benchmark):  # pylint: disable=unused-argument
-    """Test generate reads to a fastq file"""
+    """
+    Benchmark the performance of demultiplexing a small FASTQ file.
+
+    Args:
+        tmp_path (pathlib.Path): Temporary directory for output files.
+        benchmark (pytest.BenchmarkFixture): Pytest benchmark fixture.
+    """
 
     # Variables
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "200"))
@@ -50,7 +56,7 @@ def generate_sample_dict(num_samples=10):
         num_samples (int): Number of samples to generate.
 
     Returns:
-        dict: A dictionary where keys are sample names and values are barcodes.
+        dict: A dictionary where keys are sample names and values are dual-index barcodes.
     """
     sample_dict = {}
     for i in range(1, num_samples + 1):
@@ -96,7 +102,13 @@ def generate_barcode_fastq(sample_dict, num_reads=1_000_000, read_length=100):
 @pytest.mark.benchmark(group="demux-reads-illumina", min_rounds=5)
 @pytest.mark.only_run_with_direct_target
 def test_benchmarking_1M_reads_demux_fastq(*args, tmp_path, benchmark):  # pylint: disable=unused-argument,invalid-name
-    """Test generate reads to a fastq file"""
+    """
+    Benchmark the performance of demultiplexing a large FASTQ file with 1 million reads.
+
+    Args:
+        tmp_path (pathlib.Path): Temporary directory for output files.
+        benchmark (pytest.BenchmarkFixture): Pytest benchmark fixture.
+    """
 
     # Variables
     max_time_ms = int(os.getenv("MAX_BENCHMARK_GENREADS_MS", "250000"))  # 250 seconds for 1M reads

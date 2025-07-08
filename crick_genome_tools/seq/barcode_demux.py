@@ -393,6 +393,7 @@ def index_to_match_key(read_header: str, barcode_bktree_map: dict, max_hamming_d
 
     return best_sample
 
+
 def demultiplex_fastq_by_barcode(
     samples_barcode_from_dict: dict,
     fastq_file_r1: str,
@@ -404,32 +405,32 @@ def demultiplex_fastq_by_barcode(
     """
     Demultiplexes FASTQ files by assigning reads to samples based on barcode sequences.
 
-    This function processes one or two FASTQ files (R1 and optionally R2) and assigns reads 
-    to samples based on the closest matching barcode within a specified Hamming distance 
-    threshold. Reads that do not match any barcode within the threshold are written to an 
+    This function processes one or two FASTQ files (R1 and optionally R2) and assigns reads
+    to samples based on the closest matching barcode within a specified Hamming distance
+    threshold. Reads that do not match any barcode within the threshold are written to an
     "undetermined" file.
 
-    The function ensures barcode dissimilarity by verifying that the minimum Hamming distance 
+    The function ensures barcode dissimilarity by verifying that the minimum Hamming distance
     between barcodes in each group exceeds the specified threshold.
 
     Args:
-        samples_barcode_from_dict (dict): A dictionary mapping sample names to their barcodes, 
+        samples_barcode_from_dict (dict): A dictionary mapping sample names to their barcodes,
             which may be simple strings or nested dicts with keys like "index" or "index2".
         fastq_file_r1 (str): Path to the R1 FASTQ file to be demultiplexed.
-        max_hamming_distance (int, optional): Maximum allowable Hamming distance between a 
+        max_hamming_distance (int, optional): Maximum allowable Hamming distance between a
             read’s index and a sample barcode to be considered a match. Defaults to 0.
-        output_dir (str, optional): Directory where demultiplexed FASTQ files will be written. 
+        output_dir (str, optional): Directory where demultiplexed FASTQ files will be written.
             Defaults to the current directory.
-        fastq_file_r2 (str, optional): Path to the R2 FASTQ file, if paired-end reads are used. 
+        fastq_file_r2 (str, optional): Path to the R2 FASTQ file, if paired-end reads are used.
             Defaults to None.
-        max_hamming_distance_2 (int, optional): Maximum allowable Hamming distance for the 
+        max_hamming_distance_2 (int, optional): Maximum allowable Hamming distance for the
             second index (i7). Defaults to the value of `max_hamming_distance` if not provided.
 
     Returns:
         dict: A dictionary mapping sample names to the number of reads assigned to each.
 
     Raises:
-        ValueError: If any group of barcodes contains pairs with a minimum Hamming distance 
+        ValueError: If any group of barcodes contains pairs with a minimum Hamming distance
             less than or equal to the provided `max_hamming_distance`.
         TypeError: If the barcode structure is not a valid string or expected dict format.
         FileNotFoundError: If the input FASTQ file does not exist or cannot be opened.
