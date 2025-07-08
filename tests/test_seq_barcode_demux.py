@@ -402,94 +402,146 @@ class TestBarcodeDemux:
             # Check that the content of each file is as expected
             with gzip.open(sample_file_path, "r") as f:
                 file_content = f.read().decode("UTF-8")
+                print(f"File content for {sample}: {file_content[:10]}...")  # Print first 100 characters for debugging
                 newline_count = file_content.count("@")
 
             if sample in expected_read_count:
                 assert_that(newline_count).is_equal_to(expected_read_count[sample])
-            else:
-                assert_that(newline_count).is_equal_to(0)
 
-    # @pytest.mark.parametrize(
-    #     "fastq_file_r1, fastq_file_r2, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content_r1, expected_file_content_r2, expected_read_count",
-    #     [
-    #         (
-    #             "tests/data/seq/undetermined_L002_R1.fastq",
-    #             "tests/data/seq/undetermined_L002_R2.fastq",
-    #             {
-    #                 "sample_1": "ACTT,NTAT",
-    #                 "sample_2": "ACGT,AGGT",
-    #                 "sample_3": "ACGTA",
-    #             },
-    #             1,
-    #             ["sample_1", "sample_2", "sample_3", "undetermined"],
-    #             {
-    #                 "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 1:N:0:ACTTGACTAG+NTATCAACGG\nGNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIII9IIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n",  # pytest: disable=line-too-long
-    #                 "sample_2": "",
-    #                 "sample_3": "",
-    #                 "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 1:N:0:TCACCAGGAC+NCCTTGTCTC\nCNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII*I9IIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 1:N:0:GCGCTTCTAC+NTCCTTGGCT\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIII*IIIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n",  # pytest: disable=line-too-long
-    #             },
-    #             {
-    #                 "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 2:N:0:ACTTGACTAG+NTATCAACGG\nACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA\n+\nIIII*IIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIII\n",  # pytest: disable=line-too-long
-    #                 "sample_2": "",
-    #                 "sample_3": "",
-    #                 "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC\nTGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG\n+\nIIIIIIIIIIIIIIIIIII*IIIIIIIII9I9IIII9III9IIIIIIIII9III9III9IIII9999II99I9IIIIIIIIIII9IIIIIIIIIIIII9II9I99I9IIIIIIIIIIII9IIIII9IIIIIIII99II9IIIIIIIIII*9\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 2:N:0:GCGCTTCTAC+NTCCTTGGCT\nAGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA\n+\nIIIIIIIIIIIII\n",  # pytest: disable=line-too-long
-    #             },
-    #             {
-    #                 "sample_1": 1,
-    #                 # "sample_2": 0,
-    #                 # "sample_3": 0,
-    #                 "undetermined": 2,
-    #             },
-    #         ),
-    #     ],
-    # )
-    # def test_demultiplex_fastq_by_barcode_valid_dualindex(
-    #     self,
-    #     tmp_path,
-    #     fastq_file_r1,
-    #     fastq_file_r2,
-    #     barcode_sample_dict,
-    #     max_hamming_distance,
-    #     expected_samples,
-    #     expected_file_content_r1,
-    #     expected_file_content_r2,
-    #     expected_read_count,
-    # ):  # pylint: disable=too-many-arguments
-    #     # Setup
-    #     output_dir = tmp_path
-    #     # output_dir = "tests/data/seq/output"
+    @pytest.mark.parametrize(
+        "fastq_file_r1, fastq_file_r2, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content_r1, expected_file_content_r2, expected_read_count",  # pytest: disable=line-too-long
+        [
+            (
+                "tests/data/seq/undetermined_L002_R1.fastq",
+                "tests/data/seq/undetermined_L002_R2.fastq",
+                {
+                    "sample_1": "ACTT,NTAT",
+                    "sample_2": "ACGT,AGGT",
+                    "sample_3": "ACGTA",
+                },
+                1,
+                ["sample_1", "sample_2", "sample_3", "undetermined"],
+                {
+                    "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 1:N:0:ACTTGACTAG+NTATCAACGG\nGNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIII9IIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n",  # pytest: disable=line-too-long
+                    "sample_2": "",
+                    "sample_3": "",
+                    "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 1:N:0:TCACCAGGAC+NCCTTGTCTC\nCNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII*I9IIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 1:N:0:GCGCTTCTAC+NTCCTTGGCT\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIII*IIIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n",  # pytest: disable=line-too-long
+                },
+                {
+                    "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 2:N:0:ACTTGACTAG+NTATCAACGG\nACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA\n+\nIIII*IIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIII\n",  # pytest: disable=line-too-long
+                    "sample_2": "",
+                    "sample_3": "",
+                    "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC\nTGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG\n+\nIIIIIIIIIIIIIIIIIII*IIIIIIIII9I9IIII9III9IIIIIIIII9III9III9IIII9999II99I9IIIIIIIIIII9IIIIIIIIIIIII9II9I99I9IIIIIIIIIIII9IIIII9IIIIIIII99II9IIIIIIIIII*9\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 2:N:0:GCGCTTCTAC+NTCCTTGGCT\nAGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA\n+\nIIIIIIIIIIIII\n",  # pytest: disable=line-too-long
+                },
+                {
+                    "sample_1": 1,
+                    # "sample_2": 0,
+                    # "sample_3": 0,
+                    "undetermined": 2,
+                },
+            ),
+        ],
+    )
+    def test_demultiplex_fastq_by_barcode_valid_dualindex(
+        self,
+        tmp_path,
+        fastq_file_r1,
+        fastq_file_r2,
+        barcode_sample_dict,
+        max_hamming_distance,
+        expected_samples,
+        expected_file_content_r1,
+        expected_file_content_r2,
+        expected_read_count,
+    ):  # pylint: disable=too-many-arguments
+        # Setup
+        output_dir = tmp_path
+        # output_dir = "tests/data/seq/output"
 
-    #     # Test
-    #     demultiplex_fastq_by_barcode(barcode_sample_dict, fastq_file_r1, max_hamming_distance, output_dir, fastq_file_r2)
+        # Test
+        demultiplex_fastq_by_barcode(barcode_sample_dict, fastq_file_r1, max_hamming_distance, output_dir, fastq_file_r2)
 
-    #     # Assert
-    #     for sample in expected_samples:
-    #         sample_file_path_r1 = os.path.join(output_dir, f"{sample}_L002_R1.fastq.gz")
-    #         sample_file_path_r2 = os.path.join(output_dir, f"{sample}_L002_R2.fastq.gz")
+        # Assert
+        for sample in expected_samples:
+            sample_file_path_r1 = os.path.join(output_dir, f"{sample}_L002_R1.fastq.gz")
+            sample_file_path_r2 = os.path.join(output_dir, f"{sample}_L002_R2.fastq.gz")
 
-    #         # Check that the expected files were created
-    #         assert_that(sample_file_path_r1).exists()
-    #         assert_that(sample_file_path_r2).exists()
+            # Check that the expected files were created
+            assert_that(sample_file_path_r1).exists()
+            assert_that(sample_file_path_r2).exists()
 
-    #         # Check that the content of each file is as expected
-    #         with gzip.open(sample_file_path_r1, "r") as f:
-    #             file_content_r1 = f.read().decode("UTF-8")
-    #             newline_count_r1 = file_content_r1.count("@")
+            # Check that the content of each file is as expected
+            with gzip.open(sample_file_path_r1, "r") as f:
+                file_content_r1 = f.read().decode("UTF-8")
+                newline_count_r1 = file_content_r1.count("@")
 
-    #         with gzip.open(sample_file_path_r2, "r") as f:
-    #             file_content_r2 = f.read().decode("UTF-8")
-    #             newline_count_r2 = file_content_r2.count("@")
+            with gzip.open(sample_file_path_r2, "r") as f:
+                file_content_r2 = f.read().decode("UTF-8")
+                newline_count_r2 = file_content_r2.count("@")
 
-    #         assert_that(file_content_r1).is_equal_to(expected_file_content_r1[sample])
-    #         assert_that(file_content_r2).is_equal_to(expected_file_content_r2[sample])
+            assert_that(file_content_r1).is_equal_to(expected_file_content_r1[sample])
+            assert_that(file_content_r2).is_equal_to(expected_file_content_r2[sample])
 
-    #         # Check the read count in each file is as expected
-    #         if sample in expected_read_count:
-    #             assert_that(newline_count_r1).is_equal_to(expected_read_count[sample])
-    #         else:
-    #             assert_that(newline_count_r1).is_equal_to(0)
+            # Check the read count in each file is as expected
+            if sample in expected_read_count:
+                assert_that(newline_count_r1).is_equal_to(expected_read_count[sample])
+            # else:
+            #     assert_that(newline_count_r1).is_equal_to(0)
 
-    #         if sample in expected_read_count:
-    #             assert_that(newline_count_r2).is_equal_to(expected_read_count[sample])
-    #         else:
-    #             assert_that(newline_count_r2).is_equal_to(0)
+            if sample in expected_read_count:
+                assert_that(newline_count_r2).is_equal_to(expected_read_count[sample])
+            # else:
+            #     assert_that(newline_count_r2).is_equal_to(0)
+
+
+def test_bktree_library():
+    import pybktree  # pylint: disable=import-outside-toplevel
+
+    # known_barcodes = [
+    #     "ACGTACGT", "TGCATGCA", "GATCGATC", "CTAGCTAG"
+    # ]
+    known_barcodes = ["TTTT", "GGGG"]
+
+    # Build the BK-tree with Hamming distance
+    tree = pybktree.BKTree(hamming_distance, known_barcodes)
+
+    # Input barcode to match
+    query = "TGTA"
+
+    # Find matches within max distance
+    print("here")
+    matches = tree.find(query, 2)  # 1 mismatch allowed
+    print(matches)
+
+    # Output matches sorted by distance
+    for dist, match in matches:
+        print(f"Match: {match}, Distance: {dist}")
+    # raise ValueError
+
+
+# def test_build_bk_tree_index_isvalid():
+#     # Setup
+#     lengths = [(4,4), (4,0)]
+#     sample_barcode_dict = { (4,4): {
+#         "sample_1": ["ACGT","AGGT"],
+#         "sample_2": ["ACGT","AAAA"],
+#         "sample_3": ["AAGT","AGGG"],},
+#         (4,0): {
+#             "sample_4": ["ATTT"],
+#             "sample_5": ["CCAA"],
+#         }
+#     }
+#     expected_result = {
+#         (4,4): {"sample_1": [BKTree(hamming_distance, ["ACGT"]), BKTree(hamming_distance, ["AGGT"])],
+#                 "sample_2": [BKTree(hamming_distance, ["ACGT"]), BKTree(hamming_distance, ["AAAA"])],
+#                 "sample_3": [BKTree(hamming_distance, ["AAGT"]), BKTree(hamming_distance, ["AGGG"])]},
+#         (4,0): {"sample_4": [BKTree(hamming_distance, ["ATTT"]), None],
+#                 "sample_5": [BKTree(hamming_distance, ["CCAA"]), None]}
+#     }
+
+#     # Test and assert
+#     result = build_bk_tree_index(lengths, sample_barcode_dict)
+#     print("here")
+#     print(result)
+#     print(expected_result)
+#     assert_that(result).is_equal_to(expected_result)
