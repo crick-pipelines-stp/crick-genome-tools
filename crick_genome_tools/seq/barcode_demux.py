@@ -714,6 +714,7 @@ def demultiplex_fastq_by_barcode(
     if isinstance(fastq_file_r1, str):
         # Extract read and lane information from the R1 fastq file name
         read_lane_r1_info = re.search(r"S\d+_([^\.]+)", fastq_file_r1)
+        read_lane_r1_info = read_lane_r1_info[1] if read_lane_r1_info else None
         if not read_lane_r1_info:
             read_lane_r1_info = fastq_file_r1.split("_", 1)[1].split(".", 1)[0]
     file_handles_r1 = {
@@ -725,6 +726,7 @@ def demultiplex_fastq_by_barcode(
         if isinstance(fastq_file_r2, str):
             # Extract read and lane information from the R2 fastq file name
             read_lane_r2_info = re.search(r"S\d+_([^\.]+)", fastq_file_r2)
+            read_lane_r2_info = read_lane_r2_info[1] if read_lane_r2_info else None
             if not read_lane_r2_info:
                 read_lane_r2_info = fastq_file_r2.split("_", 1)[1].split(".", 1)[0]
         file_handles_r2 = {
