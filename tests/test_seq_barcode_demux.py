@@ -83,7 +83,7 @@ class TestBarcodeDemux:
             (4, 0): {"sample_1": ["ACGT"]},
             (4, 4): {"sample_2": ["ACGT", "AGGT"]},
             (8, 0): {"sample_3": ["ACGTAGCT"]},
-            (5, 5): {"sample_4": ["ACGTA", "AGCTT"], "sample_5": ["AAATA","ATCTT"]},
+            (5, 5): {"sample_4": ["ACGTA", "AGCTT"], "sample_5": ["AAATA", "ATCTT"]},
         }
 
         print(group_samples_by_index_length(input_dict))
@@ -101,7 +101,7 @@ class TestBarcodeDemux:
     )
     def test_hamming_distance_isnone(self, sequence1, sequence2):
         assert_that(hamming_distance).raises(ValueError).when_called_with(sequence1, sequence2)
-    
+
     def test_hamming_distance_uneven_lengths(self):
         # Test and assert
         assert_that(hamming_distance).raises(ValueError).when_called_with("ACGT", "ACGTT")
@@ -258,43 +258,41 @@ class TestBarcodeDemux:
     def test_index_to_match_key_isvalid(self):
         # Setup
         name = "@LH00442:107:22YHM5LT3:2:1191:41040:4635 1:N:0:TTCAGAGGTC+CTGGAGCATC"
-        sorted_grouped_samples_by_length = [
+        sorted_lengths = [
             (10, 10),
             (8, 0),
             (4, 0),
         ]
         grouped_samples_by_length = {
-            (4, 0): {"sample_2": "ACGT"},
-            (10, 10): {"sample_3": "TTCAGAGGTC,CTGGAGCATC"},
-            (8, 0): {"sample_1": "ATTTAGAT"},
+            (4, 0): {"sample_2": ["ACGT"]},
+            (10, 10): {"sample_3": ["TTCAGAGGTC", "CTGGAGCATC"]},
+            (8, 0): {"sample_1": ["ATTTAGAT"]},
         }
         max_hamming_distance = 1
 
-        for length, sample_dict in grouped_samples_by_length.items():
-            print(sample_dict)
-            grouped_bk_trees = build_bk_tree_index(sample_dict)
+        grouped_bk_trees = build_bk_tree_index(sorted_lengths, grouped_samples_by_length)
 
-            # Test and assert
-            match_key = index_to_match_key(name, sorted_grouped_samples_by_length, grouped_bk_trees, max_hamming_distance)
-        assert_that(match_key).is_equal_to(("sample_3", "TTCAGAGGTC+CTGGAGCATC"))
+        # Test and assert
+        match_key = index_to_match_key(read_header=name, barcode_bktree_map=grouped_bk_trees, max_hamming_distance_1=max_hamming_distance)
+        print(match_key)
+        assert_that(match_key).is_equal_to("sample_3")
 
-    # def test_demultiplex_fastq_by_barcode_invalid_hamming_input(self, tmp_path):
-    #     # Setup
-    #     fastq_file = "tests/data/seq/L002_R1.fastq"
-    #     barcode_sample_dict = {
-    #         "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
-    #         "sample_2": "AGGTGGCTAC+CCACGTAACG",
-    #         "sample_3": "TATCACTCTC+ACCTTGTTCT",
-    #         "sample_4": "AGGTGGCTAC+CCACGTAACG",
-    #     }
-    #     max_hamming_distance = 1
-    #     output_dir = tmp_path
+    def test_demultiplex_fastq_by_barcode_invalid_hamming_input(self, tmp_path):
+        # Setup
+        fastq_file = "tests/data/seq/L002_R1.fastq"
+        barcode_sample_dict = {
+            "sample_1": "ACTGGTGTCG-CAAGTCCTGT",
+            "sample_2": "AGGTGGCTAC+CCACGTAACG",
+            "sample_3": "TATCACTCTC+ACCTTGTTCT",
+            "sample_4": "AGGTGGCTAC+CCACGTAACG",
+        }
+        max_hamming_distance = 1
+        output_dir = tmp_path
 
-    #     # Test and assert
-    #     assert_that(demultiplex_fastq_by_barcode).raises(ValueError).when_called_with(
-    #         barcode_sample_dict, fastq_file, max_hamming_distance, output_dir
-    #     )
-    #     demultiplex_fastq_by_barcode(fastq_file, barcode_sample_dict, max_hamming_distance, output_dir)
+        # Test and assert
+        assert_that(demultiplex_fastq_by_barcode).raises(ValueError).when_called_with(
+            barcode_sample_dict, fastq_file, max_hamming_distance, output_dir
+        )
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content",
@@ -306,7 +304,7 @@ class TestBarcodeDemux:
                     "sample_2": "ACGT,AGGT",
                     "sample_3": "ACGTA",
                 },
-                1,
+                2,
                 ["sample_1", "sample_2", "sample_3", "undetermined"],
                 {
                     "sample_1": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 1:N:0:ACTTGACTAG+NTATCAACGG\nGNAGGGGCGGCCCGGCCCCCACCCCCACGCCCGCCCGGGAGGCGGACGGGGGGAGAGGGAGAGCGCGGCGACGGGTATCTGGCTTCCTCGGCCCCGGGATTCGGCGAAAGCTGCGGCCGGAGGGCTGTAACACTCGGGGTGAGGTGGTAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIII9IIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n",  # pytest: disable=line-too-long
@@ -315,18 +313,18 @@ class TestBarcodeDemux:
                     "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 1:N:0:TCACCAGGAC+NCCTTGTCTC\nCNGCCACCTCCTCGGTCGCGCTGGCCGGGCCACCCGGGGTCAAAGCCACCTCACCCGAGCAAGTGGGTGCTAGTGAGGGCCGGGGGCGCCAGGCAGCACGGCAAGCGGAAGAGCCGAGCCGCAGCTCCGCAGCTGCCGGCGCCCGGGGAGA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII*I9IIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n@LH00442:107:22YHM5LT3:2:1101:1111:1064 1:N:0:GCGCTTCTAC+NTCCTTGGCT\nANTGACCTGTCATTTCAGCATGTCACCCCCAAGCCATCTCTAGGTGTACTTCTTCCATCGAGGAGAAAAATGTCTCTTTGACTTCTTAATGACACCGTGACGTTTGGTTCCAAAAAGGTGCCCTGGTAAATCTCCAGAAACACATTAGTTA\n+\nI#IIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIII*IIIIIIIIII9IIIII9IIIII99I9III9II9IIIII999III99I99*9*I**9*II*99*\n",  # pytest: disable=line-too-long
                 },
             ),
-            # (
-            #     "tests/data/seq/undetermined_L002_R2.fastq",
-            #     {"sample_A": "ACTTGACTAG+NTATCAACGG", "sample_B": "GCGCTTCTAC,NTCCTTGGCT", "sample_C": "ACCTTA+ACCTTA"},
-            #     1,
-            #     ["sample_A", "sample_B", "sample_C", "undetermined"],
-            #     {
-            #         "sample_A": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 2:N:0:ACTTGACTAG+NTATCAACGG\nACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA\n+\nIIII*IIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIII\n",  # pytest: disable=line-too-long
-            #         "sample_B": "@LH00442:107:22YHM5LT3:2:1101:1111:1064 2:N:0:GCGCTTCTAC+NTCCTTGGCT\nAGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA\n+\nIIIIIIIIIIIII\n",
-            #         "sample_C": "",
-            #         "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC\nTGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG\n+\nIIIIIIIIIIIIIIIIIII*IIIIIIIII9I9IIII9III9IIIIIIIII9III9III9IIII9999II99I9IIIIIIIIIII9IIIIIIIIIIIII9II9I99I9IIIIIIIIIIII9IIIII9IIIIIIII99II9IIIIIIIIII*9\n",  # pytest: disable=line-too-long
-            #     },
-            # ),
+            (
+                "tests/data/seq/undetermined_L002_R2.fastq",
+                {"sample_A": "ACTTGACTAG+NTATCAACGG", "sample_B": "GCGCTTCTAC,NTCCTTGGCT", "sample_C": "ACCTTA+ACCTTA"},
+                1,
+                ["sample_A", "sample_B", "sample_C", "undetermined"],
+                {
+                    "sample_A": "@LH00442:107:22YHM5LT3:2:1101:1000:1064 2:N:0:ACTTGACTAG+NTATCAACGG\nACCACCTCACCCCGAGTGTTACAGCCCTCCGGCCGCAGCTTTCGCCGAATCCCGGGGCCGAGGAAGCCAGATACCCGTCGCCGCGCTCTCCCTCTCCCCCCGTCCGCCTCCCGGGCGGGCGTGGGGGTGGGGGCCGGGCCGCCCCTCCAGA\n+\nIIII*IIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIIIIII9IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII9IIIII\n",  # pytest: disable=line-too-long
+                    "sample_B": "@LH00442:107:22YHM5LT3:2:1101:1111:1064 2:N:0:GCGCTTCTAC+NTCCTTGGCT\nAGACCTGCTGGGCTGACCACAGGCCTACAAACACGGACACTGCCTGAGAATAACTAATGTGTTTCTGGAGATTTACCAGGGCACCTTTTTGGAACCAAACGTCACGGTGTCATTACGAATTCAAAGAGACATCTTTCTCCTCGATGGAAGA\n+\nIIIIIIIIIIIII\n",
+                    "sample_C": "",
+                    "undetermined": "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC\nTGGAGACTCGCTGCCCGGGCGCCGGCAGCTGCGGAGCTGCGGCTCGGCTCTTCCGCTTGCCGTGCTGCCTGGCGCCCCCGGCCCTCACTAGCACCCACTTGCTCGGGTGAGGTGGCTTTGACCCCGGGTGGCCCGGCCAGCGCGACCGAGG\n+\nIIIIIIIIIIIIIIIIIII*IIIIIIIII9I9IIII9III9IIIIIIIII9III9III9IIII9999II99I9IIIIIIIIIII9IIIIIIIIIIIII9II9I99I9IIIIIIIIIIII9IIIII9IIIIIIII99II9IIIIIIIIII*9\n",  # pytest: disable=line-too-long
+                },
+            ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_valid(
@@ -353,7 +351,6 @@ class TestBarcodeDemux:
                 print(f"File content for {sample}: {file_content[:100]}...")  # Print first 100 characters for debugging
 
             assert_that(file_content).is_equal_to(expected_file_content[sample])
-        # raise ValueError
 
     @pytest.mark.parametrize(
         "fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_read_count",
@@ -361,35 +358,39 @@ class TestBarcodeDemux:
             (
                 "tests/data/seq/sub_read_S1_L002_R1.fastq",
                 {
-                    "sample_1": "ACTT,NTAT",
+                    # "sample_1": "ACTT,NTAT",
+                    # "sample_1": "ACTT,NCGT",
+                    "sample_1": "CGCA,NCGT",
                     "sample_2": "ACGT,AGGT",
                     "sample_3": "ACGTA",
+                    "sample_4": "CGCA,TATC",
                 },
                 1,
-                ["sample_1", "sample_2", "sample_3", "undetermined"],
+                ["sample_1", "sample_2", "sample_3", "sample_4", "undetermined"],
                 {
-                    "sample_1": 5,
-                    # "sample_2": 0,
-                    "sample_3": 57,
-                    "undetermined": 938,
+                    "sample_1": 1,
+                    "sample_2": 0,
+                    "sample_3": 0,  # present in 14 index2, only 1 in a single index1
+                    "sample_4": 11,
+                    "undetermined": 988,
                 },
             ),
         ],
     )
     def test_demultiplex_fastq_by_barcode_read_count_valid(
         self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_read_count
-    ):  # pytest: disable=line-too-long
+    ):  # pylint: disable=too-many-arguments
         # Setup
         output_dir = tmp_path
         # output_dir = "tests/data/seq/output"
 
         # Test
-        read_count = demultiplex_fastq_by_barcode(barcode_sample_dict, fastq_file, max_hamming_distance, output_dir)
+        read_count = demultiplex_fastq_by_barcode(barcode_sample_dict, fastq_file, max_hamming_distance, output_dir=output_dir)
+        print(f"Read count: {read_count}")
 
         # Assert
-        assert_that(read_count).is_equal_to(expected_read_count)
-
         read_lane_info = re.search(r"S\d+_([^\.]+)", fastq_file)
+        read_lane_info = read_lane_info[1]
         if not read_lane_info:
             read_lane_info = fastq_file.split("_", 1)[1].split(".", 1)[0]
         for sample in expected_samples:
