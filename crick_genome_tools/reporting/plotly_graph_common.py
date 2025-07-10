@@ -193,13 +193,15 @@ def format_int(i):
 
 def format_float(f):
     try:
-        s = str(f)
-        i = int(s.split(".")[0])
-        f = float("0." + s.split(".")[1])
-    except:
-        return 0
-
-    return "{:,d}".format(i) + "{:.2f}".format(f)[1:]
+        f = float(f)
+        i = int(f)
+        dec = f - i
+        if dec == 0:
+            return "{:,d}".format(i)
+        else:
+            return "{:,}".format(f)
+    except (ValueError, TypeError):
+        return "0"
 
 
 def format_percent(f):

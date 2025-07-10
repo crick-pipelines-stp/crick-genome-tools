@@ -6,7 +6,9 @@ import json
 import logging
 import os
 import pickle
+from enum import Enum
 
+import numpy as np
 import pandas as pd
 
 from crick_genome_tools.io.vcf import generate_merged_vcf_report
@@ -83,6 +85,9 @@ class ReportDataParser:
             elif folder_name == "count_table":
                 log.info("Processing count table data")
                 self.get_count_table_data(folder_path)
+            elif folder_name == "truncation":
+                log.info("Processing truncation data")
+                self.get_truncation_data(folder_path)
             else:
                 log.error(f"Unknown folder: {folder_name}")
 
@@ -122,12 +127,16 @@ class ReportDataParser:
         for fastq_file in fastq_files:
             config["fastq"] = os.path.join(folder_path, fastq_file)
 
+            if "toulligqc" not in self.result_dict:
+                self.result_dict["toulligqc"] = {}
+                self.dataframe_dict["toulligqc"] = {}
+
             # Check for sample_id entry
             sample_id = fastq_file.split(".")[0]
             if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+                self.result_dict["toulligqc"][sample_id] = {}
             if sample_id not in self.dataframe_dict:
-                self.dataframe_dict[sample_id] = {}
+                self.dataframe_dict["toulligqc"][sample_id] = {}
 
             # Extract data
             extractor = FastqExtractor(config)
@@ -136,9 +145,9 @@ class ReportDataParser:
             extractor.extract(result_dict)
 
             # Extract sample id from the first part of the fastq file name
-            self.result_dict[sample_id]["toulligqc"] = result_dict
-            self.dataframe_dict[sample_id]["toulligqc"] = extractor.dataframe_dict
-            log.info(f"Processed fastq file: {fastq_file}")
+            self.result_dict["toulligqc"][sample_id] = result_dict
+            self.dataframe_dict["toulligqc"][sample_id] = extractor.dataframe_dict
+            log.info(f"TOULLIGQC - Processed fastq file: {fastq_file}")
 
     def get_samtools_flagstat_data(self, folder_path, clean_ext, data_suffix):
         """
@@ -161,6 +170,7 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+        log.info(f"SAMTOOLS - Processed samtools {data_suffix} data for {len(df)} samples")
 
     def get_samtools_contam_data(self, folder_path, clean_ext, data_suffix):
         """
@@ -192,12 +202,14 @@ class ReportDataParser:
 
         # Add data to merged
         self.merged_dataframe_dict["samtools_" + data_suffix] = df
+        log.info(f"SAMTOOLS - Processed samtools {data_suffix} data for {len(df)} samples")
 
     def get_mosdepth_data(self, folder_path):
         """
         Get data from mosdepth reports.
         """
         self.dataframe_dict["coverage_per_base"] = parse_mosdepth_per_base(folder_path)
+        log.info(f"COVERAGE - Processed mosdepth coverage data for {len(self.dataframe_dict['coverage_per_base'])} samples")
 
     def get_ref_data(self, folder_path):
         """
@@ -207,22 +219,21 @@ class ReportDataParser:
         ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
         for ref_file in ref_files:
             sample_id = ref_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "reference" not in self.result_dict:
+                self.result_dict["reference"] = {}
+                self.result_dict["reference_index"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["ref"] = f.readlines()
-            log.info(f"Processed reference file: {sample_id} - {ref_file}")
+                self.result_dict["reference"][sample_id] = f.readlines()
+            log.info(f"REFERENCE - Processed reference file: {sample_id} - {ref_file}")
 
         # Get index files
         ref_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta.fai")]
         for ref_file in ref_files:
             sample_id = ref_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
             with open(os.path.join(folder_path, ref_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["fai"] = f.readlines()
-            log.info(f"Processed reference index file: {sample_id} - {ref_file}")
+                self.result_dict["reference_index"][sample_id] = f.readlines()
+            log.info(f"REFERENCE - Processed reference index file: {sample_id} - {ref_file}")
 
     def get_variant_data(self, folder_path, vcf_tools):
         """
@@ -233,13 +244,13 @@ class ReportDataParser:
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants"] = {}
+            if "variants" not in self.result_dict:
+                self.result_dict["variants"] = {}
+            if sample_id not in self.result_dict["variants"]:
+                self.result_dict["variants"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["variants"][tool_name] = f.readlines()
-            log.info(f"Processed variant file: {sample_id} - {var_file}")
+                self.result_dict["variants"][sample_id][tool_name] = f.readlines()
+            log.info(f"VARIANTS - Processed variant file: {sample_id} - {var_file}")
 
         if len(vcf_tools) > 0:
             # Make list of var files for each sample_id
@@ -254,12 +265,12 @@ class ReportDataParser:
 
             # Process each sample_id
             for sample_id in var_files_by_sample.keys():
-                if sample_id not in self.dataframe_dict:
-                    self.dataframe_dict[sample_id] = {}
+                if "variants" not in self.dataframe_dict:
+                    self.dataframe_dict["variants"] = {}
                 var_files_by_sample[sample_id].sort(key=lambda x: vcf_tools.index(x.split(".")[1]))
                 variants, header, processed_variants = generate_merged_vcf_report(var_files_by_sample[sample_id], vcf_tools)
-                self.dataframe_dict[sample_id]["variants"] = pd.DataFrame(processed_variants, columns=header)
-                log.info(f"Generated merged vcf report: {sample_id} - {var_files_by_sample[sample_id]}")
+                self.dataframe_dict["variants"][sample_id] = pd.DataFrame(processed_variants, columns=header)
+                log.info(f"VARIANTS - Generated merged vcf report: {sample_id} - {var_files_by_sample[sample_id]}")
 
     def get_compressed_variant_data(self, folder_path):
         # Get binary variant files
@@ -267,62 +278,227 @@ class ReportDataParser:
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants_gz" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants_gz"] = {}
+            if "variants_gz" not in self.result_dict:
+                self.result_dict["variants_gz"] = {}
+            if sample_id not in self.result_dict["variants_gz"]:
+                self.result_dict["variants_gz"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
-                self.result_dict[sample_id]["variants_gz"][tool_name] = f.read()
-            log.info(f"Processed variant gzip file: {sample_id} - {var_file}")
+                self.result_dict["variants_gz"][sample_id][tool_name] = f.read()
+            log.info(f"VARIANTS - Processed variant gzip file: {sample_id} - {var_file}")
 
         # Get Tabix files
         var_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".vcf.gz.tbi")]
         for var_file in var_files:
             sample_id = var_file.split(".")[0]
             tool_name = var_file.split(".")[1]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
-            if "variants_tbi" not in self.result_dict[sample_id]:
-                self.result_dict[sample_id]["variants_tbi"] = {}
+            if "variants_tbi" not in self.result_dict:
+                self.result_dict["variants_tbi"] = {}
+            if sample_id not in self.result_dict["variants_tbi"]:
+                self.result_dict["variants_tbi"][sample_id] = {}
             with open(os.path.join(folder_path, var_file), "rb") as f:
-                self.result_dict[sample_id]["variants_tbi"][tool_name] = f.read()
-            log.info(f"Processed variant tabix file: {sample_id} - {var_file}")
+                self.result_dict["variants_tbi"][sample_id][tool_name] = f.read()
+            log.info(f"VARIANTS - Processed variant tabix file: {sample_id} - {var_file}")
 
     def get_annotation_data(self, folder_path):
         # Get annotation files
         ann_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".gff")]
         for ann_file in ann_files:
             sample_id = ann_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "annotation" not in self.result_dict:
+                self.result_dict["annotation"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, ann_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["annotation"] = f.readlines()
-            log.info(f"Processed annotation file: {sample_id} - {ann_file}")
+                self.result_dict["annotation"][sample_id] = f.readlines()
+            log.info(f"ANNOTATION - Processed annotation file: {sample_id} - {ann_file}")
 
     def get_samplesheet_data(self, folder_path):
         # Get path of first csv file in folder
         csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
         self.merged_dataframe_dict["samplesheet"] = pd.read_csv(os.path.join(folder_path, csv_files[0]), encoding="UTF-8")
-        log.info(f"Processed samplesheet file: {csv_files[0]}")
+        log.info(f"SAMPLESHEET - Processed samplesheet file: {csv_files[0]}")
 
     def get_count_table_data(self, folder_path):
         csv_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".csv")]
         for csv_file in csv_files:
             sample_id = csv_file.split(".")[0]
-            if sample_id not in self.dataframe_dict:
-                self.dataframe_dict[sample_id] = {}
-            self.dataframe_dict[sample_id]["count_table"] = pd.read_csv(os.path.join(folder_path, csv_file), encoding="UTF-8", sep="\t")
-            log.info(f"Processed count table file: {csv_file}")
+            if "count_table" not in self.dataframe_dict:
+                self.dataframe_dict["count_table"] = {}
+            self.dataframe_dict["count_table"][sample_id] = pd.read_csv(os.path.join(folder_path, csv_file), encoding="UTF-8", sep="\t")
+            log.info(f"COUNT_TABLE - Processed count table file: {csv_file}")
 
     def get_consensus_data(self, folder_path):
         # Get consensus files
         cons_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".fasta")]
         for cons_file in cons_files:
             sample_id = cons_file.split(".")[0]
-            if sample_id not in self.result_dict:
-                self.result_dict[sample_id] = {}
+            if "consensus" not in self.result_dict:
+                self.result_dict["consensus"] = {}
             # Read each line of the fasta file into a list
             with open(os.path.join(folder_path, cons_file), "r", encoding="UTF-8") as f:
-                self.result_dict[sample_id]["consensus"] = f.readlines()
-            log.info(f"Processed consensus file: {sample_id} - {cons_file}")
+                self.result_dict["consensus"][sample_id] = f.readlines()
+            log.info(f"CONSESNSUS - Processed consensus file: {sample_id} - {cons_file}")
+
+    def get_truncation_data(self, folder_path):
+        bam_info_files = [file_name for file_name in os.listdir(folder_path) if file_name.endswith(".tsv")]
+        for bam_info_file in bam_info_files:
+            sample_id = bam_info_file.split(".")[0]
+            if "truncation" not in self.result_dict:
+                self.result_dict["truncation"] = {}
+                self.result_dict["truncation_type"] = {}
+                self.result_dict["truncation_type_simple"] = {}
+            # Read the bam info and save the starts/ends positions
+            bam_info_df = pd.read_csv(
+                os.path.join(folder_path, bam_info_file), sep="\t", usecols=["Pos", "EndPos"], dtype={"Pos": np.uint32, "EndPos": np.uint32}
+            )
+            bam_info_df = bam_info_df.rename(columns={"Pos": "Read Start", "EndPos": "Read End"})
+            self.result_dict["truncation"][sample_id] = bam_info_df
+            log.info(f"TRUNCATION - Processed truncation file: {sample_id} - {bam_info_file}")
+
+            bam_info_df = pd.read_csv(
+                os.path.join(folder_path, bam_info_file),
+                sep="\t",
+                usecols=["Ref", "Read", "Pos", "EndPos", "ReadLen", "Strand", "IsSec", "IsSup"],
+                dtype={
+                    "Read": "string",
+                    "Ref": "string",
+                    "Pos": np.int32,
+                    "EndPos": np.int32,
+                    "ReadLen": np.int32,
+                    "Strand": np.int8,
+                    "IsSec": np.int8,
+                    "IsSup": np.int8,
+                },
+            )
+            bam_info_df[["Strand", "IsSec", "IsSup"]] = bam_info_df[["Strand", "IsSec", "IsSup"]].astype(np.bool_)
+
+            itr_length = 130
+            itr_fl_threshold = 20
+            payload_threshold = 100
+            itr1_starts = 0
+            itr1_ends = itr_length
+            itr2_ends = bam_info_df["EndPos"].max()
+            itr2_starts = itr2_ends - itr_length
+
+            starts = bam_info_df["Pos"]
+            ends = bam_info_df["EndPos"]
+            itr1_full = itr1_starts + itr_fl_threshold
+            itr2_full = itr2_ends - itr_fl_threshold
+            payload5_full = itr1_ends + payload_threshold
+            payload3_full = itr2_starts - payload_threshold
+
+            full_5prime = (starts >= itr1_starts) & (starts < itr1_full)
+            full_3prime = (ends > itr2_full) & (ends <= itr2_ends)
+            partial_5prime = (starts >= itr1_full) & (starts <= itr1_ends)
+            partial_3prime = (ends >= itr2_starts) & (ends <= itr2_full)
+            full_payload = (starts <= payload5_full) & (ends >= payload3_full)
+            starts_in_midsection = (starts > itr1_ends) & (starts <= itr2_starts)
+            ends_in_midsection = (ends > itr1_ends) & (ends < itr2_starts)
+
+            conditions = [
+                full_5prime & full_3prime,
+                partial_5prime & full_3prime,
+                partial_5prime & partial_3prime,
+                full_5prime & partial_3prime,
+                full_payload,
+                (starts > itr1_ends) & (ends < itr2_starts),
+                full_5prime & ends_in_midsection,
+                starts_in_midsection & full_3prime,
+                partial_5prime & ends_in_midsection,
+                starts_in_midsection & partial_3prime,
+                (starts >= itr1_starts) & (ends <= itr1_ends),
+                (starts >= itr2_starts) & (ends <= itr2_ends),
+                (starts < itr1_starts) & (ends > itr2_ends),
+                (starts < itr1_starts) & (ends >= itr1_starts),
+                (starts <= itr2_ends) & (ends > itr2_ends),
+                (starts < itr1_starts) & (ends < itr1_starts),
+                (starts > itr2_ends) & (ends > itr2_ends),
+            ]
+
+            choices = [
+                AlnType.complete,
+                AlnType.par5_full3,
+                AlnType.par5_par3,
+                AlnType.full5_par3,
+                AlnType.full_payload,
+                AlnType.truncated_payload,
+                AlnType.full5_par_mid,
+                AlnType.par_mid_full3,
+                AlnType.par5_par_mid,
+                AlnType.par_mid_par3,
+                AlnType.itr5_only,
+                AlnType.itr3_only,
+                AlnType.ext_itr,
+                AlnType.vec_bb_5,
+                AlnType.vec_bb_3,
+                AlnType.bb,
+                AlnType.bb,
+            ]
+
+            choices_simple = [
+                AlnType.complete,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.full_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.truncated_payload,
+                AlnType.itr5_only,
+                AlnType.itr3_only,
+                AlnType.ext_itr,
+                AlnType.vec_bb_5,
+                AlnType.vec_bb_3,
+                AlnType.bb,
+                AlnType.bb,
+            ]
+
+            bam_info_df["aln_type"] = np.select(conditions, choices, default=AlnType.unknown)
+            self.result_dict["truncation_type"][sample_id] = bam_info_df
+
+            bam_info_df_simple = bam_info_df.copy()
+            bam_info_df_simple["aln_type"] = np.select(conditions, choices_simple, default=AlnType.unknown)
+            self.result_dict["truncation_type_simple"][sample_id] = bam_info_df_simple
+
+
+class AlnType(str, Enum):
+    """Enum for Assigning categories to alignments.
+
+    An alignment category defines its ITR and midsection status as well as whether
+    the alignment maps to the vector backbone.
+
+    Subclassing str allows us to access the values as strings and not have to
+    do .value all over the place.
+    """
+
+    # These are alignments that represent almost full AAV genomes. They have varying
+    # amounts of ITR on both sides of the alignment and contain full mid-sections
+    complete = "Complete"
+    full5_par3 = "Full 5` ITR and partial 3` ITR"
+    par5_full3 = "Partial 5` ITR and full 3` ITR"
+    par5_par3 = "Partial 5` ITR and partial 3` ITR"
+    full_payload = "Full payload"
+
+    # These alignments are truncated at the mid-section region but contain some
+    # ITR region on one of the ends
+    truncated_payload = "Truncated payload"
+    full5_par_mid = "Full 5` ITR and partial payload"
+    par_mid_full3 = "Partial payload section and full 3` ITR"
+    par5_par_mid = "Partial 5` ITR and partial payload"
+    par_mid_par3 = "Partial payload and partial 3` ITR"
+
+    # Alignment starts and ends within ITR
+    itr5_only = "5` ITR"
+    itr3_only = "3` ITR"
+
+    # Transgene plamsid backbone alignments
+    vec_bb_5 = "Vector backbone - 5` ends"
+    vec_bb_3 = "Vector backbone - 3` ends"
+    bb = "Backbone"
+
+    ext_itr = "Extended ITR-ITR region"
+    unknown = "Unknown"
+
+    def __str__(self):
+        return self.value

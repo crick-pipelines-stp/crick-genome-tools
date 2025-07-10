@@ -40,6 +40,11 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
         tool_names (list): List of tool names corresponding to the VCF files
         output_file (str, optional): Path to the output file
     """
+    log.info("Generating merged VCF report")
+    log.info(f"VCF files: {vcf_files}")
+    log.info(f"Tool names: {tool_names}")
+    log.info(f"Output file: {output_file}")
+
     # Load vcf files
     vcf_data = []
     for vcf_file in vcf_files:
@@ -52,7 +57,7 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
 
     # Error if files and tool len mismatch
     if len(vcf_data) != len(tool_names):
-        raise ValueError("Number of VCF files and tool names must match")
+        raise ValueError(f"Number of VCF files and tool names must match {tool_names} != {vcf_data}")
 
     # Loop vcf files and collect information
     variants = {}
@@ -63,9 +68,18 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
             chrom = record.chrom
             pos = record.pos
             ref = record.ref
-            alt_list = [str(a) for a in record.alts]
-            alt = ",".join(alt_list)
-            var_type = determine_variant_type(ref, alt_list[0])
+            alt_list = [str(a) for a in record.alts] if record.alts else []
+            alt_var_type = alt_list
+            if len(alt_list) > 1:
+                alt = ",".join(alt_list)
+                alt_var_type = alt_list[0]
+            elif len(alt_list) == 0:
+                alt = ref
+                alt_var_type = ref
+            else:
+                alt = alt_list[0]
+                alt_var_type = alt_list[0]
+            var_type = determine_variant_type(ref, alt_var_type)
             qual = round(float(record.qual), 2)
             info = record.info
 
@@ -121,7 +135,10 @@ def generate_merged_vcf_report(vcf_files: list, tool_names: list, output_file: s
 
             # Tool specific info: sniffles
             if tool == "snpeff":
-                annotation = info["ANN"]
+                if "ANN" in info:
+                    annotation = info["ANN"]
+                else:
+                    annotation = ""
 
             # Construct entry
             variant = {
