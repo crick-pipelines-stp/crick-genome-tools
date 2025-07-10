@@ -18,6 +18,7 @@ dependencies = [
     "plotly",
     "scipy",
     "multiqc",
+    "pybktree",
 ]
 
 [project.optional-dependencies]
