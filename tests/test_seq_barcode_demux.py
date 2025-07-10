@@ -28,17 +28,17 @@ from crick_genome_tools.seq.barcode_demux import (
 
 
 class TestBarcodeDemux:
-    def test_extract_index_from_header_none(self):
+    def test_bcdemux_extract_index_from_header_none(self):
         assert_that(extract_index_from_header_illumina).raises(ValueError).when_called_with(None)
 
-    def test_extract_index_from_header_empty(self):
+    def test_bcdemux_extract_index_from_header_empty(self):
         assert_that(extract_index_from_header_illumina).raises(ValueError).when_called_with("")
 
-    def test_extract_index_from_header_invalid(self):
+    def test_bcdemux_extract_index_from_header_invalid(self):
         header = "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCA:GGAC+NCCTTGT:CTC"
         assert_that(extract_index_from_header_illumina).raises(ValueError).when_called_with(header)
 
-    def test_extract_index_from_header_isvalid(self):
+    def test_bcdemux_extract_index_from_header_isvalid(self):
         header = "@LH00442:107:22YHM5LT3:2:1101:1092:1064 2:N:0:TCACCAGGAC+NCCTTGTCTC"
         header_2 = "@LH00442:107 1:N:0:GCGCTTCTAC+NTCCTTGGCT"
         header_3 = "invalid_header"
@@ -48,20 +48,20 @@ class TestBarcodeDemux:
         assert_that(extract_index_from_header_illumina(header_2)).is_equal_to("GCGCTTCTAC+NTCCTTGGCT")
         assert_that(extract_index_from_header_illumina(header_3)).is_equal_to("")
 
-    def test_group_samples_by_index_length_none(self):
+    def test_bcdemux_group_samples_by_index_length_none(self):
         assert_that(group_samples_by_index_length).raises(TypeError).when_called_with(None)
 
-    def test_group_samples_by_index_length_emptydict(self):
+    def test_bcdemux_group_samples_by_index_length_emptydict(self):
         assert_that(group_samples_by_index_length({})).is_equal_to({})
 
-    def test_group_samples_by_index_length_invalid(self):
+    def test_bcdemux_group_samples_by_index_length_invalid(self):
         # Call the fuction with a dictionary with invalid barcode values
         assert_that(group_samples_by_index_length).raises(TypeError).when_called_with({"sample_1": 1234})
 
         # Call the function with an input that is not a dict
         assert_that(group_samples_by_index_length).raises(TypeError).when_called_with("not_a_dict")
 
-    def test_group_samples_by_index_length_valid(self):
+    def test_bcdemux_group_samples_by_index_length_valid(self):
         input_dict = {
             "sample_1": "ACGT",
             "sample_2": "ACGT,AGGT",
@@ -99,10 +99,10 @@ class TestBarcodeDemux:
             (None, "AATCG"),
         ],
     )
-    def test_hamming_distance_isnone(self, sequence1, sequence2):
+    def test_bcdemux_hamming_distance_isnone(self, sequence1, sequence2):
         assert_that(hamming_distance).raises(ValueError).when_called_with(sequence1, sequence2)
 
-    def test_hamming_distance_uneven_lengths(self):
+    def test_bcdemux_hamming_distance_uneven_lengths(self):
         # Test and assert
         assert_that(hamming_distance).raises(ValueError).when_called_with("ACGT", "ACGTT")
         assert_that(hamming_distance).raises(ValueError).when_called_with("ACGT", "ACG")
@@ -115,12 +115,12 @@ class TestBarcodeDemux:
             ("ACCT", "ATAC", 3),
         ],
     )
-    def test_hamming_distance_isvalid(self, sequence1, sequence2, expected_result):
+    def test_bcdemux_hamming_distance_isvalid(self, sequence1, sequence2, expected_result):
         # Test and assert
         result = hamming_distance(sequence1, sequence2)
         assert_that(result).is_equal_to(expected_result)
 
-    def test_crosscheck_barcode_proximity_invalid_input(self):
+    def test_bcdemux_crosscheck_barcode_proximity_invalid_input(self):
         # Setup
         sample_barcode_list = ["invalid", "input", "not", "a", "dict"]
 
@@ -130,7 +130,7 @@ class TestBarcodeDemux:
         assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(1234)
         assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(None)
 
-    def test_crosscheck_barcode_proximity_invalid_barcode_length(self):
+    def test_bcdemux_crosscheck_barcode_proximity_invalid_barcode_length(self):
         # Setup
         sample_barcode_dict = {
             "sample_1": "ACGTAGGT",
@@ -141,7 +141,7 @@ class TestBarcodeDemux:
         # Test and assert
         assert_that(crosscheck_barcode_proximity).raises(ValueError).when_called_with(sample_barcode_dict)
 
-    def test_crosscheck_barcode_proximity_single_barcode(self):
+    def test_bcdemux_crosscheck_barcode_proximity_single_barcode(self):
         # Setup
         sample_barcode_dict = {"sample_1": "ACGTAGGT"}
 
@@ -149,7 +149,7 @@ class TestBarcodeDemux:
         assert_that(crosscheck_barcode_proximity(sample_barcode_dict)).is_equal_to([])
         # No pairs to compare, so the result should be an empty list
 
-    def test_crosscheck_barcode_proximity_isvalid(self):
+    def test_bcdemux_crosscheck_barcode_proximity_isvalid(self):
         # Setup
         sample_barcode_dict = {
             "sample_1": "ACGTAGGT",
@@ -162,7 +162,7 @@ class TestBarcodeDemux:
         # Test and assert
         assert_that(crosscheck_barcode_proximity(sample_barcode_dict)).is_equal_to(expected_result)
 
-    def test_find_min_hamming_distances_invalid_input(self):
+    def test_bcdemux_find_min_hamming_distances_invalid_input(self):
         # Test and assert
         # not a dictionary
         assert_that(find_min_hamming_distances).raises(ValueError).when_called_with("ACGT")  # string
@@ -170,7 +170,7 @@ class TestBarcodeDemux:
         assert_that(find_min_hamming_distances).raises(ValueError).when_called_with(1)  # int
         assert_that(find_min_hamming_distances).raises(ValueError).when_called_with(None)  # None
 
-    def test_find_min_hamming_distances_isvalid(self):
+    def test_bcdemux_find_min_hamming_distances_isvalid(self):
         # Setup
         sample_barcode_dict = {
             8: [("ACGTAGGT", "ACGTAAAA", 3), ("ACGTAAAT", "ACGTAGGA", 3), ("ACGTAAAA", "ACGTAGGA", 2)],
@@ -180,21 +180,21 @@ class TestBarcodeDemux:
         # Test and assert
         assert_that(find_min_hamming_distances(sample_barcode_dict)).is_equal_to({8: 2, 4: 1})
 
-    def test_assert_min_hamming_above_threshold_hamming_below_max_threshold(self):
+    def test_bcdemux_assert_min_hamming_above_threshold_hamming_below_max_threshold(self):
         # Setup
         sample_barcode_dict = {8: 4, 4: 5, 3: 3}
 
         # Test and assert
         assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(sample_barcode_dict, 4)
 
-    def test_assert_min_hamming_above_threshold_isinvalid(self):
+    def test_bcdemux_assert_min_hamming_above_threshold_isinvalid(self):
         # Setup
         sample_barcode_dict = {8: 4, 4: 5, 3: 3}
         assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(sample_barcode_dict, None)
         assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with("invalid_input", 3)
         assert_that(assert_min_hamming_above_threshold).raises(ValueError).when_called_with(None, 3)
 
-    def test_assert_min_hamming_above_threshold_isvalid(self):
+    def test_bcdemux_assert_min_hamming_above_threshold_isvalid(self):
         # Setup
         sample_barcode_dict = {8: 4, 4: 5, 3: 3}
 
@@ -205,13 +205,13 @@ class TestBarcodeDemux:
             assert False, f"Function raised an unexpected exception: {e}"
             # assertion can't be done using assertpy
 
-    def test_custom_priority_by_length_sort_key_invalid(self):
+    def test_bcdemux_custom_priority_by_length_sort_key_invalid(self):
         # Test and assert
         assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with(None)
         assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with("invalid_input")
         assert_that(custom_priority_by_length_sort_key).raises(TypeError).when_called_with([1234])
 
-    def test_custom_priority_by_length_sort_key_isvalid_tuple_input(self):
+    def test_bcdemux_custom_priority_by_length_sort_key_isvalid_tuple_input(self):
         # Normal 2-tuple, no zero
         assert_that(custom_priority_by_length_sort_key((5, 5))).is_equal_to((False, -10))  # no 0 values, so returns False
         assert_that(custom_priority_by_length_sort_key((4, 0))).is_equal_to((True, -4))  # 0 value, so returns True
@@ -220,7 +220,7 @@ class TestBarcodeDemux:
         # Tie-breaker: same total length, but one has zero
         assert custom_priority_by_length_sort_key((4, 4)) < custom_priority_by_length_sort_key((8, 0))
 
-    def test_custom_priority_by_length_sort_key_isvalid_dict_input(self):
+    def test_bcdemux_custom_priority_by_length_sort_key_isvalid_dict_input(self):
         # Setup
         sample_barcode_dict = {
             (4, 0): {"sample_1": "ACGT"},
@@ -236,16 +236,16 @@ class TestBarcodeDemux:
 
         assert_that(sorted_samples).is_equal_to(expected_sorted_samples)
 
-    def test_trim_merge_string_isnone(self):
+    def test_bcdemux_trim_merge_string_isnone(self):
         assert_that(trim_merge_string).raises(ValueError).when_called_with(None, 3)
         assert_that(trim_merge_string).raises(ValueError).when_called_with("string", None)
 
-    def test_trim_merge_string_invalid(self):
+    def test_bcdemux_trim_merge_string_invalid(self):
         # Test and assert
         assert_that(trim_merge_string).raises(ValueError).when_called_with("ACGTAGGT", -3)
         assert_that(trim_merge_string).raises(ValueError).when_called_with(["not_a_string"], 3)
 
-    def test_trim_merge_string_isvalid(self):
+    def test_bcdemux_trim_merge_string_isvalid(self):
         # Test and assert
         assert_that(trim_merge_string("ACGTAGGT", 5)).is_equal_to("ACGTA")
         assert_that(trim_merge_string("ACGTAGGT", 0)).is_equal_to("")
@@ -255,7 +255,7 @@ class TestBarcodeDemux:
         assert_that(trim_merge_string("ACGTAAAC AGGT", 8)).is_equal_to("ACGTAGGT")
         assert_that(trim_merge_string("ACGT AGGT", 10)).is_equal_to("ACGTAGGT")
 
-    def test_index_to_match_key_isvalid(self):
+    def test_bcdemux_index_to_match_key_isvalid(self):
         # Setup
         name = "@LH00442:107:22YHM5LT3:2:1191:41040:4635 1:N:0:TTCAGAGGTC+CTGGAGCATC"
         sorted_lengths = [
@@ -277,7 +277,7 @@ class TestBarcodeDemux:
         print(match_key)
         assert_that(match_key).is_equal_to("sample_3")
 
-    def test_demultiplex_fastq_by_barcode_invalid_hamming_input(self, tmp_path):
+    def test_bcdemux_demultiplex_fastq_by_barcode_invalid_hamming_input(self, tmp_path):
         # Setup
         fastq_file = "tests/data/seq/L002_R1.fastq"
         barcode_sample_dict = {
@@ -327,7 +327,7 @@ class TestBarcodeDemux:
             ),
         ],
     )
-    def test_demultiplex_fastq_by_barcode_valid(
+    def test_bcdemux_demultiplex_fastq_by_barcode_valid(
         self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_file_content
     ):  # pylint: disable=too-many-arguments
         # Setup
@@ -377,7 +377,7 @@ class TestBarcodeDemux:
             ),
         ],
     )
-    def test_demultiplex_fastq_by_barcode_read_count_valid(
+    def test_bcdemux_demultiplex_fastq_by_barcode_read_count_valid(
         self, tmp_path, fastq_file, barcode_sample_dict, max_hamming_distance, expected_samples, expected_read_count
     ):  # pylint: disable=too-many-arguments
         # Setup
@@ -442,7 +442,7 @@ class TestBarcodeDemux:
             ),
         ],
     )
-    def test_demultiplex_fastq_by_barcode_valid_dualindex(
+    def test_bcdemux_demultiplex_fastq_by_barcode_valid_dualindex(
         self,
         tmp_path,
         fastq_file_r1,
@@ -494,7 +494,7 @@ class TestBarcodeDemux:
             #     assert_that(newline_count_r2).is_equal_to(0)
 
 
-def test_bktree_library():
+def test_bcdemux_bktree_library():
     import pybktree  # pylint: disable=import-outside-toplevel
 
     # known_barcodes = [
@@ -519,7 +519,7 @@ def test_bktree_library():
     # raise ValueError
 
 
-# def test_build_bk_tree_index_isvalid():
+# def test_bcdemux_build_bk_tree_index_isvalid():
 #     # Setup
 #     lengths = [(4,4), (4,0)]
 #     sample_barcode_dict = { (4,4): {
