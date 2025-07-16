@@ -202,7 +202,7 @@ class IterativeAlignment:
         # Copy the final bam and bai files to the output directory
         final_bam_path = os.path.join(execution_dir, f"{sample_id}_final.bam")
         final_bai_path = os.path.join(execution_dir, f"{sample_id}_final.bai")
-        shutil.copy(bai_file, final_bam_path)
+        shutil.copy(bam_file, final_bam_path)
         shutil.copy(bai_file, final_bai_path)
 
         # Copy the final flagstat file to the output directory
