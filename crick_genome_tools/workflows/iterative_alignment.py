@@ -236,24 +236,16 @@ class IterativeAlignment:
             CommandChain.command_to_logfile(["bwa-mem2", "index", ref_path], os.path.join(log_dir, f"{sample_id}_iter_{iter_num}.refindex.log"))
 
             # Define the BWA mem command using dynamic params
-            bwa_command = (
-                [
-                    "bwa-mem2",
-                    "mem",
-                    "-t",
-                    str(self.num_cores),
-                    "-R",
-                    f"@RG\tID:{sample_id}\tSM:{sample_id}\tLB:{sample_id}\tPL:ILLUMINA",
-                    "-k",
-                    str(self.aligner_params["mem"]),
-                    "-B",
-                    str(self.aligner_params["mmpen"]),
-                    "-O",
-                    str(self.aligner_params["gappen"]),
-                ]
-                + self.aligner_params["bwa_args"]
-                + [ref_path, read1_path, read2_path]
-            )
+            read_group = f"@RG\\tID:{sample_id}\\tSM:{sample_id}\\tLB:{sample_id}\\tPL:ILLUMINA"
+            bwa_command = [
+                "bwa-mem2",
+                "mem",
+                "-t", str(self.num_cores),
+                "-R", read_group,
+                "-k", str(self.aligner_params["mem"]),
+                "-B", str(self.aligner_params["mmpen"]),
+                "-O", str(self.aligner_params["gappen"]),
+            ] + self.aligner_params["bwa_args"] + [ref_path, read1_path, read2_path]
             log.info(f"Running BWA mem with command: {bwa_command}")
 
             # Define the alignment command chain and run
