@@ -20,20 +20,24 @@ dependencies = [
     "multiqc",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "black",
-    "isort",
-    "pylint",
-    "ruff"
+  {include-group = "lint"},
+  {include-group = "test"}
 ]
-tests = [
+test = [
     "pytest",
     "pytest-cov",
     "pytest-sugar",
     "pytest-profiling",
     "pytest-benchmark",
     "assertpy",
+]
+lint = [
+    "black",
+    "isort",
+    "pylint",
+    "ruff",
 ]
 
 [tool.setuptools]
